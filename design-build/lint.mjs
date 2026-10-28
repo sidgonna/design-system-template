@@ -17,11 +17,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadContext, pairingResults, gitHead, recordCheck, readJson } from './lib/context.mjs';
-import { inSection, yamlBlock, yamlBlockKeys, table, placeholders, unwrap, analyze } from './lib/markdown.mjs';
+import { inSection, yamlBlock, yamlBlockKeys, table, placeholders, unwrap } from './lib/markdown.mjs';
 import { parseColor, parseDtcgColor, toHex, deltaE, srgbToOklch, suggestPassingColor } from './lib/color.mjs';
-import { varName, toPx, collectAliases } from './lib/tokens.mjs';
+import { varName, toPx } from './lib/tokens.mjs';
 import { generate } from './tokens-css.mjs';
-import { STATES, DOC_STATES, COMPONENT_HEADINGS, UI_DIR, expected as uiExpected, blockOf, docPath, screenPath, screensOf, resolveSource } from './lib/ui-inventory.mjs';
+import { STATES, DOC_STATES, COMPONENT_HEADINGS, UI_DIR, expected as uiExpected, blockOf, screensOf, resolveSource } from './lib/ui-inventory.mjs';
+import { jsxOpenTags } from './lib/jsx.mjs';
 import { DS_ROOT, findProject, fixHint, appCodeTargets, projectConfig, APP_EXCLUDE } from './lib/project.mjs';
 
 const RULES = {
@@ -125,31 +126,31 @@ const WRONG_GROUP = { background: ['text'], foreground: ['surface'], border: [] 
 const fitsSlot = (p, slot) => !slot || !WRONG_GROUP[slot].includes(p.split('.')[1]);
 
 function suggestFor(ctx, idx, hit, inCode, slot = null) {
-  const use = (paths) => paths.map((p) => (inCode ? `var(${varName(p)})` : ref(p))).join(' or ');
+  const fmt = (paths) => paths.map((p) => (inCode ? `var(${varName(p)})` : ref(p))).join(' or ');
   if (hit.kind === 'hex' || hit.kind === 'color-fn') {
     const c = parseColor(hit.value);
     const role = slot ? ` for a ${slot}` : '';
-    if (!c) return `replace it with a color token from §13, e.g. ${use([slot === 'background' ? 'color.surface.default' : 'color.text.primary'])}`;
+    if (!c) return `replace it with a color token from §13, e.g. ${fmt([slot === 'background' ? 'color.surface.default' : 'color.text.primary'])}`;
     const all = [...new Set(idx.colors.filter((t) => t.hex.toLowerCase() === toHex(c).toLowerCase()).map((t) => t.path))];
     const exact = all.filter((p) => fitsSlot(p, slot));
-    if (exact.length === 1) return `use ${use(exact)} (same value)`;
-    if (exact.length > 1) return `use ${use(exact)} (all have this value; pick the one whose §4 role matches this use)`;
+    if (exact.length === 1) return `use ${fmt(exact)} (same value)`;
+    if (exact.length > 1) return `use ${fmt(exact)} (all have this value; pick the one whose §4 role matches this use)`;
     const near = [...new Map(idx.colors.filter((t) => fitsSlot(t.path, slot)).map((t) => [t.path, { path: t.path, d: deltaE(c, t.c) }])).values()].sort((a, b) => a.d - b.d).slice(0, 3);
-    const wrong = all.length ? `${use(all)} has this value but is not a ${slot} role; ` : 'no token has this value; ';
-    return `${wrong}use the closest token${role}: ${near.map((n) => `${use([n.path])} (ΔE ${n.d.toFixed(1)})`).join(', ')}, or add a token to §13 and tokens_file`;
+    const wrong = all.length ? `${fmt(all)} has this value but is not a ${slot} role; ` : 'no token has this value; ';
+    return `${wrong}use the closest token${role}: ${near.map((n) => `${fmt([n.path])} (ΔE ${n.d.toFixed(1)})`).join(', ')}, or add a token to §13 and tokens_file`;
   }
   if (hit.kind === 'px') {
     const px = parseFloat(hit.value);
     const exact = idx.dims.filter((d) => Math.abs(d.px - Math.abs(px)) < 0.01).map((d) => d.path);
     const neg = px < 0 ? (inCode ? ' inside calc(-1 * …)' : ' (negated)') : '';
-    if (exact.length) return `use ${use(exact.slice(0, 4))}${neg}${exact.length > 1 ? ' (pick by meaning: space, radius, size…)' : ''}`;
+    if (exact.length) return `use ${fmt(exact.slice(0, 4))}${neg}${exact.length > 1 ? ' (pick by meaning: space, radius, size…)' : ''}`;
     const near = [...idx.dims].sort((a, b) => Math.abs(a.px - Math.abs(px)) - Math.abs(b.px - Math.abs(px))).slice(0, 3);
-    return `no token is ${Math.abs(px)}px; use the nearest: ${near.map((n) => `${use([n.path])} (${n.px}px)`).join(', ')}, or add a token to §13`;
+    return `no token is ${Math.abs(px)}px; use the nearest: ${near.map((n) => `${fmt([n.path])} (${n.px}px)`).join(', ')}, or add a token to §13`;
   }
   if (hit.kind === 'ms') {
     const ms = parseFloat(hit.value);
     const near = [...idx.durs].sort((a, b) => Math.abs(a.ms - ms) - Math.abs(b.ms - ms)).slice(0, 2);
-    return near.length && near[0].ms === ms ? `use ${use([near[0].path])}` : `use the nearest duration token: ${near.map((n) => `${use([n.path])} (${n.ms}ms)`).join(', ')}`;
+    return near.length && near[0].ms === ms ? `use ${fmt([near[0].path])}` : `use the nearest duration token: ${near.map((n) => `${fmt([n.path])} (${n.ms}ms)`).join(', ')}`;
   }
   return 'move the value into §13 and reference the token';
 }
@@ -464,6 +465,7 @@ export function lint(opts = {}) {
   if (inv) for (const c of inv.components || []) for (const n of [c.name, ...(c.aliases || [])]) comps.set(n.toLowerCase().replace(/[-_\s]/g, ''), c);
   const ignTags = new Set(inv?.ignore?.tags || []);
   const ignProps = new Set(inv?.ignore?.props || []);
+  const screenFiles = new Set(inv ? screensOf(inv).flatMap(([, s]) => (s.source || []).map((r) => resolveSource(where.project, root, r)).filter(Boolean)) : []);
   const normName = (n) => n.toLowerCase().replace(/[-_\s]/g, '');
   if (!inv) add('unknown-component', 'error', ctx.inventoryRel, 1, `${ctx.inventoryRel} is missing or not valid JSON`, 'write it in KICKSTART Step 2 (see design.md §16.1)');
 
@@ -576,20 +578,29 @@ export function lint(opts = {}) {
         for (const m of text.matchAll(/import\s+(?:type\s+)?(?:(\w+)\s*,?\s*)?(?:\{([^}]+)\})?\s*from\s*["']([^"']+)["']/g)) for (const n of [m[1], ...(m[2] || '').split(',').map((s) => s.trim().split(/\s+as\s+/).pop())].filter(Boolean)) importFrom.set(n, m[3]);
         const imported = new Set(importFrom.keys());
         // Components imported from a package (react-router, a UI kit…) are not this project's components, unless
-        // that package is the inventory's "library". Local imports (./, ../, @/, ~/) and unimported tags are checked.
-        const fromPackage = (tag) => { const s = importFrom.get(tag.split('.')[0]); return !!s && !/^(\.|@\/|~\/|#)/.test(s) && !(inv.library && (s === inv.library || s.startsWith(inv.library + '/'))); };
-        for (const m of text.matchAll(/<([A-Z][\w]*(?:\.[A-Z]\w*)?)\b([^>]*?)\/?>/g)) {
-          const tag = m[1];
-          if (ignTags.has(tag) || fromPackage(tag)) continue;
-          const n = text.slice(0, m.index).split('\n').length;
+        // that package is the inventory's "library". Local imports (./, ../, @/, ~/, #), imports of this design
+        // system's own components (any path ending in <design-system>/components…, bare or aliased) and unimported
+        // tags are checked.
+        const ownDs = new RegExp(`(^|/)${path.basename(DS_ROOT).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/components(/|$)`);
+        // The inventory's own import paths ("design-system/components/react") count too, bare or behind an alias
+        // prefix, whatever the template folder is called on disk.
+        const invImports = [...new Set((inv.components || []).map((c) => c.import).filter(Boolean))];
+        const isInvImport = (s) => invImports.some((i) => s === i || s.startsWith(i + '/') || s.endsWith('/' + i) || s.includes('/' + i + '/'));
+        const fromPackage = (tag) => { const s = importFrom.get(tag.split('.')[0]); return !!s && !/^(\.|@\/|~\/|#)/.test(s) && !ownDs.test(s) && !isInvImport(s) && !(inv.library && (s === inv.library || s.startsWith(inv.library + '/'))); };
+        // A component imported from a screen's own source file (inventory.json → screens.*.source) is that screen,
+        // not a UI component: <App /> from ./App, <SettingsPage /> from ./pages/Settings.
+        const isScreen = (tag) => { const s = importFrom.get(tag); if (!s || !/^\.\.?\//.test(s)) return false; const base = path.resolve(path.dirname(abs), s); return ['', '.tsx', '.jsx', '.ts', '.js', '.vue', '.svelte', '.astro', '/index.tsx', '/index.jsx', '/index.ts', '/index.js'].some((e) => screenFiles.has(base + e)); };
+        for (const t of jsxOpenTags(text)) {
+          const tag = t.tag;
+          if (ignTags.has(tag) || fromPackage(tag) || isScreen(tag)) continue;
+          const n = text.slice(0, t.index).split('\n').length;
           const c = comps.get(normName(tag)) || comps.get(normName(tag.split('.').pop()));
-          if (!c) { add('unknown-component', 'error', f, n, `<${tag}> is not in ${ctx.inventoryRel}${imported.has(tag) ? '' : ' (and is not imported)'}`, `reuse ${didYouMean(tag, (inv.components || []).map((x) => x.name)).join(' or ') || 'an existing component'}; if it really exists, add it to inventory.json with its import path (KICKSTART Step 2)`, { value: tag }); continue; }
-          for (const pm of m[2].matchAll(/([a-zA-Z][\w-]*)\s*=/g)) {
-            const prop = pm[1];
+          if (!c) { add('unknown-component', 'error', f, n, `<${tag}> is not in ${ctx.inventoryRel}${imported.has(tag) ? '' : ' (and is not imported)'}`, `reuse ${didYouMean(tag, (inv.components || []).map((x) => x.name)).join(' or ') || 'an existing component'}; if it really exists, add it to inventory.json with its import path (KICKSTART Step 2); if it is a screen or page, list its file in inventory.json → screens.<id>.source`, { value: tag }); continue; }
+          for (const prop of t.props) {
             if (ignProps.has(prop) || /^(on[A-Z]|aria-|data-)/.test(prop) || (c.props || []).includes(prop)) continue;
             add('unknown-component', 'error', f, n, `<${tag}> has no prop "${prop}" in inventory.json`, `use one of: ${(c.props || []).join(', ') || '(none)'}; look it up in ${c.import || 'the component source'} before adding it`, { value: prop });
           }
-          const vm = m[2].match(/\bvariant\s*=\s*["']([^"']+)["']/);
+          const vm = t.attrs.match(/\bvariant\s*=\s*["']([^"']+)["']/);
           if (vm && !(c.variants || []).includes(vm[1])) add('unknown-component', 'error', f, n, `<${tag} variant="${vm[1]}"> is not a listed variant`, `use one of: ${(c.variants || []).join(', ')}`, { value: vm[1] });
         }
       }
@@ -622,7 +633,7 @@ export function lint(opts = {}) {
         const text = fs.readFileSync(abs, 'utf8');
         const found = new Set();
         for (const m of text.matchAll(/\bdata-component\s*=\s*["']([^"']+)["']/g)) { const c = byName(m[1]); if (c) found.add(c.name); }
-        for (const m of text.matchAll(/<([A-Z]\w*)\b/g)) { const c = byName(m[1]); if (c && !ignTags.has(m[1])) found.add(c.name); }
+        for (const t of jsxOpenTags(text)) { const c = byName(t.tag); if (c && !ignTags.has(t.tag)) found.add(c.name); }
         const fr = path.relative(where.project, abs).split(path.sep).join('/');
         for (const n of found) if (!listed.has(n)) UI(`${fr} renders ${n}, but screen "${id}" doesn't list it`, `add { "component": "${n}", "variants": [...], "states": [...] } to screens.${id}.components`, ctx.inventoryRel, 1, { value: n });
         if ((s.source || []).length === 1) for (const n of listed) if (!found.has(n)) UI(`screen "${id}" lists ${n}, but ${fr} doesn't render it`, `remove it from screens.${id}.components, or add the source file that renders it to screens.${id}.source`, ctx.inventoryRel, 1, { value: n });
@@ -715,7 +726,7 @@ function sameValue(type, a, b) {
 }
 
 // ---------- output ----------
-export function format(res, baseline, opts) {
+export function format(res, baseline) {
   const errors = res.findings.filter((f) => f.severity === 'error');
   const warnings = res.findings.filter((f) => f.severity === 'warning');
   const counts = {};

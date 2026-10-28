@@ -42,7 +42,7 @@ if (relFile === 'tokens/tokens.json') {
   try {
     const g = generate(ROOT);
     for (const [f, c] of [['tokens.css', g.css], ['tokens.js', g.js], ['tokens.mjs', g.mjs]]) fs.writeFileSync(path.join(ROOT, 'design-build/preview', f), c);
-  } catch (e) { /* lint reports tokens-format problems below */ }
+  } catch { /* lint reports tokens-format problems below */ }
 }
 const { lint, format: formatLint } = await import(path.join(ROOT, 'design-build/lint.mjs'));
 const res = lint({ root: ROOT });

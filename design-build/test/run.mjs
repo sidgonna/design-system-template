@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
@@ -50,9 +50,13 @@ for (const f of fs.readdirSync(path.join(FIX, 'good'))) test(`fixture good/${f}:
   const e = errorsOf(res); assert(e.length === 0, show(e));
 });
 for (const f of fs.readdirSync(path.join(FIX, 'bad'))) {
-  const first = fs.readFileSync(path.join(FIX, 'bad', f), 'utf8').split('\n').slice(0, 3).join(' ');
-  const m = first.match(/\bexpect:\s*([^*>]+?)\s*(?:\*\/|-->|$)/);
-  if (!m) continue; // render-only fixtures use expect-render
+  // The expect comment is one of the first 3 lines; match it per line, so code after it (a JSX `>`) can't hide it.
+  const first = fs.readFileSync(path.join(FIX, 'bad', f), 'utf8').split('\n').slice(0, 3).join('\n');
+  const m = first.match(/\bexpect:\s*([^*>\n]+?)\s*(?:\*\/|-->|$)/m);
+  if (!m) { // render-only fixtures use expect-render; anything else is a fixture that silently tests nothing
+    if (!/\bexpect-render:/.test(first)) test(`fixture bad/${f}: has an expect: line`, () => assert(false, 'add `expect: rule=n` (or `expect-render:`) to one of its first 3 lines'));
+    continue;
+  }
   const want = Object.fromEntries(m[1].split(',').map((s) => s.trim().split('=')).map(([r, n]) => [r, Number(n)]));
   test(`fixture bad/${f}: ${m[1]}`, () => {
     const res = lint({ root: ROOT, src: [path.join(FIX, 'bad', f)] });
@@ -130,7 +134,7 @@ test('ui-inventory.mjs: --check passes on the template; a new screen gets its pa
   const ui = (dir, ...a) => spawnSync(process.execPath, [path.join(dir, 'design-build/ui-inventory.mjs'), ...a], { encoding: 'utf8' });
   let r = ui(ROOT, '--check');
   assert(r.status === 0, `template --check: exit ${r.status}\n${r.stdout}${r.stderr}`);
-  const dir = sandbox(({ dir: d, edit }) => {
+  const dir = sandbox(({ edit }) => {
     edit('design-build/inventory.json', editInv((j) => {
       j.components.find((c) => c.name === 'Toast').status = 'existing';
       j.components.push({ name: 'App', aliases: [], status: 'existing', import: 'src/App.tsx', props: [], variants: [] }); // app-only: no doc needed

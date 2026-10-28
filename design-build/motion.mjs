@@ -14,8 +14,10 @@
 //   button-hover, button-press, card-hover, input-focus  CSS transitions started by real hover/press/focus;
 //                                                         same sampling (input-focus is color/ring only)
 //   play-motion    the preview's #play-motion demo: real-time transform at t0, mid and end must differ
-// Then with prefers-reduced-motion: reduce it repeats the triggers and fails if any animation runs, any
-// transform/size/position transition starts, or a hovered/pressed component has a transform.
+// Then with prefers-reduced-motion: reduce it repeats the triggers and checks the core.md §10 policy: nothing
+// moves, and only opacity/colour fades of at most motion.duration.fast remain. It fails if an animation changes
+// anything but opacity or colour (or runs longer than fast, or forever), a transform/size/position transition
+// starts, a colour transition is longer than fast, or a hovered/pressed component has a transform.
 // Animations are slowed 10× through the DevTools protocol so a transition is still running when it is sampled.
 // Exit: 0 pass · 1 fail · 2 harness error (Playwright missing, page did not load, no components found).
 import fs from 'node:fs';
@@ -27,6 +29,8 @@ import { findProject } from './lib/project.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DS = path.resolve(HERE, '..');
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2' };
+// Properties a reduced-motion fade may change (core.md §10): opacity and colours, never geometry.
+const FADE = /^(opacity|color|background-color|border(-(block|inline|top|right|bottom|left)(-(start|end))?)?-color|outline-color|text-decoration-color|fill|stroke|box-shadow|caret-color|accent-color)$/;
 const MOVING = /^(transform|translate|scale|rotate|all|left|top|right|bottom|inset(-.*)?|margin(-.*)?|(min-|max-)?(width|height|inline-size|block-size))$/;
 
 function serve(root) {
@@ -72,12 +76,23 @@ window.__motion = {
   reenter(sel, attr, from, to) { const el = document.querySelector(sel); el.setAttribute(attr, from); getComputedStyle(el).animationName; el.setAttribute(attr, to); return true; },
   // Restart a CSS animation that already finished (fill: backwards, so it is gone from getAnimations()).
   replay(sel) { const el = document.querySelector(sel); if (!el) return false; el.style.animationName = 'none'; getComputedStyle(el).animationName; el.style.animationName = ''; getComputedStyle(el).animationName; return true; },
+  // The fast duration in ms, read from the tokens (--motion-duration-fast), default 150.
+  fastMs() { const v = getComputedStyle(document.documentElement).getPropertyValue('--motion-duration-fast').trim(); const n = parseFloat(v); return Number.isFinite(n) ? (/ms$/.test(v) ? n : /s$/.test(v) ? n * 1000 : n) : 150; },
+  // Everything running that breaks the reduced-motion policy: movement of any kind, or a fade longer than fast.
   moving() {
-    const re = ${MOVING};
+    const re = ${MOVING}, fade = ${FADE}, fast = this.fastMs();
     return document.getAnimations().filter((a) => a.playState !== 'finished').map((a) => {
       const el = a.effect && a.effect.target; const id = el ? (el.id ? '#' + el.id : el.tagName.toLowerCase() + (el.dataset && el.dataset.component ? '[data-component=' + el.dataset.component + ']' : '')) : '?';
-      if (a.animationName) return { el: id, what: 'animation ' + a.animationName, durationMs: a.effect.getComputedTiming().duration };
-      if (a.transitionProperty && re.test(a.transitionProperty.trim())) return { el: id, what: 'transition ' + a.transitionProperty, durationMs: a.effect.getComputedTiming().duration };
+      const t = a.effect.getComputedTiming(), durationMs = t.duration;
+      if (a.animationName) {
+        const props = [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)).filter((k) => !['offset', 'computedOffset', 'easing', 'composite'].includes(k)).map((k) => k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())))];
+        const onlyFade = props.length > 0 && props.every((p) => fade.test(p));
+        if (onlyFade && durationMs <= fast && t.iterations !== Infinity) return null;
+        return { el: id, what: 'animation ' + a.animationName + ' (' + (onlyFade ? (t.iterations === Infinity ? 'fade runs forever' : 'fade longer than fast ' + fast + 'ms') : 'changes ' + props.filter((p) => !fade.test(p)).join(', ')) + ')', durationMs };
+      }
+      const prop = (a.transitionProperty || '').trim();
+      if (prop && re.test(prop)) return { el: id, what: 'transition ' + prop, durationMs };
+      if (prop && durationMs > fast) return { el: id, what: 'transition ' + prop + ' (fade longer than fast ' + fast + 'ms)', durationMs };
       return null;
     }).filter(Boolean);
   },
@@ -86,6 +101,7 @@ window.__motion = {
 const differs = (frames, keys) => frames.some((fr) => keys.some((k) => fr[k] !== frames[0][k]));
 const SEL = {
   card: '[data-component="card"]',
+  cardEnter: '[data-component="card"][data-enter]',   // the entrance is opt-in (data-enter / the enter prop)
   cardInteractive: '[data-component="card"][data-interactive]',
   badge: '[data-component="badge"]',
   inputError: '[data-component="input"][data-variant="error"]',
@@ -152,7 +168,7 @@ export async function motionCheck({ target, strip = null } = {}) {
         if (release) await release();
         check(results.motion, name, !!r?.found && differs(r.frames, keys), r || {});
       };
-      await anim('card-enter', SEL.card, 'ds-enter', ['transform', 'opacity']);
+      await anim('card-enter', SEL.cardEnter, 'ds-enter', ['transform', 'opacity']);
       await anim('badge-pop', SEL.badge, 'ds-pop', ['transform', 'opacity']);
       if (await has(SEL.inputError)) {
         await page.locator(SEL.inputError).first().scrollIntoViewIfNeeded();
@@ -205,7 +221,10 @@ export async function motionCheck({ target, strip = null } = {}) {
         const transform = transformSel ? await page.locator(transformSel).first().evaluate((e) => getComputedStyle(e).transform) : null;
         check(results.reduced, name, moving.length === 0 && (!transformSel || transform === 'none'), { moving, transform });
       };
-      await idle('on-load (card-enter, badge-pop, spinner)', async () => {}, null);
+      await idle('on-load (card-enter, badge-pop, spinner: fades ≤ fast only)', async () => {}, null);
+      // Replay the entrances: under reduce they may only fade (opacity), never move.
+      if (await has(SEL.cardEnter)) await idle('card-enter (opacity fade only)', () => page.evaluate((s) => __motion.replay(s), SEL.cardEnter), SEL.cardEnter);
+      if (await has(SEL.badge)) await idle('badge-pop (opacity fade only)', () => page.evaluate((s) => __motion.replay(s), SEL.badge), SEL.badge);
       if (await has(SEL.inputError)) await idle('input-shake', () => page.evaluate((s) => __motion.reenter(s, 'data-variant', 'default', 'error'), SEL.inputError), `${SEL.inputError} input`);
       if (await has(SEL.button)) await idle('button-hover', () => page.locator(SEL.button).first().hover(), SEL.button);
       if (await has(SEL.button)) { await idle('button-press', async () => { await page.locator(SEL.button).first().hover(); await page.mouse.down(); }, SEL.button); await page.mouse.up(); }

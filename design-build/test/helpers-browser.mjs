@@ -49,7 +49,17 @@ try {
     m.append(c);
     ok(c.dataset.component === 'card' && c.dataset.variant === 'raised' && c.hasAttribute('data-interactive'), 'card attrs');
     ok(c.querySelector('[data-component="badge"][data-variant="info"]')?.textContent === 'New', 'badge');
-    ok(ds.replay(c) === c && c.getAnimations().some((a) => a.animationName === 'ds-enter'), 'replay restarts the entrance');
+    ok(!c.getAnimations().some((a) => a.animationName === 'ds-enter'), 'no entrance without enter (opt-in)');
+    const ce = ds.createCard({ enter: true, children: 'x' });
+    m.append(ce);
+    ok(ce.hasAttribute('data-enter') && ds.replay(ce) === ce && ce.getAnimations().some((a) => a.animationName === 'ds-enter'), 'replay restarts the entrance');
+    ok(ds.createBadge({ label: 'Saved', variant: 'success', live: true }).getAttribute('role') === 'status', 'live badge is a status');
+    const lb = ds.createButton({ label: 'Save', variant: 'primary', loading: true, loadingLabel: 'Saving' });
+    ok(lb.querySelector('[data-part="visually-hidden"][role="status"]')?.textContent === 'Saving', 'loading button announces its label');
+    ds.setButtonLoading(lb, false);
+    ok(!lb.querySelector('[role="status"]') && !lb.hasAttribute('aria-busy'), 'loading cleared');
+    let msg = ''; try { ds.setInputError(document.createElement('div'), 'x'); } catch (e) { msg = e.message; }
+    ok(/setInputError: pass the <div data-component="input"> root/.test(msg), 'setInputError names the fix for a wrong root');
     let threw = false; try { ds.createBadge({ label: 'x', variant: 'brand' }); } catch { threw = true; }
     ok(threw, 'unknown variant should throw');
     ok(JSON.stringify(ds.variants.button) === JSON.stringify(['primary', 'secondary', 'ghost', 'danger']), 'variants export');

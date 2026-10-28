@@ -197,12 +197,27 @@ function contentProbe() {
   return { blank: text === 0 && media === 0, text, media };
 }
 
+// Reduced-motion policy (core.md §10): nothing moves; an opacity/colour fade of at most motion.duration.fast is fine.
+// motion.mjs is the full check; this probe only warns.
 function motionProbe() {
   const moving = /transform|translate|scale|rotate|all|left|top|right|bottom|inset|margin|width|height/;
+  const fadeOnly = /^(opacity|color|background-color|border(-[a-z]+)*-color|outline-color|text-decoration-color|fill|stroke|box-shadow|caret-color|accent-color)$/;
+  const fv = getComputedStyle(document.documentElement).getPropertyValue('--motion-duration-fast').trim();
+  const fast = (parseFloat(fv) || 150) * (/[^m]s$/.test(fv) ? 1000 : 1);
+  // Read the @keyframes from the stylesheets, not el.getAnimations(): an entrance that already finished has no
+  // Animation object left, but its computed animation-name still names it.
+  const keyframes = new Map();
+  const walk = (rules) => { for (const r of rules) { if (r.type === CSSRule.KEYFRAMES_RULE) keyframes.set(r.name, [...r.cssRules].flatMap((k) => [...k.style])); else if (r.cssRules) try { walk(r.cssRules); } catch { /* cross-origin */ } } };
+  for (const sh of document.styleSheets) { try { walk(sh.cssRules); } catch { /* cross-origin sheet */ } }
+  const ms = (s) => parseFloat(s) * (/ms$/.test(s.trim()) ? 1 : 1000);
+  const allowedFade = (cs) => {
+    const names = cs.animationName.split(',').map((s) => s.trim()), durs = cs.animationDuration.split(','), its = cs.animationIterationCount.split(',');
+    return names.every((n, i) => { const props = keyframes.get(n); return !!props && props.length > 0 && props.every((p) => fadeOnly.test(p)) && ms(durs[i % durs.length]) <= fast && its[i % its.length].trim() !== 'infinite'; });
+  };
   const found = [];
   for (const el of document.querySelectorAll('*')) {
     const cs = getComputedStyle(el);
-    const anim = cs.animationName !== 'none' && cs.animationName && parseFloat(cs.animationDuration) > 0.01;
+    const anim = cs.animationName !== 'none' && cs.animationName && parseFloat(cs.animationDuration) > 0.01 && !allowedFade(cs);
     const durs = cs.transitionDuration.split(',').map(parseFloat), props = cs.transitionProperty.split(',').map((s) => s.trim());
     const tr = props.some((p, i) => moving.test(p) && (durs[i % durs.length] || 0) > 0.01);
     if (anim || tr) found.push({ el: el.id ? `#${el.id}` : el.tagName.toLowerCase() + (el.classList.length ? '.' + [...el.classList].join('.') : ''), animation: anim ? cs.animationName : null, transition: tr ? cs.transitionProperty : null });
@@ -214,7 +229,7 @@ function motionProbe() {
 async function focusWalk(page, limit = 80) {
   const missing = [], seen = new Set();
   let stops = 0;
-  await page.evaluate(() => { document.activeElement && document.activeElement.blur && document.activeElement.blur(); window.scrollTo(0, 0); });
+  await page.evaluate(() => { document.activeElement?.blur?.(); window.scrollTo(0, 0); });
   for (let i = 0; i < limit; i++) {
     await page.keyboard.press('Tab');
     const f = await page.evaluate(() => {
@@ -296,7 +311,7 @@ async function main() {
         await page.screenshot({ path: shot, fullPage: true, animations: 'disabled' });
         run.screenshot = path.relative(ROOT, shot).split(path.sep).join('/');
         const focus = await focusWalk(page);
-        await page.evaluate(() => { document.activeElement && document.activeElement.blur && document.activeElement.blur(); window.scrollTo(0, 0); });
+        await page.evaluate(() => { document.activeElement?.blur?.(); window.scrollTo(0, 0); });
 
         const add = (list, check, msg, detail) => list.push({ id, check, message: msg, detail });
         if (layout.overflow) add(failures, 'overflow', `page is ${layout.overflow.scrollWidth}px wide in a ${layout.overflow.viewport}px viewport. Fix: let the widest element wrap or shrink (min(100%, …), flex-wrap), or put wide content (tables, code) in an overflow-x:auto container`, layout.overflow.culprits);
