@@ -313,6 +313,8 @@
     vp.scrollLeft = (e.clientX - r.left) / s - vp.clientWidth / 2; vp.scrollTop = (e.clientY - r.top) / s - vp.clientHeight / 2;
   });
   drawMini();
+  // for the live board (lib/live.mjs): it keeps the zoom across a reload
+  window.boardCanvas = { getZoom: function () { return zoom; }, setZoom: function (z) { setZoom(Number(z) || 1, false); } };
 
   // ---------- Phase 5 review (kept in this browser; download it as design-build/review.json) ----------
   var LABEL = { accept: 'Accepted', edit: 'Edit requested', reject: 'Rejected' };
@@ -373,7 +375,7 @@
   if (page === 'studies') {
     var ids = (document.body.getAttribute('data-directions') || '').split(',').filter(Boolean), note = $('studies-note');
     if (location.protocol === 'file:') {
-      if (note) { note.setAttribute('role', 'status'); note.textContent = 'Opened from a file, so the directions cannot load their tokens and every pane shows the current tokens. Run node design-build/board.mjs --serve and open the address it prints.'; }
+      if (note) { note.setAttribute('role', 'status'); note.textContent = 'Opened from a file, so the directions cannot load their tokens and every pane shows the current tokens. Run node design-build/board.mjs --serve --watch and open the address it prints.'; }
     } else Promise.all(ids.map(function (id) {
       return fetch('directions/' + encodeURIComponent(id) + '.resolved.json').then(function (r) { if (!r.ok) throw new Error(id + ': ' + r.status); return r.json(); }).then(function (d) {
         all('.dir-pane[data-direction="' + id + '"]').forEach(function (pane) {

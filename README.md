@@ -14,18 +14,23 @@ npx degit sidgonna/design-system-template design-system
 npm --prefix design-system/design-build ci
 npx --prefix design-system/design-build playwright install chromium   # add --with-deps on a fresh Linux machine
 
-# 3. Install the git pre-commit hook (needs a git repo: run `git init` first if there is none)
+# 3. Open the live board: keep it running in a second terminal, open the URL it prints
+node design-system/design-build/board.mjs --serve --watch
+
+# 4. Install the git pre-commit hook (needs a git repo: run `git init` first if there is none)
 node design-system/design-build/install-hooks.mjs
 
-# 4. Check that everything runs
+# 5. Check that everything runs
 node design-system/design-build/lint.mjs
 ```
 
-On an existing app, step 4 usually fails with a list of hard-coded colors and sizes in your code. That is expected: KICKSTART Step 2 shows you the counts and asks whether to freeze them as a ceiling (`--baseline`), and §16 Phase 6 brings them down.
+Step 3 serves the design board (`http://localhost:4173/design-build/preview/`, or the next free port) and rebuilds it every time a design file, `tokens/tokens.json`, `inventory.json`, `ui-inventory/`, an asset, a component, `state.yaml` or `review.json` changes. Open tabs reload by themselves, keep their scroll, zoom, view and theme, and name the changed tiles; a broken save shows a banner with the file and line and keeps the last good board until you fix it. Right after copying, every tile is a hatched placeholder: that is the starting point, not an error. Ctrl+C stops it; `--no-watch` serves the files without rebuilding, `--poll` watches by polling (network drives, some containers).
 
-5. Keep `design-system/design-build/` out of your app's own linter (ESLint, oxlint, Biome): it holds Node tooling and test fixtures that are bad on purpose, so the app's lint (and a lint-staged pre-commit) fails on it otherwise. Keep `design-system/components/` linted. For example `"ignorePatterns": ["design-system/design-build/**"]` in `.oxlintrc.json`, or `globalIgnores(['dist', 'design-system/design-build'])` in `eslint.config.js`.
+On an existing app, step 5 usually fails with a list of hard-coded colors and sizes in your code. That is expected: KICKSTART Step 2 shows you the counts and asks whether to freeze them as a ceiling (`--baseline`), and §16 Phase 6 brings them down.
 
-6. Open your coding harness in the project and paste the prompt below. The harness reads the system, works out your project type from the files, asks the intake questions and walks you through visual directions before it builds anything. For an app it then applies the system to your code (§16 Phase 6).
+6. Keep `design-system/design-build/` out of your app's own linter (ESLint, oxlint, Biome): it holds Node tooling and test fixtures that are bad on purpose, so the app's lint (and a lint-staged pre-commit) fails on it otherwise. Keep `design-system/components/` linted. For example `"ignorePatterns": ["design-system/design-build/**"]` in `.oxlintrc.json`, or `globalIgnores(['dist', 'design-system/design-build'])` in `eslint.config.js`.
+
+7. Open your coding harness in the project and paste the prompt below. The harness reads the system, works out your project type from the files, asks the intake questions and walks you through visual directions before it builds anything. For an app it then applies the system to your code (§16 Phase 6).
 
 Developing the template itself? Clone it normally and drop the `design-system/` prefix from every command (`node design-build/lint.mjs`).
 
@@ -57,6 +62,7 @@ STEP 3 — Tell me what you found (5 lines max)
 - The modules you enabled.
 - Any existing brand material you found.
 - That you'll follow §16, starting with intake.
+- The live board: start `node design-system/design-build/board.mjs --serve --watch` in a second terminal and leave it running (if you can't keep a process running, ask me to run it), then give me the board URL it prints. It rebuilds and reloads by itself whenever a design file, token or asset changes.
 
 STEP 4 — §16 Phase 1 intake (ALWAYS ask the full set)
 Ask me ALL the intake questions from §16 Phase 1 in ONE message: grouped, numbered, with a short example answer for each. Never skip one, whether the project is empty, full, or already has brand files.
@@ -105,6 +111,7 @@ RULES FOR THIS WHOLE SESSION
 - Follow §16 phase by phase and stop at every gate for my answer. Never pick a visual direction for me.
 - Respect the §16.0 hard limits. When a research cap is hit, stop researching, log the gaps as ASSUMPTION in §14.4, and move to visuals. Never stall.
 - Show, don't tell. Any color, font, icon or motion you propose must be visible in an HTML page or image I can open, and you should tell me the exact path to open.
+- Keep the live board running. After every change, tell me which tile to look at (for example "§4 Color system"); the board reloads by itself, keeps my place and names the changed tiles. If it shows a red "Not updated" banner, fix the file:line it names before anything else.
 - Follow §0 of design.md: every value lives once in §13 tokens, every topic has one owning file, and modules narrow core but never contradict it.
 - After every edit to a design file, tokens or UI, run `node design-system/design-build/lint.mjs` and fix what it reports; it checks the design files and the app's code. Reuse a component from `design-build/inventory.json` before extending one, and extend before creating; ask me before creating one.
 - Never say "done" until `design-build/state.yaml` shows lint, render and a11y passing on the current commit; for the app, render must run on the dev-server URL (`node design-system/design-build/render.mjs --url <dev-server URL> --record`). Never edit the lint config, baseline, hooks or checks, or update screenshots, to make a check pass without asking me.
@@ -195,7 +202,7 @@ The markdown holds the prose, and `node design-system/design-build/ui-inventory.
 | `node design-system/design-build/ui-inventory.mjs [--check]` | Regenerates `ui-inventory/index.md` and the tables in each screen and component doc from `inventory.json`, and creates missing docs from the templates. `--check` only reports. | Node 18+ |
 | `npm --prefix design-system/design-build run tokens:check` | Validates `tokens/tokens.json` against the DTCG 2025.10 format with Terrazzo | the same `npm ci` |
 | `node design-system/design-build/tokens-css.mjs` | Regenerates `preview/tokens.css` (CSS variables, light + dark), `tokens.mjs` (ES module for app code) and `tokens.js` from `tokens/tokens.json`; `--check` fails if they are stale | Node 18+ |
-| `node design-system/design-build/board.mjs` | Builds the design board, `preview/index.html`: an overview card with a coverage ring, the brand identity zone, and one tile per core section, module part, component doc, screen and governance part, with hatched placeholders for what is unfilled, live components and motion, light, dark and side-by-side views, and a pan and zoom canvas with a minimap. It also writes `preview/board.json` and `board.md` for AI agents. `--check` fails if they are stale; `--review "§4=accept"` records Phase 5 verdicts in `design-build/review.json`; `--overview-only --direction A --direction B` writes the Phase 3 studies page; `--serve` opens both over http | Node 18+ |
+| `node design-system/design-build/board.mjs` | Builds the design board, `preview/index.html`: an overview card with a coverage ring, the brand identity zone, and one tile per core section, module part, component doc, screen and governance part, with hatched placeholders for what is unfilled, live components and motion, light, dark and side-by-side views, and a pan and zoom canvas with a minimap. It also writes `preview/board.json` and `board.md` for AI agents. `--check` fails if they are stale; `--review "§4=accept"` records Phase 5 verdicts in `design-build/review.json`; `--overview-only --direction A --direction B` writes the Phase 3 studies page; `--serve --watch` is the live board: it serves both over http, rebuilds `tokens.css`, the board and the studies page when their sources change and reloads open tabs (a bad save keeps the last good board and shows the file:line; `--no-watch` for a plain server). The reload script is added to served pages only, so the committed `index.html` and `--check` are unaffected | Node 18+ |
 | `node design-system/design-build/test/run.mjs` | The checks' own self-test: good and bad fixtures, mutation tests for every rule, the CLI flags, running from an app root, the git and agent hooks, the UI inventory (missing, stale or unfilled docs, unknown tokens, variants and states), the React wrappers (server-rendered), the board (every tile, coverage, `board-stale`, `review.json`, the studies page), and, when Playwright is installed, the render fixtures, the component helpers in a browser and the motion check (including a broken reduced-motion block that must fail) | Node 18+ |
 
 Useful flags:

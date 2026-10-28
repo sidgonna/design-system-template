@@ -311,7 +311,18 @@ caption { caption-side: bottom; text-align: start; padding-block-start: var(--sp
 .wall { display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-12) * 3), 1fr)); }
 .wall img { inline-size: 100%; block-size: auto; border-radius: var(--radius-sm); }
 
+/* ---------- the live board (board.mjs --serve; lib/live.mjs adds these elements to served pages only) ----------
+   Nothing moves: the toast appears and goes, changed tiles get an outline for a few seconds, no transitions. */
+.live-toast { position: fixed; inset-block-end: var(--space-4); inset-inline-end: var(--space-4); z-index: 20; max-inline-size: min(calc(100vw - var(--space-8)), calc(var(--space-12) * 10)); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface-inverse); color: var(--color-text-inverse); box-shadow: var(--shadow-2); font-size: var(--font-size-body); overflow-wrap: break-word; }
+.live-banner { position: fixed; inset-block-start: var(--space-2); inset-inline: var(--space-2); z-index: 21; display: grid; gap: var(--space-2); justify-items: start; max-block-size: 40vh; overflow: auto; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: var(--space-2) solid var(--color-semantic-error); background: var(--color-surface-inverse); color: var(--color-text-inverse); box-shadow: var(--shadow-3); }
+.live-banner-title { margin: 0; font-weight: var(--font-weight-bold); }
+.live-banner ul { margin: 0; padding-inline-start: var(--space-4); }
+.live-banner code { overflow-wrap: anywhere; }
+.live-toast[hidden], .live-banner[hidden] { display: none; }
+.tile.live-changed { outline: var(--border-width-thick) solid var(--color-focus); outline-offset: var(--space-1); }
+
 @media print {
+  .live-toast, .live-banner { display: none !important; }
   .board-bar .bar-tools, .zone-nav, .review, .minimap, .anchor, .skip-link, .duo { display: none !important; }
   .tile { break-inside: avoid; box-shadow: none; }
 }

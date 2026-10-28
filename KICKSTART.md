@@ -28,6 +28,7 @@ STEP 3 — Tell me what you found (5 lines max)
 - The modules you enabled.
 - Any existing brand material you found.
 - That you'll follow §16, starting with intake.
+- The live board: start `node design-system/design-build/board.mjs --serve --watch` in a second terminal and leave it running (if you can't keep a process running, ask me to run it), then give me the board URL it prints. It rebuilds and reloads by itself whenever a design file, token or asset changes.
 
 STEP 4 — §16 Phase 1 intake (ALWAYS ask the full set)
 Ask me ALL the intake questions from §16 Phase 1 in ONE message: grouped, numbered, with a short example answer for each. Never skip one, whether the project is empty, full, or already has brand files.
@@ -76,6 +77,7 @@ RULES FOR THIS WHOLE SESSION
 - Follow §16 phase by phase and stop at every gate for my answer. Never pick a visual direction for me.
 - Respect the §16.0 hard limits. When a research cap is hit, stop researching, log the gaps as ASSUMPTION in §14.4, and move to visuals. Never stall.
 - Show, don't tell. Any color, font, icon or motion you propose must be visible in an HTML page or image I can open, and you should tell me the exact path to open.
+- Keep the live board running. After every change, tell me which tile to look at (for example "§4 Color system"); the board reloads by itself, keeps my place and names the changed tiles. If it shows a red "Not updated" banner, fix the file:line it names before anything else.
 - Follow §0 of design.md: every value lives once in §13 tokens, every topic has one owning file, and modules narrow core but never contradict it.
 - After every edit to a design file, tokens or UI, run `node design-system/design-build/lint.mjs` and fix what it reports; it checks the design files and the app's code. Reuse a component from `design-build/inventory.json` before extending one, and extend before creating; ask me before creating one.
 - Never say "done" until `design-build/state.yaml` shows lint, render and a11y passing on the current commit; for the app, render must run on the dev-server URL (`node design-system/design-build/render.mjs --url <dev-server URL> --record`). Never edit the lint config, baseline, hooks or checks, or update screenshots, to make a check pass without asking me.

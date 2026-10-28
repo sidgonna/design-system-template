@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -350,6 +350,18 @@ test('board: --overview-only writes the Phase 3 studies page, lint-clean, and re
   assert(r.status === 1 && /B\.json/.test(r.stderr), `missing direction: ${r.status} ${r.stderr}`);
 }));
 
+// the live board (board.mjs --serve, lib/live.mjs): driven through the real CLI by test/live-check.mjs in a sandbox
+test('live board: a save rebuilds tokens.css and the board and sends an SSE reload naming the changed tiles; bad JSON/YAML keeps the last good board with file:line; the next save recovers; busy port, --poll, Ctrl+C', () => withSandbox(() => {}, (dir) => {
+  const r = spawnSync(node, [path.join(HERE, 'live-check.mjs'), dir, 'server'], { encoding: 'utf8', cwd: dir, timeout: 60000 });
+  assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
+}));
+test('live board: the client snippet is only in served HTML, never in the committed preview/index.html', () => {
+  const html = fs.readFileSync(path.join(BUILD, 'preview/index.html'), 'utf8');
+  assert(!html.includes('__live') && !html.includes('__BOARD_LIVE'), 'preview/index.html contains the live snippet');
+  const r = spawnSync(node, ['--input-type=module', '-e', `import { inject } from ${JSON.stringify(pathToFileURL(path.join(BUILD, 'lib/live.mjs')).href)}; process.stdout.write(inject('<html><body><p>x</p></body></html>', 7));`], { encoding: 'utf8' });
+  assert(r.status === 0 && /<script src="\/__live\/client\.js" defer><\/script>\n<\/body>/.test(r.stdout) && r.stdout.includes('"7"'), `inject: ${r.stdout}${r.stderr}`);
+});
+
 // ---------- 3b. installed in an app: <app>/design-system/ ----------
 const git = (cwd, ...a) => spawnSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd, encoding: 'utf8' });
 function appSandbox({ files = {}, gitInit = true } = {}) {
@@ -511,6 +523,11 @@ if (hasPlaywright || args.has('--render')) {
       assert(r.status === 0, `render exit ${r.status}\n${r.stdout.slice(0, 2000)}${r.stderr}`);
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   });
+  test('live board in a browser: reloads by itself within 2.5s keeping scroll, canvas view and zoom, shows the toast and outlines the changed tile; a bad save shows the banner over the last good board', () => withSandbox(() => {}, (dir) => {
+    fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'design-build/node_modules'), 'dir');
+    const r = spawnSync(node, [path.join(dir, 'design-build/test/live-check.mjs'), dir, 'browser'], { encoding: 'utf8', cwd: dir, timeout: 90000 });
+    assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
+  }));
   test('components/index.js: the vanilla helpers build accessible markup in a browser and reject unknown variants', () => {
     const r = spawnSync(node, [path.join(HERE, 'helpers-browser.mjs')], { encoding: 'utf8', cwd: BUILD });
     assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
