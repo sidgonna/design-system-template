@@ -19,6 +19,8 @@ may_narrow: [§9, §10]   # never contradict
 **FEEL:** {{…}}
 
 ### M1.1 Components
+Every row must match a `name` in `design-build/inventory.json`, and every variant must be one it lists (the lint checks both, rule `unknown-component`). Reuse an existing component first, extend it second, and add a new one only with the user's agreement (§0.5).
+
 | Component | Variants | Tokens used | Notes |
 |---|---|---|---|
 | Button | primary, secondary, ghost, danger | `{color.brand.primary}`, `{radius.md}` | label rules → §6 |
@@ -33,6 +35,7 @@ may_narrow: [§9, §10]   # never contradict
 `default · hover · focus · active · disabled · loading · empty · error · success` — each component lists what changes per state, using tokens only. Focus → §11.
 ### M1.3 Breakpoints and responsive rules
 Uses `{breakpoint.*}`. {{How grid, type and spacing adapt per breakpoint.}}
+- Every layout MUST work at the three check widths `{viewport.mobile}`, `{viewport.tablet}` and `{viewport.desktop}`, in light and dark: no horizontal scroll, no key element off-screen, no overlapping controls. `design-build/render.mjs` screenshots and checks each one.
 ### M1.4 Radius and elevation
 Which components use which `{radius.*}` and `{shadow.*}`; depth meaning: {{higher = more temporary}}.
 ### M1.5 Interaction patterns

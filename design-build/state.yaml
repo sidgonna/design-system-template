@@ -3,10 +3,18 @@ phase: 0            # 0 not started, 1 intake, 2 research, 3 studies, 4 fill, 5 
 gate_passed: false
 project_type: []    # inferred in KICKSTART step 2
 evidence: []        # file paths that showed the type
+inventory: design-build/inventory.json   # KICKSTART step 2; components to reuse (§0.5)
 research:
   started_at: null
   sources_used: 0
   competitors_used: 0
 choices: {}         # Phase 3 picks per aspect, e.g. color: B
+decisions: []       # one entry per decision, e.g. - { date: 2026-10-28, section: §4, decision: "accent C", by: user, quote: "go with C, warmer" }
+locked_sections: [] # sections the user accepted in Phase 5; don't change them unless the user reopens one
 completion: 0.0     # Phase 4 lint
 version: "0.0.0"
+# Written by `lint.mjs --record` and `render.mjs --record`, run after the last commit of the work. "Done" needs all three `pass` with commit = git rev-parse --short HEAD (§0.5).
+checks:
+  lint: { status: null, commit: null, at: null, errors: null, warnings: null }
+  render: { status: null, commit: null, at: null, failures: null, screenshots: null }
+  a11y: { status: null, commit: null, at: null, serious_or_critical: null, manual: null }

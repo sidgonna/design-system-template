@@ -18,6 +18,7 @@ Scan everything in the project outside the design system folder and decide the p
 - Existing brand material: logos, color files, fonts, brand guides, style or theme files.
 A project can be several types at once. Set the `parts.*.enabled` flags in design.md from what you find, and note the evidence (file paths) for each.
 If the project is empty, or has nothing that shows its type, say so plainly, leave every module flag undecided, and rely on the intake answers to set them.
+For a coding project, also write `design-build/inventory.json`, the list of UI that already exists, so it is reused instead of rebuilt. Use the shape already in that file: the UI library in use (for example shadcn/ui, MUI, Radix or in-house), the theme and token files, a rough count of hard-coded colors and, for each existing component, its name, aliases, import path, props and variants with `status: existing`. Read the components from the code, never guess them. Keep the starter `planned` entries that match §M1.1; remove any the project won't use, from both files. Set `inventory` in `design-build/state.yaml` to that path. If there is no UI code, leave the components list empty.
 
 STEP 3 — Tell me what you found (5 lines max)
 - The project type(s) you inferred and the files that told you, or that the project is empty.
@@ -53,8 +54,8 @@ Before any open web search in §16 Phase 2, read the seeds for each area. §16.2
 - Agent design skills (review and taste): Impeccable https://github.com/pbakaus/impeccable · Vercel web-design-guidelines https://github.com/vercel-labs/agent-skills · Anthropic frontend-design https://github.com/anthropics/skills · Google stitch-skills https://github.com/google-labs-code/stitch-skills · UI/UX Pro Max https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
 - Motion building blocks: Motion Canvas https://motioncanvas.io/ · Rive https://rive.app/ · three.js https://threejs.org/ · Satori https://github.com/vercel/satori · Remotion https://www.remotion.dev/ (check license) · React Bits https://reactbits.dev/
 - Animation tools for people: Jitter https://jitter.video/ · ProtoPie https://www.protopie.io/ · Lottielab https://www.lottielab.com/
-- DESIGN.md collections: Devault https://devault.design/design-md · designmd.supply https://designmd.supply/ · Neuform https://neuform.ai/ · TypeUI https://typeui.sh/
-- DESIGN.md extractors and builders: DESIGNMD https://design-md.hyperbrowser.ai/ · DesignMD https://designmd.me/ · Open Design https://open-design.ai/ · Aura https://aura.build/
+- DESIGN.md collections (teardown only, never a source of our values): Devault https://devault.design/design-md · designmd.supply https://designmd.supply/ · Neuform https://neuform.ai/ · TypeUI https://typeui.sh/
+- DESIGN.md extractors and builders (teardown only): DESIGNMD https://design-md.hyperbrowser.ai/ · DesignMD https://designmd.me/ · Open Design https://open-design.ai/ · Aura https://aura.build/
 - AI design workflow (drafts, not sources): Skill Issue https://skill-issue.in/ · UX Pilot https://uxpilot.ai/ · v0 https://v0.app/ · Base44 https://base44.com/
 - Web and motion references: Inspora https://inspora.design/ · Motionin https://motionin.design/ · Oversight Supply https://supply.madebyoversight.com/ (and /sections)
 - Data viz: Carbon Data Viz https://carbondesignsystem.com/data-visualization/getting-started/ · ColorBrewer https://colorbrewer2.org/
@@ -73,6 +74,8 @@ RULES FOR THIS WHOLE SESSION
 - Respect the §16.0 hard limits. When a research cap is hit, stop researching, log the gaps as ASSUMPTION in §14.4, and move to visuals. Never stall.
 - Show, don't tell. Any color, font, icon or motion you propose must be visible in an HTML page or image I can open, and you should tell me the exact path to open.
 - Follow §0 of design.md: every value lives once in §13 tokens, every topic has one owning file, and modules narrow core but never contradict it.
+- After every edit to a design file, tokens or UI, run `node design-build/lint.mjs` and fix what it reports. Reuse a component from `design-build/inventory.json` before extending one, and extend before creating; ask me before creating one.
+- Never say "done" until `design-build/state.yaml` shows lint, render and a11y passing on the current commit. Never edit the lint config, baseline, hooks or checks, or update screenshots, to make a check pass without asking me.
 - Keep `design-build/state.yaml` updated after every step, including the inferred project type and its evidence, so we can resume in a new session.
 - Talk to me in plain language, keep messages short, and ask one batch of questions at a time.
 

@@ -5,6 +5,7 @@
 # Values and rules live in /design/*.md, never here.
 # ============================================================
 doc_type: design-system-index
+owns: [§0, §15, §16]
 template_version: 2.0.0
 brand_name: "{{BRAND_NAME}}"
 system_version: "{{0.1.0}}"
@@ -31,7 +32,7 @@ parts:
 ## Folder layout
 ```
 KICKSTART.md               ← paste-in prompt to start a build in any harness
-BOTTLENECKS.md             ← PROPOSALS only: where AI agents stumble and fix options; not rules until moved into these files
+BOTTLENECKS.md             ← where AI agents stumble, the fixes, and which are implemented (rules live here in design.md and design/)
 design.md                  ← you are here: index, rules of the system, build workflow, checklist
 design-build/              ← working files during a §16 build (state, research, studies, preview)
 design/
@@ -58,7 +59,7 @@ File names are fixed. New modules follow the same pattern: `design/<kebab-case-d
 | Convention | Meaning |
 |---|---|
 | `{{PLACEHOLDER}}` | Fill per brand or project. Unfilled means not ready. |
-| `{token.path}` | A value defined once in **§13** (core.md). Never write a raw hex, px or ms value anywhere else. |
+| `{token.path}` | A value defined once in **§13** (core.md). Never write a raw hex, rgb, hsl, oklch, px or ms value anywhere else; `design-build/lint.mjs` flags it and names the token to use. |
 | `MUST` / `MUST NOT` | Hard rule. Breaking it is a defect. |
 | `SHOULD` / `AVOID` | Strong default. Breaking it needs a written reason. |
 | `FEEL:` | The human sense the rule protects. Read it before bending a rule. |
@@ -112,6 +113,11 @@ agent_rules:
   - To build a new system from this template, follow §16 phase by phase and respect its hard limits.
   - Start research from the §16.2 seed sources; search the open web only for what seeds can't answer.
   - Before delivering, run §15 and report any failed item.
+  - After ANY edit to a design file, tokens or UI code, run `node design-build/lint.mjs` and fix what it reports before the next edit. Every message gives file:line, the bad value and the fix.
+  - Components - reuse, then extend, then create. Look a component or prop up in `design-build/inventory.json` (and the code it points to) before using it. Never use a component or prop that is not listed. If nothing fits, extend an existing one; create a new one only when the user agrees, then add it to inventory.json. If unsure, ask.
+  - Before proposing any change, re-read `design-build/state.yaml` → `decisions` and `locked_sections`. Never reopen a rejected option or touch a locked section unless the user asks.
+  - Done means checked. Never call work "done", "finished" or "ready" until `design-build/state.yaml` → `checks` shows lint, render and a11y all `pass` with `commit` equal to the current `git rev-parse --short HEAD`. Commit the work first, then run `node design-build/lint.mjs --record` and `node design-build/render.mjs --record` (the state.yaml change they make doesn't need its own commit). Paste the summary lines, not a claim.
+  - Never game the checks. Without the user's explicit approval, do not edit `design-build/lint.config.json`, `design-build/lint-baseline.json`, `design-build/inventory.json` ignore lists, `design-build/terrazzo.config.mjs`, `.githooks/`, `.github/workflows/`, `design-build/ci/`, `design-build/hooks/` or the check scripts; do not run `lint.mjs --baseline`; do not update or delete screenshots to make a comparison pass; do not add `justified` reasons to `avoid_defaults` that the user did not give; do not use `--no-verify`. Fix the design instead. If a check is wrong, say so and ask.
 ```
 
 ### 0.6 Rules for editing the system
@@ -142,14 +148,21 @@ limits:
 ### 16.1 Working folder
 ```
 design-build/
-  state.yaml            ← current phase, gate status, timers, sources used
+  state.yaml            ← current phase, gate status, timers, sources used, decisions, check results
   brief.md              ← Phase 1 output
+  inventory.json        ← components the project already has (KICKSTART Step 2); the lint rejects any other
   research-plan.md      ← Phase 2 plan
   research/notes.md     ← findings, one line per source with URL
-  studies/index.html    ← Phase 3 visual studies (plus PNG screenshots)
-  preview/index.html    ← Phase 5 rendered design system
+  studies/index.html    ← Phase 3 visual studies
+  preview/index.html    ← Phase 5 rendered design system (reads preview/tokens.css, generated from tokens_file)
+  screenshots/          ← render.mjs output: <page>-<width>-<theme>.png (gitignored)
+  lint.mjs              ← static checks (Phase 4 lint block, §15); zero dependencies
+  render.mjs            ← screenshots, layout checks and axe (needs `npm install` in design-build/)
+  lint.config.json      ← what the lint treats as token files, code and allowed exceptions (protected, §0.5)
+  test/run.mjs          ← self-test for the lint, with good and bad fixtures
+  hooks/                ← optional editor hooks that run the lint after each edit
 ```
-`state.yaml` is updated at the end of every step, so a harness that restarts can resume where it left off.
+`state.yaml` is updated at the end of every step, so a harness that restarts can resume where it left off. The full command list is in the README under **Quality checks**.
 
 ### 16.2 Seed sources (research starts here, not with a blank web search)
 **FEEL:** "Start deep, not wide."
@@ -164,7 +177,8 @@ seed_rules:
   - Color: generate candidate palettes with the palette_generators_for_agents tools (seed colors from §1 and the user), check every pairing for contrast, then show them in the Phase 3 studies. Link the matching human generator so the user can tweak a palette themselves.
   - Motion: build Phase 3 motion studies with a motion_libraries option that fits the project's stack, and use plain CSS when there's no stack yet.
   - Sites that need a login or block automated access (e.g. Mobbin, Behance): skip them, note that in research/notes.md, and don't stall.
-  - Teams can add their own seeds here. Keep each group to 6 or fewer, so the list stays a starting point and not a library.
+  - Teams can add their own seeds here. Keep each group to 6 or fewer, so the list stays a starting point and not a library (the lint counts them).
+  - DESIGN.md collections and extractors are for teardown only. Use them to read how a competitor or reference is built (Phase 2), never as a source of our values, and never paste an extracted DESIGN.md into this system.
 ```
 
 ```yaml
@@ -205,7 +219,7 @@ seeds:
     - { name: "Typescale", url: "https://typescale.com/", use_for: "building the §13 type scale" }
     - { name: "W3C Indic Layout Requirements", url: "https://www.w3.org/TR/ilreq/", use_for: "Indian script layout rules" }
   iconography:
-    - { name: "Lucide", url: "https://lucide.dev/", use_for: "outline set, consistent 24px grid" }
+    - { name: "Lucide", url: "https://lucide.dev/", use_for: "outline set drawn on a consistent 24 × 24 grid" }
     - { name: "Phosphor", url: "https://phosphoricons.com/", use_for: "6 weights including duotone" }
     - { name: "Material Symbols", url: "https://fonts.google.com/icons", use_for: "variable-weight icon font" }
     - { name: "Tabler Icons", url: "https://tabler.io/icons", use_for: "large outline and filled set" }
@@ -282,12 +296,12 @@ seeds:
     - { name: "Jitter", url: "https://jitter.video/", use_for: "quick UI and social motion in the browser; export video, GIF or Lottie" }
     - { name: "ProtoPie", url: "https://www.protopie.io/", use_for: "high-fidelity interactive prototypes to test §8 motion on real gestures" }
     - { name: "Lottielab", url: "https://www.lottielab.com/", use_for: "make and edit Lottie animations without After Effects" }
-  design_md_collections:   # libraries of DESIGN.md files; added 2026-10-28 from @Skirook (15 Oct)
+  design_md_collections:   # TEARDOWN ONLY (see seed_rules): libraries of DESIGN.md files; added 2026-10-28 from @Skirook (15 Oct)
     - { name: "Devault DESIGN.md", url: "https://devault.design/design-md", use_for: "collection of DESIGN.md files to compare with ours (blocks automated access)" }
     - { name: "designmd.supply", url: "https://designmd.supply/", use_for: "DESIGN.md files and design resources (blocks automated access)" }
     - { name: "Neuform", url: "https://neuform.ai/", use_for: "reusable DESIGN.md files for agent-ready design systems, plus landing templates" }
     - { name: "TypeUI", url: "https://typeui.sh/", use_for: "UI components and design files for AI coding, per the poster (blocks automated access, not reviewed)" }
-  design_md_extractors_and_builders:   # tools that write or use a DESIGN.md; added 2026-10-28 from @Skirook (15 Oct)
+  design_md_extractors_and_builders:   # TEARDOWN ONLY (see seed_rules): tools that write or use a DESIGN.md; added 2026-10-28 from @Skirook (15 Oct)
     - { name: "DESIGNMD (Hyperbrowser)", url: "https://design-md.hyperbrowser.ai/", use_for: "extract a DESIGN.md from any site in Google's format; fast competitor teardown for Phase 2" }
     - { name: "DesignMD", url: "https://designmd.me/", use_for: "paste a URL, get tokens, type and component styles as a DESIGN.md; same use as above" }
     - { name: "Open Design", url: "https://open-design.ai/", use_for: "open-source workspace where your agent builds prototypes, pages and slides" }
@@ -324,7 +338,7 @@ Ask in **one** message, grouped and numbered, with examples so answers are quick
 1. **The business:** name, what the product or app is, who it's for, and where (city, region, languages).
 2. **The job:** what this design system will be used for (app, website, social and ads, video, print). This sets the `parts.*.enabled` flags.
 3. **Personality:** three words it should feel like, and three it must never feel like.
-4. **What exists:** logo, colors, fonts or past work to keep, change or drop (ask for files or links).
+4. **What exists:** logo, colors, fonts or past work to keep, change or drop (ask for files or links), and any component library or UI kit already in use (for example shadcn/ui, MUI, Radix, a Figma kit or in-house components), so we reuse it instead of rebuilding.
 5. **References:** 2–5 brands they admire (any category) and 2–5 direct competitors.
 6. **Constraints:** budget for paid fonts or icon sets, accessibility needs, deadlines, must-use platforms.
 
@@ -350,7 +364,7 @@ Ask in **one** message, grouped and numbered, with examples so answers are quick
 **2b. Execute** within §16.0 limits, **starting each area from its §16.2 seeds**, then searching the open web only for the gaps. Log each source as one line in `research/notes.md` with its URL and the takeaway. The timer starts at the first fetch. When a cap is hit, stop and go to Phase 3.
 
 ### Phase 3 · Visual studies (show, don't tell)
-Build `studies/index.html`, a single self-contained page, and save a PNG of each panel for chat-only surfaces. Offer **2–3 directions** per aspect, labeled A, B and C:
+Build `studies/index.html`, a single self-contained page. **Screenshots are required:** run `node design-build/render.mjs design-build/studies/index.html` and show the user the PNGs it writes to `design-build/screenshots/` (390, 768 and 1280 wide, light and dark). A study the user has not seen as an image or live page doesn't count. Offer **2–3 directions** per aspect, labeled A, B and C:
 - **Competitor wall:** screenshots or logo and color strips of the competitors, with a one-line gap note.
 - **Color:** swatches in real proportion (for example 60/30/10), text-on-background pairings with live contrast ratios, a light and dark preview, and data colors.
 - **Typography:** specimens at the real scale (display down to caption), a headline plus paragraph in each language from §12, and the font license noted.
@@ -358,8 +372,9 @@ Build `studies/index.html`, a single self-contained page, and save a PNG of each
 - **Motion:** live CSS or Lottie demos of 3 interactions (enter, feedback, page change) at each candidate timing and easing, plus a reduced-motion version.
 - **Imagery:** a moodboard grid for each direction.
 - **Mini mockup:** one app screen and one social post per direction, so each choice is seen in context.
+- **Label every direction** with one line: `breaks: <which core §2 avoid_defaults it avoids> · signature: <its §2 signature move> · differs from competitors by: <what>`. A direction that can't fill this line is a default, not a direction.
 
-**Gate:** the user picks A, B or C (or mixes them) per aspect in **one** reply. If there's no reply, wait. Never pick for them.
+**Gate:** the user picks A, B or C (or mixes them) per aspect in **one** reply. If there's no reply, wait. Never pick for them. Record each pick, with the date and the user's words, in `state.yaml` → `decisions`.
 
 ### Phase 4 · Fill the template to about 90%
 Order matters, because later sections reference earlier ones:
@@ -371,16 +386,20 @@ Order matters, because later sections reference earlier ones:
 
 Anything that truly needs the user stays as `{{TBD: reason}}`.
 
-**Automated self-check (MUST pass before the gate):**
+**Automated self-check (MUST pass before the gate):** `node design-build/lint.mjs` implements this block. Each key maps to a lint rule id, shown in the comment.
 ```yaml
 lint:
-  completion: "filled placeholders / total placeholders in enabled files >= 0.90"
-  raw_values_outside_tokens: 0      # no hex, px or ms outside §13
-  unresolved_tokens: 0              # every {token.path} exists in §13
-  ownership_overlap: 0              # no topic defined in two files (§0.3)
-  contrast_failures: 0              # every §4 pairing passes §11
-  checklist_15: "all items pass or are listed as TBD"
+  completion: "filled placeholders / total placeholders in enabled files >= 0.90"   # completion (enforced from phase 4; run with --phase 4)
+  raw_values_outside_tokens: 0      # raw-value: no hex, rgb, hsl, oklch, px or ms outside §13, tokens_file and generated files
+  unresolved_tokens: 0              # unresolved-token: every {token.path} and var(--token) exists in tokens_file
+  ownership_overlap: 0              # ownership-overlap: no § owned by two files (§0.3 and front matter)
+  contrast_failures: 0              # contrast: every §4 pairing passes §11, in light and dark
+  role_slot_misuse: 0               # role-slot: no token used in its §4 "Never use for" slot
+  ai_default_fingerprints: 0        # avoid-default: no unjustified core.md §2 avoid_defaults
+  unknown_components: 0             # unknown-component: every component is in design-build/inventory.json
+  checklist_15: "all items pass or are listed as TBD"   # checklist-15: automatable items run; the rest are listed for review
 ```
+Also run `npm --prefix design-build run tokens:check` (Terrazzo DTCG validation) when the dev dependencies are installed.
 **Gate:** the lint passes. Report the completion percentage and the TBD list.
 
 ### Phase 5 · Render, review and finish
@@ -391,20 +410,25 @@ Build `preview/index.html`, a styled site that reads its values from `tokens_fil
 
 Every section shows **Accept**, **Reject** and **Edit** options. (In a terminal-only harness, list the sections numbered and let the user reply with something like `3 edit: warmer accent`.)
 - **Accept:** lock the section. Don't touch it again unless the user reopens it.
-- **Edit:** change only the owning file (§0.3) and tokens, re-run the lint, re-render, and show the changed section side by side with the old one.
+- **Edit:** change only the owning file (§0.3) and tokens, re-run the lint, re-render, and show the changed section side by side with the old one. Log the change in `state.yaml` → `decisions` and add the section to `locked_sections` once accepted.
 - **Reject:** go back to Phase 3 for that aspect only, with 2 fresh directions.
 
 After {{3}} review rounds, check in with the user about whether to keep going or ship.
-**Done when:** every enabled section is accepted, the lint passes with completion at 100% or the remaining TBDs are explicitly waived, the version is bumped to `1.0.0`, and the changelog is updated.
+**Render and accessibility gate (MUST pass before "done"):** `node design-build/render.mjs` captures every page at 390, 768 and 1280 wide in light and dark, checks for horizontal overflow, key elements off-screen, overlapping controls and tap targets under 24 CSS pixels, and runs axe (`wcag2a`, `wcag2aa`, `wcag21aa`, `wcag22aa`). Any layout failure or serious/critical axe violation fails it. Fix the design, never the check (§0.5).
+
+**Done when:** every enabled section is accepted; `state.yaml` → `checks` shows lint, render and a11y `pass` on the current commit; completion is 100% or the remaining TBDs are explicitly waived; the version is bumped to `1.0.0`; and the changelog is updated.
 
 ---
 
 ## §15 Pre-delivery checklist
 Run before shipping any piece of work (humans and agents alike):
-- [ ] No unfilled `{{PLACEHOLDER}}` in sections this work touches
-- [ ] No raw values outside §13; every value is a `{token}`
-- [ ] Matches §1 personality sliders and `is_not` list
-- [ ] Passes §11 (contrast, text size, alt text, captions, reduced motion)
+Run `node design-build/lint.mjs` (static: placeholders, raw values, tokens, contrast, role slots, defaults, components) and `node design-build/render.mjs` (rendered: layout, tap targets, axe). Items marked *(auto)* are covered by those scripts; the rest need a person.
+- [ ] No unfilled `{{PLACEHOLDER}}` in sections this work touches *(auto: lint `completion`)*
+- [ ] No raw values outside §13; every value is a `{token}` *(auto: lint `raw-value`, `unresolved-token`)*
+- [ ] Matches §1 personality sliders and `is_not` list; no unjustified §2 `avoid_defaults` *(partly auto: lint `avoid-default`)*
+- [ ] Passes §11 (contrast, text size, alt text, captions, reduced motion) *(partly auto: lint `contrast`, render.mjs axe; see the §11 mapping)*
+- [ ] Rendered at `{viewport.mobile}`, `{viewport.tablet}` and `{viewport.desktop}` in light and dark, and the screenshots were shown: no sideways scroll, nothing off-screen, no overlapping controls, no tap target under 24 CSS pixels *(auto: render.mjs; showing them is on you)*
+- [ ] Uses only components in `design-build/inventory.json` *(auto: lint `unknown-component`)*
 - [ ] Icons from §8 only, one style per view
 - [ ] Motion uses §10 tokens; has a reduced-motion fallback
 - [ ] Copy follows §6; regional versions reviewed per §12

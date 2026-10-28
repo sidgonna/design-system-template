@@ -25,6 +25,7 @@ Scan everything in the project outside the design system folder and decide the p
 - Existing brand material: logos, color files, fonts, brand guides, style or theme files.
 A project can be several types at once. Set the `parts.*.enabled` flags in design.md from what you find, and note the evidence (file paths) for each.
 If the project is empty, or has nothing that shows its type, say so plainly, leave every module flag undecided, and rely on the intake answers to set them.
+For a coding project, also write `design-build/inventory.json`, the list of UI that already exists, so it is reused instead of rebuilt. Use the shape already in that file: the UI library in use (for example shadcn/ui, MUI, Radix or in-house), the theme and token files, a rough count of hard-coded colors and, for each existing component, its name, aliases, import path, props and variants with `status: existing`. Read the components from the code, never guess them. Keep the starter `planned` entries that match §M1.1; remove any the project won't use, from both files. Set `inventory` in `design-build/state.yaml` to that path. If there is no UI code, leave the components list empty.
 
 STEP 3 — Tell me what you found (5 lines max)
 - The project type(s) you inferred and the files that told you, or that the project is empty.
@@ -60,8 +61,8 @@ Before any open web search in §16 Phase 2, read the seeds for each area. §16.2
 - Agent design skills (review and taste): Impeccable https://github.com/pbakaus/impeccable · Vercel web-design-guidelines https://github.com/vercel-labs/agent-skills · Anthropic frontend-design https://github.com/anthropics/skills · Google stitch-skills https://github.com/google-labs-code/stitch-skills · UI/UX Pro Max https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
 - Motion building blocks: Motion Canvas https://motioncanvas.io/ · Rive https://rive.app/ · three.js https://threejs.org/ · Satori https://github.com/vercel/satori · Remotion https://www.remotion.dev/ (check license) · React Bits https://reactbits.dev/
 - Animation tools for people: Jitter https://jitter.video/ · ProtoPie https://www.protopie.io/ · Lottielab https://www.lottielab.com/
-- DESIGN.md collections: Devault https://devault.design/design-md · designmd.supply https://designmd.supply/ · Neuform https://neuform.ai/ · TypeUI https://typeui.sh/
-- DESIGN.md extractors and builders: DESIGNMD https://design-md.hyperbrowser.ai/ · DesignMD https://designmd.me/ · Open Design https://open-design.ai/ · Aura https://aura.build/
+- DESIGN.md collections (teardown only, never a source of our values): Devault https://devault.design/design-md · designmd.supply https://designmd.supply/ · Neuform https://neuform.ai/ · TypeUI https://typeui.sh/
+- DESIGN.md extractors and builders (teardown only): DESIGNMD https://design-md.hyperbrowser.ai/ · DesignMD https://designmd.me/ · Open Design https://open-design.ai/ · Aura https://aura.build/
 - AI design workflow (drafts, not sources): Skill Issue https://skill-issue.in/ · UX Pilot https://uxpilot.ai/ · v0 https://v0.app/ · Base44 https://base44.com/
 - Web and motion references: Inspora https://inspora.design/ · Motionin https://motionin.design/ · Oversight Supply https://supply.madebyoversight.com/ (and /sections)
 - Data viz: Carbon Data Viz https://carbondesignsystem.com/data-visualization/getting-started/ · ColorBrewer https://colorbrewer2.org/
@@ -80,6 +81,8 @@ RULES FOR THIS WHOLE SESSION
 - Respect the §16.0 hard limits. When a research cap is hit, stop researching, log the gaps as ASSUMPTION in §14.4, and move to visuals. Never stall.
 - Show, don't tell. Any color, font, icon or motion you propose must be visible in an HTML page or image I can open, and you should tell me the exact path to open.
 - Follow §0 of design.md: every value lives once in §13 tokens, every topic has one owning file, and modules narrow core but never contradict it.
+- After every edit to a design file, tokens or UI, run `node design-build/lint.mjs` and fix what it reports. Reuse a component from `design-build/inventory.json` before extending one, and extend before creating; ask me before creating one.
+- Never say "done" until `design-build/state.yaml` shows lint, render and a11y passing on the current commit. Never edit the lint config, baseline, hooks or checks, or update screenshots, to make a check pass without asking me.
 - Keep `design-build/state.yaml` updated after every step, including the inferred project type and its evidence, so we can resume in a new session.
 - Talk to me in plain language, keep messages short, and ask one batch of questions at a time.
 
@@ -96,13 +99,45 @@ Begin with Step 1 now.
 | [`design/motion-video.md`](design/motion-video.md) | §M3: video, titles, captions, sound and export |
 | [`design/print.md`](design/print.md) | §M4: print, packaging and merch |
 | [`KICKSTART.md`](KICKSTART.md) | The same kickstart prompt as above |
-| [`BOTTLENECKS.md`](BOTTLENECKS.md) | Proposed fixes for where AI agents stumble (proposals, not rules yet) |
-| `tokens/tokens.json` | A machine copy of the §13 tokens |
+| [`BOTTLENECKS.md`](BOTTLENECKS.md) | Where AI agents stumble, the fix for each, and which fixes are implemented |
+| `tokens/tokens.json` | A machine copy of the §13 tokens, in W3C Design Tokens (DTCG) format with light and dark modes |
 | `assets/` | Logo, icons, imagery, motion, moodboard, templates and fonts |
-| `design-build/` | Working files during a build: state, research notes, studies and the preview |
+| `design-build/` | Working files during a build (state, inventory, research notes, studies, the preview) and the quality checks (`lint.mjs`, `render.mjs`, hooks) |
 
 ## How it works
 - **Every value lives once,** in §13 tokens. Everything else references tokens by name.
 - **Every topic has one owner file,** so sections can't contradict each other. Modules can narrow core rules but never override them.
 - **Modules are optional,** and they switch on through flags in `design.md`.
 - **The §16 workflow** runs in five steps: intake, capped research, visual studies (you pick A, B or C), filling the template to about 90% with an automatic check, then reviewing and finishing it.
+
+## Quality checks
+"Done" is something a script checks, not something an agent claims. Two scripts do the checking, and three gates run them.
+
+| Command | What it checks | Needs |
+|---|---|---|
+| `node design-build/lint.mjs` | Static checks on the design docs, `tokens/tokens.json` and the code in `design-build/preview` and `studies`:<br>• raw hex, rgb, hsl, oklch, px or ms values outside §13<br>• `{token}` and `var(--token)` references that don't resolve<br>• tokens used in a §4 "Never use for" slot<br>• WCAG contrast for every §4 pairing, in light and dark (4.5:1 normal, 3:1 large and UI)<br>• unjustified core §2 `avoid_defaults`<br>• components or variants missing from `design-build/inventory.json`<br>• DTCG format, generated CSS that is stale, section ownership, KICKSTART/README sync, and Phase 4 completion<br>Each finding gives `file:line`, the value and the fix. | Node 18+ only |
+| `node design-build/render.mjs [page or URL …]` | Captures each page (the preview by default) at 390, 768 and 1280 wide in light and dark, into `design-build/screenshots/`. It fails on any of these:<br>• sideways scroll<br>• key elements off-screen<br>• overlapping controls<br>• tap targets under 24px<br>• no visible focus<br>• serious or critical axe issues (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`)<br>Results go to `render-report.json` and `a11y-report.json`. | `npm --prefix design-build ci` and `npx --prefix design-build playwright install chromium` (add `--with-deps` on a fresh Linux machine) |
+| `npm --prefix design-build run tokens:check` | Validates `tokens/tokens.json` against the DTCG 2025.10 format with Terrazzo | the same `npm ci` |
+| `node design-build/test/run.mjs` | The checks' own self-test: good and bad fixtures, mutation tests for every rule, the CLI flags, the agent hook, and the render fixture when Playwright is installed | Node 18+ |
+
+Useful flags:
+- `lint.mjs --json` for machine-readable output.
+- `lint.mjs --src <dir|file>` to lint other code, such as your app's `src/`.
+- `lint.mjs --baseline` for an existing codebase. It freezes today's counts so a run fails only when a count rises. Run it only with the owner's approval.
+- `--record` on both scripts writes the result and commit to `design-build/state.yaml` → `checks`.
+- `lint.mjs --phase 4` enforces completion before the state says Phase 4.
+
+**Gates:**
+- **CI.** `design-build/ci/design-checks.yml` is a GitHub Actions workflow. Enable it once with `mkdir -p .github/workflows && git mv design-build/ci/design-checks.yml .github/workflows/` and push; pushing a workflow needs a token with the `workflow` scope. It runs the self-test, the lint, the tokens check and render + axe on every push and pull request. Screenshots and reports are uploaded as an artifact.
+- **Pre-commit.** `.githooks/pre-commit` needs no dependencies. It runs the lint. When visual files change, it also runs render + axe if they are installed, and warns if they aren't. Enable it once per clone with `git config core.hooksPath .githooks`.
+- **Agent hooks (optional).** `design-build/hooks/` has a Claude Code `PostToolUse` example and a Cursor `postToolUse` example. Each runs the lint after every agent edit and gives the findings back to the agent. See [`design-build/hooks/README.md`](design-build/hooks/README.md). They are not switched on by default.
+
+**No gaming (design.md §0.5).** Agents must not do any of these without the owner's approval:
+- edit the check scripts, `lint.config.json`, `lint-baseline.json`, the hooks or the workflow
+- run `--baseline`
+- add a `justified` reason to `avoid_defaults` that the owner didn't give
+- commit with `--no-verify`
+
+If a check is wrong, the agent should say so and ask.
+
+**Automated is not conformance.** These checks catch a share of WCAG issues, not all of them. Keyboard, screen-reader and 200% zoom passes are still manual (core §11).
