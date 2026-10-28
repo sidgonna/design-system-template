@@ -8,7 +8,7 @@
 | HTML/CSS API | `<div data-component="input" data-variant="default\|error"><label><input>` + `components/components.css` |
 | Props | `label`, `hint`, `error`, `disabled`, `required`, `type`, `autoComplete`, `inputMode`, `readOnly`, `autoFocus`, `maxLength`, `minLength`, `pattern`, `min`, `max`, `step`, `form`, `spellCheck`, `enterKeyHint` |
 | Variants | `default`, `error` |
-| Used on | [Design system preview](../screens/preview.md) (`default`, `error`; `default`, `focus`, `error`) |
+| Used on | [Design board](../screens/preview.md) (`default`, `error`; `default`, `focus`, `error`) |
 <!-- /ui-inventory:generated -->
 
 ## Purpose
