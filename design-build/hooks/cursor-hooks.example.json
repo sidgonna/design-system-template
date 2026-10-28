@@ -2,7 +2,7 @@
   "version": 1,
   "hooks": {
     "postToolUse": [
-      { "matcher": "Write", "command": "node design-build/hooks/after-edit.mjs --format cursor", "timeout": 60 }
+      { "matcher": "Write", "command": "node design-system/design-build/hooks/after-edit.mjs --format cursor", "timeout": 60 }
     ]
   }
 }

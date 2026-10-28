@@ -4,7 +4,7 @@
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/design-build/hooks/after-edit.mjs\" --format claude", "timeout": 60 }
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/design-system/design-build/hooks/after-edit.mjs\" --format claude", "timeout": 60 }
         ]
       }
     ]

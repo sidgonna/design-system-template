@@ -5,3 +5,4 @@ design-build/render-report.json
 design-build/a11y-report.json
 design-build/.terrazzo/
 .DS_Store
+design-build/preview-reports/

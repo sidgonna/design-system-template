@@ -1,0 +1,60 @@
+# Optional CI for YOUR APP (the template's own CI is .github/workflows/design-checks.yml; leave that one alone).
+# Copy to .github/workflows/design-checks.yml at the app root. Assumes the template is in design-system/,
+# an npm app whose `npm run dev` serves on a port you can pass (Vite shown). Adjust DEV_URL and the dev command.
+# Once copied it is PROTECTED like every check (design.md §0.5): agents must not edit or disable it without approval.
+name: design-checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  DEV_URL: http://localhost:5173/
+
+jobs:
+  design:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            design-system/design-build/package-lock.json
+      - name: Install the app
+        run: npm ci
+      - name: Install the design checks
+        run: npm ci --prefix design-system/design-build
+      - name: Install Chromium for Playwright
+        run: npx --prefix design-system/design-build playwright install --with-deps chromium
+      - name: Lint (design files + app code)
+        run: node design-system/design-build/lint.mjs
+      - name: Generated tokens up to date
+        run: node design-system/design-build/tokens-css.mjs --check
+      - name: DTCG tokens check (Terrazzo)
+        run: npm --prefix design-system/design-build run tokens:check
+      - name: Start the dev server
+        run: |
+          npm run dev -- --port 5173 --strictPort > /tmp/dev-server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf "$DEV_URL" > /dev/null && exit 0; sleep 1; done
+          echo "dev server did not start:"; cat /tmp/dev-server.log; exit 1
+      - name: Render + axe on the app (390/768/1280 × light/dark)
+        run: node design-system/design-build/render.mjs --url "$DEV_URL"
+      - name: Render + axe on the design preview
+        run: node design-system/design-build/render.mjs --reports design-system/design-build/preview-reports
+      - name: Upload screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-checks
+          path: |
+            design-system/design-build/screenshots/
+            design-system/design-build/*-report.json
+            design-system/design-build/preview-reports/
+          if-no-files-found: ignore
