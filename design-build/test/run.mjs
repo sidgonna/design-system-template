@@ -6,10 +6,12 @@
 //   3. Mutation tests: copy the repo to a temp dir, break one thing, and check the matching rule fires
 //      (contrast, unresolved doc token, raw doc value, ownership, tokens-sync/format/css-stale, seed cap,
 //      kickstart sync, completion, justified avoid_defaults, --baseline, CLI exit codes and --json).
+//   3a. Board tests: board.mjs --check, every tile present, coverage = lint, board-stale, switched-off modules, --review
+//      writes review.json (never state.yaml), a bad logo token ref, and the Phase 3 --overview-only studies page.
 //   3b. App-root tests: the template copied into <tmp app>/design-system/ (no .git): lint auto-detects and fails app
 //      code, project.json, --baseline, Phase 6 tokens-import, nested .git, the git pre-commit hook and the agent hook.
 //   4. If Playwright is installed (or --render is passed): render.mjs fails fixtures/bad/layout.html for each
-//      expected reason, and fails blank pages, script errors and an unreachable --url. Skipped with a notice otherwise (CI always installs it).
+//      expected reason, fails blank pages, script errors and an unreachable --url, and passes the Phase 3 studies page. Skipped with a notice otherwise (CI always installs it).
 // Exit 0 when all pass, 1 otherwise.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -67,7 +69,7 @@ for (const f of fs.readdirSync(path.join(FIX, 'bad'))) {
 }
 
 // ---------- 3. mutations ----------
-const COPY = ['design.md', 'design', 'tokens', 'design-build', 'components', 'ui-inventory', 'KICKSTART.md', 'README.md'];
+const COPY = ['design.md', 'design', 'tokens', 'design-build', 'components', 'ui-inventory', 'KICKSTART.md', 'README.md', 'assets'];
 const SKIP = new Set(['node_modules', 'screenshots', '.terrazzo', 'fixtures']);
 function copyDir(src, dst) {
   const st = fs.statSync(src);
@@ -275,6 +277,79 @@ test('agent hook: after-edit.mjs is silent on a clean edit, exit 2 (claude) / ad
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+// ---------- 3a. the design board (board.mjs: preview/index.html, board.json, board.md, review.json, studies) ----------
+const BOARD = (dir) => path.join(dir, 'design-build/board.mjs');
+const boardCli = (dir, ...a) => spawnSync(node, [BOARD(dir), ...a], { encoding: 'utf8', cwd: dir });
+const boardJson = (dir) => JSON.parse(fs.readFileSync(path.join(dir, 'design-build/preview/board.json'), 'utf8'));
+const boardTiles = (b) => b.zones.flatMap((z) => z.tiles);
+const withSandbox = (mutate, fn) => { const dir = sandbox(mutate); try { fn(dir); } finally { fs.rmSync(dir, { recursive: true, force: true }); } };
+const DIRECTION = { name: 'Test direction', breaks: 'no cold blue', signature: 'one warm accent', differs: 'warmer than the wall' };
+test('board: the shipped board is up to date (board.mjs --check)', () => {
+  const r = boardCli(ROOT, '--check');
+  assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
+});
+test('board: every core section, module part, component doc, screen and governance part has its tile', () => {
+  const b = boardJson(ROOT);
+  const ids = new Set(boardTiles(b).map((t) => t.id));
+  const want = ['overview', ...Array.from({ length: 13 }, (_, i) => `s${i + 1}`), 's14-1', 's14-2', 's14-3', 's14-4', 's14-5', 's0', 's15', 's16',
+    'm1', ...Array.from({ length: 7 }, (_, i) => `m1-${i + 1}`), 'm2', 'm3', 'm4', 'review',
+    ...JSON.parse(fs.readFileSync(path.join(BUILD, 'inventory.json'), 'utf8')).components.map((c) => `comp-${String(c.name ?? c).toLowerCase()}`)];
+  const missing = want.filter((id) => !ids.has(id));
+  assert(!missing.length, `missing tiles: ${missing.join(', ')}`);
+  const html = fs.readFileSync(path.join(BUILD, 'preview/index.html'), 'utf8');
+  const noAnchor = [...ids].filter((id) => !html.includes(`id="tile-${id}"`));
+  assert(!noAnchor.length, `tiles without an anchor in preview/index.html: ${noAnchor.join(', ')}`);
+  assert(b.zones.length === 7, `want 7 zones, got ${b.zones.length}`);
+});
+test('board: the coverage ring counts the same unfilled placeholders as the lint', () => {
+  const b = boardJson(ROOT), res = lint({ root: ROOT });
+  const sum = boardTiles(b).filter((t) => t.counted_in_coverage).reduce((n, t) => n + t.placeholders, 0);
+  assert(sum === res.remaining && b.coverage.placeholders.remaining === res.remaining && b.coverage.placeholders.counted_in_tiles === res.remaining, `tiles ${sum}, board ${b.coverage.placeholders.remaining}, lint ${res.remaining}`);
+});
+test('mutation: core.md edited without rebuilding the board → board-stale (warning before Phase 5, error from Phase 5)', () => withSandbox(({ edit }) => edit('design/core.md', (s) => s.replace('{{BRAND_NAME}}', 'Stale Co')), (dir) => {
+  const early = lint({ root: dir }).findings.filter((f) => f.rule === 'board-stale');
+  assert(early.length && early.every((f) => f.severity === 'warning'), `phase 0: ${show(early)}`);
+  const late = lint({ root: dir, phase: 5 }).findings.filter((f) => f.rule === 'board-stale');
+  assert(late.length && late.every((f) => f.severity === 'error') && /board\.mjs/.test(late[0].fix), `phase 5: ${show(late)}`);
+  assert(boardCli(dir, '--check').status === 1, 'board.mjs --check should fail');
+  assert(boardCli(dir).status === 0 && !lint({ root: dir, phase: 5 }).findings.some((f) => f.rule === 'board-stale'), 'rebuilding did not clear board-stale');
+}));
+test('board: a module with enabled: false is shown switched off (greyed out), not hidden', () => withSandbox(({ edit }) => edit('design.md', (s) => s.replace(/(digital_product:[^\n]*enabled: )\{\{true\|false\}\}/, '$1false')), (dir) => {
+  const r = boardCli(dir); assert(r.status === 0, r.stderr);
+  const b = boardJson(dir);
+  assert(b.modules.find((m) => m.key === 'digital_product')?.state === 'off', JSON.stringify(b.modules));
+  const html = fs.readFileSync(path.join(dir, 'design-build/preview/index.html'), 'utf8');
+  assert(/id="tile-m1-1"[^>]*data-module-state="off"|data-module-state="off"[^>]*id="tile-m1-1"/.test(html), 'M1.1 tile is not marked data-module-state="off"');
+}));
+test('board: --review writes design-build/review.json (not state.yaml) and the board shows the verdict', () => withSandbox(() => {}, (dir) => {
+  const state = fs.readFileSync(path.join(dir, 'design-build/state.yaml'), 'utf8');
+  let r = boardCli(dir, '--review', '§4=edit:warmer accent');
+  assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
+  const rv = JSON.parse(fs.readFileSync(path.join(dir, 'design-build/review.json'), 'utf8'));
+  assert(rv.verdicts['§4']?.verdict === 'edit' && rv.verdicts['§4'].note === 'warmer accent', JSON.stringify(rv));
+  assert(fs.readFileSync(path.join(dir, 'design-build/state.yaml'), 'utf8') === state, 'state.yaml changed');
+  const html = fs.readFileSync(path.join(dir, 'design-build/preview/index.html'), 'utf8');
+  assert(/id="tile-s4"[^>]*data-verdict="edit"|data-verdict="edit"[^>]*id="tile-s4"/.test(html), 'the §4 tile does not carry data-verdict="edit"');
+  assert(boardCli(dir, '--check').status === 0, 'board stale after --review');
+  r = boardCli(dir, '--review', '§99=accept');
+  assert(r.status === 1 && /accept\|edit\|reject/.test(r.stderr), `unknown tile accepted: ${r.status} ${r.stderr}`);
+}));
+test('board: a logo colour that is not a token fails board.mjs --check', () => withSandbox(({ edit }) => edit('assets/logo/logo.json', (s) => s.replace('"{color.brand.primary}"', '"{color.brand.nope}"')), (dir) => {
+  const r = boardCli(dir, '--check');
+  assert(r.status === 1 && /color\.brand\.nope/.test(r.stderr), `exit ${r.status}\n${r.stderr}`);
+}));
+test('board: --overview-only writes the Phase 3 studies page, lint-clean, and rejects a missing direction', () => withSandbox(({ dir }) => {
+  fs.mkdirSync(path.join(dir, 'design-build/studies/directions'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'design-build/studies/directions/A.json'), JSON.stringify(DIRECTION));
+}, (dir) => {
+  let r = boardCli(dir, '--overview-only', '--direction', 'A');
+  assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
+  for (const f of ['studies/index.html', 'studies/directions/A.resolved.json']) assert(fs.existsSync(path.join(dir, 'design-build', f)), `${f} not written`);
+  const e = errorsOf(lint({ root: dir })); assert(!e.length, show(e));
+  r = boardCli(dir, '--overview-only', '--direction', 'B');
+  assert(r.status === 1 && /B\.json/.test(r.stderr), `missing direction: ${r.status} ${r.stderr}`);
+}));
+
 // ---------- 3b. installed in an app: <app>/design-system/ ----------
 const git = (cwd, ...a) => spawnSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd, encoding: 'utf8' });
 function appSandbox({ files = {}, gitInit = true } = {}) {
@@ -419,6 +494,21 @@ if (hasPlaywright || args.has('--render')) {
       assert(r.status === 1, `expected exit 1, got ${r.status}\n${r.stdout}${r.stderr}`);
       const j = JSON.parse(r.stdout);
       assert(j.reduced.some((m) => !m.ok), `no reduced-motion failure: ${JSON.stringify(j.reduced)}`);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+  test('render: the Phase 3 studies page (board.mjs --overview-only, two directions) passes render.mjs', () => {
+    const dir = sandbox(({ dir: d }) => {
+      fs.mkdirSync(path.join(d, 'design-build/studies/directions'), { recursive: true });
+      for (const id of ['A', 'B']) fs.writeFileSync(path.join(d, `design-build/studies/directions/${id}.json`), JSON.stringify({ ...DIRECTION, name: `Direction ${id}` }));
+    });
+    try {
+      fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'design-build/node_modules'), 'dir');
+      let r = spawnSync(node, [BOARD(dir), '--overview-only', '--direction', 'A', '--direction', 'B'], { encoding: 'utf8', cwd: dir });
+      assert(r.status === 0, `board: ${r.status}\n${r.stderr}`);
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'design-render-'));
+      r = spawnSync(node, [path.join(dir, 'design-build/render.mjs'), path.join(dir, 'design-build/studies/index.html'), '--widths', '390', '--themes', 'light', '--out', tmp, '--reports', tmp, '--json'], { encoding: 'utf8', cwd: dir });
+      fs.rmSync(tmp, { recursive: true, force: true });
+      assert(r.status === 0, `render exit ${r.status}\n${r.stdout.slice(0, 2000)}${r.stderr}`);
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   });
   test('components/index.js: the vanilla helpers build accessible markup in a browser and reject unknown variants', () => {

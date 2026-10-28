@@ -21,6 +21,7 @@ import { inSection, yamlBlock, yamlBlockKeys, table, placeholders, unwrap } from
 import { parseColor, parseDtcgColor, toHex, deltaE, srgbToOklch, suggestPassingColor } from './lib/color.mjs';
 import { varName, toPx } from './lib/tokens.mjs';
 import { generate } from './tokens-css.mjs';
+import { staleFiles as boardStale } from './board.mjs';
 import { STATES, DOC_STATES, COMPONENT_HEADINGS, UI_DIR, expected as uiExpected, blockOf, screensOf, resolveSource } from './lib/ui-inventory.mjs';
 import { jsxOpenTags } from './lib/jsx.mjs';
 import { DS_ROOT, findProject, fixHint, appCodeTargets, projectConfig, APP_EXCLUDE } from './lib/project.mjs';
@@ -38,6 +39,7 @@ const RULES = {
   'tokens-format': 'tokens_file is not valid DTCG, or a themed color lacks a mode',
   'tokens-sync': 'core.md §13 and tokens_file disagree',
   'tokens-css-stale': 'generated preview/tokens.css, tokens.js or tokens.mjs out of date',
+  'board-stale': 'generated board (preview/index.html, board.json, board.md) out of date (warning before Phase 5)',
   'seed-cap': 'a §16.2 seed group has more entries than allowed',
   'kickstart-sync': 'README kickstart block differs from KICKSTART.md',
   'tokens-import': 'Phase 6+: no app code file imports the generated tokens.css',
@@ -358,6 +360,12 @@ export function lint(opts = {}) {
       else if (fs.readFileSync(abs, 'utf8') !== c) add('tokens-css-stale', 'error', f, 1, `${f} is out of date with ${ctx.tokensRel}`, 'run: node design-build/tokens-css.mjs (never hand-edit generated files)');
     }
   } catch (e) { add('tokens-css-stale', 'error', 'design-build/tokens-css.mjs', 1, `could not generate tokens.css: ${e.message}`, 'fix tokens_file first'); }
+
+  // ---- board-stale ----
+  // The board is the Phase 5 review page: while drafting it may lag behind (a warning), from Phase 5 it must match.
+  try {
+    for (const f of boardStale(root)) add('board-stale', phase >= 5 ? 'error' : 'warning', f, 1, `${f} is out of date with the design files, tokens, inventory or review.json`, 'run: node design-build/board.mjs (never hand-edit generated files)');
+  } catch (e) { add('board-stale', 'error', 'design-build/board.mjs', 1, `could not build the board: ${e.message}`, 'fix the error above, then run: node design-build/board.mjs'); }
 
   // ---- contrast ----
   const pr = pairingResults(ctx);
