@@ -40,7 +40,7 @@ SEED SOURCES — research starts deep, not wide
 Before any open web search in §16 Phase 2, read the seeds for each area. §16.2 in design.md is the full, owning list; this is the short version. If they differ, §16.2 wins.
 - Tokens: W3C Design Tokens Format https://tr.designtokens.org/format/ · Style Dictionary https://styledictionary.com/
 - Reference systems: Material 3 https://m3.material.io/ · Apple HIG https://developer.apple.com/design/human-interface-guidelines · IBM Carbon https://carbondesignsystem.com/ · GOV.UK https://design-system.service.gov.uk/
-- Components (search each one separately, §16 Phase 2c): Component Gallery https://component.gallery/ · Radix https://www.radix-ui.com/primitives · shadcn/ui https://ui.shadcn.com/ · React Aria https://react-spectrum.adobe.com/react-aria/ · Kokonut UI https://kokonutui.com/ · 21st.dev https://21st.dev/ (patterns only)
+- Components (search each seed once per component, §16 Phase 2c; add WAI-ARIA APG and Refero Styles): Component Gallery https://component.gallery/ · Radix https://www.radix-ui.com/primitives · shadcn/ui https://ui.shadcn.com/ · React Aria https://react-spectrum.adobe.com/react-aria/ · Kokonut UI https://kokonutui.com/ · 21st.dev https://21st.dev/ (patterns only)
 - Accessibility: WCAG 2.2 https://www.w3.org/TR/WCAG22/ · ARIA Authoring Practices https://www.w3.org/WAI/ARIA/apg/ · WebAIM Contrast https://webaim.org/resources/contrastchecker/
 - Color: Radix Colors https://www.radix-ui.com/colors · Leonardo https://leonardocolor.io/ · OKLCH https://oklch.com/
 - Type: Google Fonts https://fonts.google.com/ · Noto (Indic) https://fonts.google.com/noto · Fontshare https://www.fontshare.com/ · Practical Typography https://practicaltypography.com/

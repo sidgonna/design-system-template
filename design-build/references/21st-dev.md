@@ -13,7 +13,7 @@
 
 | Component | 21st.dev page | Author · license | Pattern borrowed | How ours differs |
 |---|---|---|---|---|
-| Button | https://21st.dev/community/components/sean0205/button-1/loading | ReUI (sean0205) · MIT | Loading state: spinner before the label, button stays in place | Label never changes (theirs swaps to "Submitting…"); `aria-busy` + `aria-disabled` instead of `disabled` so focus stays; CSS spinner on `{motion.duration.slow}`, still under reduced motion; no Radix, lucide or cva |
+| Button | https://21st.dev/community/components/sean0205/button-1/loading | ReUI (sean0205) · MIT | Loading state: spinner before the label, button stays in place | Label never changes (theirs swaps to "Submitting…"); `aria-busy` + `aria-disabled` instead of `disabled` so focus stays; CSS spinner (one turn every 2 × `{motion.duration.slow}`) that stops spinning under reduced motion and shows a static ring; no Radix, lucide or cva |
 | Button | https://21st.dev/community/components/shadcn/button | shadcn · MIT | Variant set (default, secondary, ghost, destructive), forwarded ref | Variants are `data-variant` attributes styled by one CSS file, so the API works without React; no `asChild`; explicit `cursor: pointer` |
 | Button | https://21st.dev/community/components/iamsatish4564/eclipse-button | iamsatish4564 · no license shown | Looked at only: animated busy button | Not used: decorative motion that goes beyond core.md §10 |
 | Input | https://21st.dev/community/components/tigerabrodi/input-with-feedback | tigerabrodi · MIT | Helper text under the field; error = red border + message; disabled look | Hint stays and the error is added after it; both are linked with `aria-describedby`; `aria-invalid`; a thick `{color.semantic.error}` border; a shake on entry that is switched off under reduced motion |
@@ -28,12 +28,12 @@
 ## Our additions, not taken from 21st.dev
 
 - **Motion on our tokens:**
-  - Card entrance (`ds-enter`)
+  - Card entrance (`ds-enter`, opt-in with `data-enter` / `enter`)
   - Badge pop-in (`ds-pop`)
   - Input error shake (`ds-shake`)
   - Button hover lift and press scale
 - **Fills:** all fill `backwards`, so the hover transforms still work.
-- **Reduced motion:** every movement turns off under `prefers-reduced-motion: reduce`, while color feedback stays. `design-build/motion.mjs` proves both.
+- **Reduced motion (core.md §10):** under `prefers-reduced-motion: reduce` nothing moves; the card entrance and badge pop-in become an opacity fade of `{motion.duration.fast}`, and color feedback stays (fades of at most `{motion.duration.fast}`). `design-build/motion.mjs` proves both halves.
 - **No React needed:** the HTML/CSS API and the vanilla helpers (`components/index.js`) work in any stack.
 
-The other §16.2 component seeds (shadcn/ui, Radix, React Aria, The Component Gallery, Kokonut UI, Refero Styles, WAI-ARIA APG, GOV.UK) are cited per component in `ui-inventory/components/*.md`.
+The other per-component seeds (§16 Phase 2c: shadcn/ui, Radix, React Aria, The Component Gallery, Kokonut UI, Refero Styles, WAI-ARIA APG), and GOV.UK where it had a relevant pattern, are cited per component in `ui-inventory/components/*.md`.

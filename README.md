@@ -21,11 +21,11 @@ node design-system/design-build/install-hooks.mjs
 node design-system/design-build/lint.mjs
 ```
 
-Your app's own linter (ESLint, oxlint, Biome) should skip `design-system/design-build/`: it holds Node tooling and test fixtures that are bad on purpose. Keep `design-system/components/` linted. For example `"ignorePatterns": ["design-system/design-build/**"]` in `.oxlintrc.json`, or `globalIgnores(['dist', 'design-system/design-build'])` in `eslint.config.js`.
-
 On an existing app, step 4 usually fails with a list of hard-coded colors and sizes in your code. That is expected: KICKSTART Step 2 shows you the counts and asks whether to freeze them as a ceiling (`--baseline`), and §16 Phase 6 brings them down.
 
-5. Open your coding harness in the project and paste the prompt below. The harness reads the system, works out your project type from the files, asks the intake questions and walks you through visual directions before it builds anything. For an app it then applies the system to your code (§16 Phase 6).
+5. Keep `design-system/design-build/` out of your app's own linter (ESLint, oxlint, Biome): it holds Node tooling and test fixtures that are bad on purpose, so the app's lint (and a lint-staged pre-commit) fails on it otherwise. Keep `design-system/components/` linted. For example `"ignorePatterns": ["design-system/design-build/**"]` in `.oxlintrc.json`, or `globalIgnores(['dist', 'design-system/design-build'])` in `eslint.config.js`.
+
+6. Open your coding harness in the project and paste the prompt below. The harness reads the system, works out your project type from the files, asks the intake questions and walks you through visual directions before it builds anything. For an app it then applies the system to your code (§16 Phase 6).
 
 Developing the template itself? Clone it normally and drop the `design-system/` prefix from every command (`node design-build/lint.mjs`).
 
@@ -69,7 +69,7 @@ SEED SOURCES — research starts deep, not wide
 Before any open web search in §16 Phase 2, read the seeds for each area. §16.2 in design.md is the full, owning list; this is the short version. If they differ, §16.2 wins.
 - Tokens: W3C Design Tokens Format https://tr.designtokens.org/format/ · Style Dictionary https://styledictionary.com/
 - Reference systems: Material 3 https://m3.material.io/ · Apple HIG https://developer.apple.com/design/human-interface-guidelines · IBM Carbon https://carbondesignsystem.com/ · GOV.UK https://design-system.service.gov.uk/
-- Components (search each one separately, §16 Phase 2c): Component Gallery https://component.gallery/ · Radix https://www.radix-ui.com/primitives · shadcn/ui https://ui.shadcn.com/ · React Aria https://react-spectrum.adobe.com/react-aria/ · Kokonut UI https://kokonutui.com/ · 21st.dev https://21st.dev/ (patterns only)
+- Components (search each seed once per component, §16 Phase 2c; add WAI-ARIA APG and Refero Styles): Component Gallery https://component.gallery/ · Radix https://www.radix-ui.com/primitives · shadcn/ui https://ui.shadcn.com/ · React Aria https://react-spectrum.adobe.com/react-aria/ · Kokonut UI https://kokonutui.com/ · 21st.dev https://21st.dev/ (patterns only)
 - Accessibility: WCAG 2.2 https://www.w3.org/TR/WCAG22/ · ARIA Authoring Practices https://www.w3.org/WAI/ARIA/apg/ · WebAIM Contrast https://webaim.org/resources/contrastchecker/
 - Color: Radix Colors https://www.radix-ui.com/colors · Leonardo https://leonardocolor.io/ · OKLCH https://oklch.com/
 - Type: Google Fonts https://fonts.google.com/ · Noto (Indic) https://fonts.google.com/noto · Fontshare https://www.fontshare.com/ · Practical Typography https://practicaltypography.com/
@@ -115,12 +115,14 @@ Begin with Step 1 now.
 ```
 
 ## Components: usage
-The template ships four working components: **Button, Input, Card and Badge** (digital-product.md §M1.1). They use only token variables and have no runtime dependencies. Their motion runs on motion tokens and turns off under `prefers-reduced-motion`. You can use them three ways:
+The template ships four working components: **Button, Input, Card and Badge** (digital-product.md §M1.1). They use only token variables and have no runtime dependencies. Their motion runs on motion tokens; under `prefers-reduced-motion` nothing moves and only short opacity and color fades remain (core.md §10). Without `components/base.css` (or your own base styles) the page keeps the browser default font, Times New Roman. You can use them three ways:
 
 ```tsx
-// React 18+ (src/main.tsx imports the CSS once; any component file imports the wrappers)
-import '../design-system/design-build/preview/tokens.css';   // tokens first
-import '../design-system/components/components.css';          // then the components
+// React 18+. In the app entry (src/main.tsx, or app/layout.tsx in Next.js), once:
+import '../design-system/design-build/preview/tokens.css';   // the tokens, first
+import '../design-system/components/base.css';               // optional: body font, colors, headings from the tokens
+// In any component file. The wrappers import components/components.css themselves, so don't import it again.
+// They start with 'use client', so a Next.js Server Component page can render them.
 import { Button, Input, Card, Badge } from '../design-system/components/react';   // typed (index.d.ts)
 
 <Card variant="raised" interactive>
@@ -132,7 +134,7 @@ import { Button, Input, Card, Badge } from '../design-system/components/react'; 
 ```
 
 ```html
-<!-- Any stack: the same CSS through data attributes -->
+<!-- Any stack: the same CSS through data attributes. Link tokens.css, then base.css (optional) and components.css -->
 <button type="button" data-component="button" data-variant="secondary">Preview</button>
 <span data-component="badge" data-variant="warning">Expiring</span>
 <script type="module">
@@ -142,10 +144,12 @@ import { Button, Input, Card, Badge } from '../design-system/components/react'; 
 
 | Component | Variants | Main props / attributes |
 |---|---|---|
-| Button | primary, secondary, ghost, danger | `variant`, `loading` (keeps focus: `aria-busy` + `aria-disabled`), `disabled`, `type` |
-| Input | default, error | `label`, `hint`, `error` (sets the variant, `aria-invalid` and `aria-describedby`, and shakes), `required`, `disabled`, `autoComplete`, `inputMode` |
-| Card | flat, raised | `variant`, `interactive` (hover and focus-within lift), `as` |
-| Badge | neutral, success, warning, error, info | `variant` |
+| Button | primary, secondary, ghost, danger | `variant`, `loading` (keeps focus: `aria-busy` + `aria-disabled`; announces `loadingLabel`, default "Loading"), `disabled`, `type` |
+| Input | default, error | `label`, `hint`, `error` (sets the variant, `aria-invalid` and `aria-describedby`, and shakes), plus the native input attributes (`required`, `disabled`, `readOnly`, `maxLength`, `autoComplete`, `inputMode`…) |
+| Card | flat, raised | `variant`, `interactive` (hover and focus-within lift), `enter` (plays the entrance), `as` |
+| Badge | neutral, success, warning, error, info | `variant`, `live` (`role="status"` for a status that changes on the page) |
+
+An unknown `variant` logs a console error in the React wrappers (and throws in the vanilla helpers) instead of silently rendering the default look.
 
 Each component has a full doc in [`ui-inventory/components/`](ui-inventory/components/): anatomy, every state, tokens, motion, accessibility, responsive behavior, do and don't, and references. `design-build/inventory.json` lists them with their import path, so agents reuse them instead of inventing new ones (§0.5).
 

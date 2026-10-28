@@ -36,11 +36,14 @@ Every row must match a `name` in `design-build/inventory.json`, and every varian
 ### M1.3 Breakpoints and responsive rules
 Uses `{breakpoint.*}`. {{How grid, type and spacing adapt per breakpoint.}}
 - Every layout MUST work at the three check widths `{viewport.mobile}`, `{viewport.tablet}` and `{viewport.desktop}`, in light and dark: no horizontal scroll, no key element off-screen, no overlapping controls. `design-build/render.mjs` screenshots and checks each one.
+- The two scales do different jobs. `{breakpoint.*}` (sm 640, md 768, lg 1024, xl 1280 px) are where the layout changes; `{viewport.*}` (390, 768, 1280 px) are the device widths the checks use, so mobile is a phone below `sm`, tablet sits on `md` and desktop on `xl`. Check any extra width the layout changes at with `render.mjs --widths`.
+- CSS variables do not work inside `@media` or `@container`, so write the breakpoint's px number there (for `md`, `min-width` with the value of `{breakpoint.md}` in px). The lint accepts a media-query width only when it equals a `{breakpoint.*}` or `{viewport.*}` token. Use `var(--breakpoint-md)` only in JS (`matchMedia`) or in `max-inline-size` for content widths.
 ### M1.4 Radius and elevation
 Which components use which `{radius.*}` and `{shadow.*}`; depth meaning: {{higher = more temporary}}.
 ### M1.5 Interaction patterns
 {{Forms, validation timing, confirmations, navigation patterns.}}
 ### M1.6 Data visualization
 Series colors `{color.data.*}`, axis/grid style, label rules, chart types allowed, never use 3D or pie with more than {{5}} slices.
+- The starter series colors have light and dark values, and each one is at least 3:1 against `{color.surface.default}` and `{color.surface.raised}` in both modes (non-text contrast; the pairings in core.md §4 check it). They are for marks (bars, lines, dots), never for text: label every series and value with text in `{color.text.primary}` or `{color.text.secondary}`, so the chart reads without color.
 ### M1.7 SEO and content structure
 One H1 per page, heading order, meta title/description patterns, image alt and file naming → §11, §14.3.

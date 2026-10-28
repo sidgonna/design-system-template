@@ -9,7 +9,10 @@ research:
   sources_used: 0
   competitors_used: 0
 choices: {}         # Phase 3 picks per aspect, e.g. color: B
-decisions: []       # one entry per decision, e.g. - { date: 2026-10-28, section: §4, decision: "accent C", by: user, quote: "go with C, warmer" }
+decisions:          # one entry per decision, e.g. - { date: 2026-10-28, section: §4, decision: "accent C", by: user, quote: "go with C, warmer" }
+  # Template maintenance (the protected check files, §0.5), not design decisions for a project:
+  - { date: 2026-10-28, section: "§0.5 checks", decision: "approved edits to the protected check files to fix the 28 Oct audit (P0–P2): lint.mjs (+ lib/jsx.mjs), lint.config.json (core.md placeholder count 211 → 219 for the new dark data colors), inventory.json ignore.tags (+ App), motion.mjs, render.mjs, hooks/after-edit.mjs and test/ (run.mjs, helpers-browser.mjs, new fixtures)", by: user, quote: "fix ALL P0, P1 and P2 items from your audit, INCLUDING edits to protected check files (lint.mjs, lint.config.json, inventory.json ignore, motion.mjs, tests)" }
+  - { date: 2026-10-28, section: "§0.5 checks", decision: "after-the-fact approval of the lint.config.json edits in commit 780e0de (code_dirs += components; template_placeholders design/digital-product.md 6 → 5)", by: user, quote: "also the after-the-fact approval of the lint.config.json edits in 780e0de" }
 locked_sections: [] # sections the user accepted in Phase 5; don't change them unless the user reopens one
 apply:              # §16 Phase 6, apps only; starts after the Phase 5 gate and the user's yes
   started_at: null
