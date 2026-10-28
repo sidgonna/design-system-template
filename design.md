@@ -35,7 +35,7 @@ In a project, this whole template sits in one folder named `design-system/` at t
 KICKSTART.md               ← paste-in prompt to start a build in any harness
 BOTTLENECKS.md             ← where AI agents stumble, the fixes, and which are implemented (rules live here in design.md and design/)
 design.md                  ← you are here: index, rules of the system, build workflow, checklist
-design-build/              ← working files during a §16 build (state, research, studies, preview), inventory.json and the checks
+design-build/              ← working files during a §16 build (state, research, studies, the board), inventory.json and the checks
 components/                ← the shipped components: components.css (data-component API), index.js (vanilla helpers), react/ (wrappers)
 ui-inventory/              ← per-screen component use and one doc per component (README.md explains; facts come from inventory.json)
 design/
@@ -121,7 +121,7 @@ agent_rules:
   - Components - reuse, then extend, then create. Look a component or prop up in `design-build/inventory.json` (and the code it points to) and its doc in `ui-inventory/components/` before using it. Never use a component or prop that is not listed. If nothing fits, extend an existing one; create a new one only when the user agrees, then add it to inventory.json. If unsure, ask.
   - No new component without a doc and a reference search. Before building or mapping a component, search each per-component seed for it separately (the list is in §16 Phase 2c), then fill `ui-inventory/components/<name>.md` from `ui-inventory/templates/component.md`. That includes purpose, anatomy, variants, states, tokens, motion, accessibility, responsive, do and don't, references with how ours differs, and usage. Every screen you build or change gets an entry in inventory.json → `screens` listing the components, variants and states it uses. Run `node design-system/design-build/ui-inventory.mjs`; lint rule `ui-inventory` fails otherwise.
   - Registries such as 21st.dev are for patterns, never code. Do not paste or lightly edit their source (licenses vary, many have none, and their Tailwind and dependencies break the token-only set). Rebuild on tokens and record the URL, the pattern and how ours differs in the component doc (and `design-build/references/21st-dev.md`).
-  - Before proposing any change, re-read `design-build/state.yaml` → `decisions` and `locked_sections`. Never reopen a rejected option or touch a locked section unless the user asks.
+  - Before proposing any change, re-read `design-build/state.yaml` → `decisions` and the Phase 5 verdicts in `design-build/review.json` (`accept` = locked). Never reopen a rejected option or touch a locked section unless the user asks.
   - Done means checked. Never call work "done", "finished" or "ready" until `design-build/state.yaml` → `checks` shows lint, render and a11y all `pass` with `commit` equal to the current `git rev-parse --short HEAD`. Commit the work first, then run `node design-system/design-build/lint.mjs --record` and `node design-system/design-build/render.mjs --record` (for an app in Phase 6: `render.mjs --url <dev-server URL> --record`); the state.yaml change they make doesn't need its own commit. Paste the summary lines, not a claim.
   - Never game the checks. Without the user's explicit approval, do not edit `design-build/lint.config.json`, `design-build/lint-baseline.json`, `design-build/inventory.json` ignore lists, `design-build/terrazzo.config.mjs`, the installed git pre-commit hook, `.github/workflows/`, `design-build/ci/`, `design-build/hooks/`, `design-build/install-hooks.mjs` or the check scripts; do not run `lint.mjs --baseline`; do not update or delete screenshots to make a comparison pass; do not add `justified` reasons to `avoid_defaults` that the user did not give; do not use `--no-verify`. Fix the design instead. If a check is wrong, say so and ask.
   - `design-build/project.json` (the app's code folders, excludes and dev-server URL) is a project setting, not a check, so it is NOT protected the same way. Write it in KICKSTART Step 2 after the user approves the folders, and you may ADD a code folder or set `app_url` later. Removing a folder from `code_dirs`, or adding to `exclude`, so that app code stops being linted needs the user's explicit approval, like editing the checks.
@@ -161,8 +161,13 @@ design-build/
   inventory.json        ← components the project already has (KICKSTART Step 2); the lint rejects any other
   research-plan.md      ← Phase 2 plan
   research/notes.md     ← findings, one line per source with URL
-  studies/index.html    ← Phase 3 visual studies
-  preview/index.html    ← Phase 5 rendered design system (reads preview/tokens.css, generated from tokens_file)
+  studies/directions/   ← Phase 3: one <ID>.json per direction (schema: schemas/direction.schema.json)
+  studies/index.html    ← Phase 3 visual studies, generated: board.mjs --overview-only --direction <ID> …
+  preview/index.html    ← the design board: every core section and module part as a tile (generated by board.mjs; reads preview/tokens.css)
+  preview/board.json    ← the same board for AI agents and exports (tiles, coverage, resolved logo and colour hex); board.md is its readable twin
+  board.mjs             ← builds the board; --check, --review, --overview-only, --serve (lint rule board-stale)
+  review.json           ← Phase 5 verdicts per tile (accept / edit / reject + note), written by board.mjs --review
+  schemas/              ← JSON schemas: logo.schema.json ({asset_root}/logo/logo.json), direction.schema.json
   preview/tokens.css    ← generated CSS variables, light + dark; the app imports it in Phase 6
   preview/tokens.mjs    ← generated ES module (tokens, cssVar(), value()) for app code that needs a value in JS
   project.json          ← the app's code folders, excludes and dev-server URL (KICKSTART Step 2; see §0.5)
@@ -379,7 +384,7 @@ Ask in **one** message, grouped and numbered, with examples so answers are quick
 **2c. Per-component research** (apps and websites, digital-product.md §M1): for each component in `design-build/inventory.json` that the app will use, search the per-component seeds **one component at a time** (not one search for "UI components"). The per-component seeds are the §16.2 `components` group except Design Systems Repo (The Component Gallery, Radix Primitives, shadcn/ui, React Aria, Kokonut UI), plus 21st.dev and Refero Styles (`agent_ready_references`) and WAI-ARIA APG (`accessibility`); this list is the one §0.5 and KICKSTART point to. Search each of them once per component. Record the result in `ui-inventory/components/<name>.md` → References: one line per seed with the URL, the pattern taken and how ours will differ. Seeds with nothing relevant get a line saying so. These per-component searches have their own budget of one search per seed per component; they don't count toward the §16.0 source cap, which is for the Phase 2a brand research.
 
 ### Phase 3 · Visual studies (show, don't tell)
-Build `studies/index.html`, a single self-contained page. **Screenshots are required:** run `node design-system/design-build/render.mjs design-system/design-build/studies/index.html` and show the user the PNGs it writes to `design-build/screenshots/` (390, 768 and 1280 wide, light and dark). A study the user has not seen as an image or live page doesn't count. Offer **2–3 directions** per aspect, labeled A, B and C:
+Write one manifest per direction, `design-build/studies/directions/<ID>.json` (name, the label line's `breaks`, `signature` and `differs`, optionally its own `tokens` file, `competitors` and `moodboard` images; schema: `design-build/schemas/direction.schema.json`), then generate the page with `node design-system/design-build/board.mjs --overview-only --direction A --direction B`. It writes `studies/index.html`: one overview card per direction in light and dark, built from that direction's tokens. Add anything it doesn't draw (imagery, social post) to the manifest's image lists. The page loads each direction's tokens over http, so open it with `node design-system/design-build/board.mjs --serve`, not from the file. **Screenshots are required:** run `node design-system/design-build/render.mjs design-system/design-build/studies/index.html` and show the user the PNGs it writes to `design-build/screenshots/` (390, 768 and 1280 wide, light and dark). A study the user has not seen as an image or live page doesn't count. Offer **2–3 directions** per aspect, labeled A, B and C:
 - **Competitor wall:** screenshots or logo and color strips of the competitors, with a one-line gap note.
 - **Color:** swatches in real proportion (for example 60/30/10), text-on-background pairings with live contrast ratios, a light and dark preview, and data colors.
 - **Typography:** specimens at the real scale (display down to caption), a headline plus paragraph in each language from §12, and the font license noted.
@@ -419,14 +424,15 @@ Also run `npm --prefix design-system/design-build run tokens:check` (Terrazzo DT
 **Gate:** the lint passes. Report the completion percentage and the TBD list.
 
 ### Phase 5 · Render, review and finish
-Build `preview/index.html`, a styled site that reads its values from `tokens_file`, so what the user sees is the system itself and not a description of it:
-- A cover with the brand name and its one-line feel
-- One page per core section and per enabled module, each opening with its `FEEL:` line
-- Live color, type, icon and motion demos, sample components, and one mockup per enabled format
+Run `node design-system/design-build/board.mjs` to generate the design board, `preview/index.html` (plus `preview/board.json` and `board.md` for agents), and show it with `node design-system/design-build/board.mjs --serve`. It reads its values from `tokens_file`, so what the user sees is the system itself and not a description of it:
+- An overview card with the brand name, its one-line feel, the modules switched on and a coverage ring of filled placeholders
+- A brand identity zone (the `{asset_root}/logo/logo.json` variants), then one tile per core section, module part, component doc, screen and governance part, each opening with its `FEEL:` line. Unfilled parts show as hatched placeholders, and switched-off modules stay on the board greyed out
+- Live color, type, icon and motion demos (Replay motion and a reduced-motion toggle), the real components, light, dark and side-by-side views, and one mockup per enabled format
+- A pan and zoom canvas with a minimap on wide screens (keyboard: + − 0 f), and a plain page view with per-tile anchors for small screens, assistive tech and print
 
-Every section shows **Accept**, **Reject** and **Edit** options. (In a terminal-only harness, list the sections numbered and let the user reply with something like `3 edit: warmer accent`.)
+Every tile has **Accept**, **Edit** and **Reject** (Review on the toolbar). Record each verdict with `node design-system/design-build/board.mjs --review "§4=edit:warmer accent"` (or the board's Download review.json); it goes to `design-build/review.json`, never `state.yaml`, and the board shows it. (In a terminal-only harness, list the tiles numbered and let the user reply with something like `3 edit: warmer accent`.)
 - **Accept:** lock the section. Don't touch it again unless the user reopens it.
-- **Edit:** change only the owning file (§0.3) and tokens, re-run the lint, re-render, and show the changed section side by side with the old one. Log the change in `state.yaml` → `decisions` and add the section to `locked_sections` once accepted.
+- **Edit:** change only the owning file (§0.3) and tokens, re-run the lint, rebuild the board, re-render, and show the changed section side by side with the old one. Log the change in `state.yaml` → `decisions` and record `accept` in `review.json` once the user accepts it.
 - **Reject:** go back to Phase 3 for that aspect only, with 2 fresh directions.
 
 After {{3}} review rounds, check in with the user about whether to keep going or ship.

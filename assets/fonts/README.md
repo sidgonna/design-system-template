@@ -12,7 +12,7 @@ The template ships **no font files**. Every `font.family.*` stack in `tokens/tok
 To load a web font:
 
 1. Check its license allows self-hosting (all of the starter families are SIL OFL 1.1). Put the `.woff2` files here, e.g. `assets/fonts/source-serif-4-600.woff2`.
-2. Add a `fonts.css` next to them and import it once, before `tokens.css`, in the app entry (and add a `<link>` to it in `design-build/preview/index.html`):
+2. Add a `fonts.css` next to them and import it once, before `tokens.css`, in the app entry. The board and the studies page link it automatically once you re-run `node design-system/design-build/board.mjs`. The file:
 
 ```css
 /* assets/fonts/fonts.css — one block per file. font-display: swap shows the fallback first, then swaps. */
