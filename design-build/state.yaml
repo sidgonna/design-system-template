@@ -1,5 +1,5 @@
 # §16 build state. The harness updates this after every step.
-phase: 0            # 0 not started, 1 intake, 2 research, 3 studies, 4 fill, 5 review, done
+phase: 0            # 0 not started, 1 intake, 2 research, 3 studies, 4 fill, 5 review, 6 apply to app, done (§16)
 gate_passed: false
 project_type: []    # inferred in KICKSTART step 2
 evidence: []        # file paths that showed the type
@@ -11,6 +11,12 @@ research:
 choices: {}         # Phase 3 picks per aspect, e.g. color: B
 decisions: []       # one entry per decision, e.g. - { date: 2026-10-28, section: §4, decision: "accent C", by: user, quote: "go with C, warmer" }
 locked_sections: [] # sections the user accepted in Phase 5; don't change them unless the user reopens one
+apply:              # §16 Phase 6, apps only; starts after the Phase 5 gate and the user's yes
+  started_at: null
+  app_url: null      # dev-server URL render.mjs checked (also design-build/project.json → app_url)
+  routes: []         # extra URLs rendered, e.g. http://localhost:5173/settings
+  target_errors: 0   # hard-coded value errors allowed in app code when done (0, or the target the user agreed)
+  accepted_by: null  # e.g. { date: 2026-10-28, by: user, quote: "looks right, ship it" }
 completion: 0.0     # Phase 4 lint
 version: "0.0.0"
 # Written by `lint.mjs --record` and `render.mjs --record`, run after the last commit of the work. "Done" needs all three `pass` with commit = git rev-parse --short HEAD (§0.5).

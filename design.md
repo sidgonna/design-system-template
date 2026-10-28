@@ -30,11 +30,12 @@ parts:
 ---
 
 ## Folder layout
+In a project, this whole template sits in one folder named `design-system/` at the project (app) root, with no `.git` of its own (README → Quick start). Paths in this system, such as `design-build/state.yaml`, are inside that folder. Commands are run from the project root, e.g. `node design-system/design-build/lint.mjs`; when the template is itself the repository root (developing the template), drop the `design-system/` prefix.
 ```
 KICKSTART.md               ← paste-in prompt to start a build in any harness
 BOTTLENECKS.md             ← where AI agents stumble, the fixes, and which are implemented (rules live here in design.md and design/)
 design.md                  ← you are here: index, rules of the system, build workflow, checklist
-design-build/              ← working files during a §16 build (state, research, studies, preview)
+design-build/              ← working files during a §16 build (state, research, studies, preview) and the checks
 design/
   core.md                  ← §1–§14, always used
   digital-product.md       ← §M1, apps and websites
@@ -59,7 +60,7 @@ File names are fixed. New modules follow the same pattern: `design/<kebab-case-d
 | Convention | Meaning |
 |---|---|
 | `{{PLACEHOLDER}}` | Fill per brand or project. Unfilled means not ready. |
-| `{token.path}` | A value defined once in **§13** (core.md). Never write a raw hex, rgb, hsl, oklch, px or ms value anywhere else; `design-build/lint.mjs` flags it and names the token to use. |
+| `{token.path}` | A value defined once in **§13** (core.md). Never write a raw hex, rgb, hsl, oklch, px or ms value anywhere else; `design-build/lint.mjs` flags it, in the design files and in the app's code, and names the token to use. |
 | `MUST` / `MUST NOT` | Hard rule. Breaking it is a defect. |
 | `SHOULD` / `AVOID` | Strong default. Breaking it needs a written reason. |
 | `FEEL:` | The human sense the rule protects. Read it before bending a rule. |
@@ -113,11 +114,13 @@ agent_rules:
   - To build a new system from this template, follow §16 phase by phase and respect its hard limits.
   - Start research from the §16.2 seed sources; search the open web only for what seeds can't answer.
   - Before delivering, run §15 and report any failed item.
-  - After ANY edit to a design file, tokens or UI code, run `node design-build/lint.mjs` and fix what it reports before the next edit. Every message gives file:line, the bad value and the fix.
+  - Paths in these rules are inside the `design-system/` folder; run commands from the project root as `node design-system/design-build/…` (§16.1).
+  - After ANY edit to a design file, tokens or UI code, run `node design-system/design-build/lint.mjs` and fix what it reports before the next edit. It checks the design files and the app's code (src/, app/, pages/, components/, styles/, top-level and public HTML, or `code_dirs` in `design-build/project.json`). Every message gives file:line, the bad value and the fix.
   - Components - reuse, then extend, then create. Look a component or prop up in `design-build/inventory.json` (and the code it points to) before using it. Never use a component or prop that is not listed. If nothing fits, extend an existing one; create a new one only when the user agrees, then add it to inventory.json. If unsure, ask.
   - Before proposing any change, re-read `design-build/state.yaml` → `decisions` and `locked_sections`. Never reopen a rejected option or touch a locked section unless the user asks.
-  - Done means checked. Never call work "done", "finished" or "ready" until `design-build/state.yaml` → `checks` shows lint, render and a11y all `pass` with `commit` equal to the current `git rev-parse --short HEAD`. Commit the work first, then run `node design-build/lint.mjs --record` and `node design-build/render.mjs --record` (the state.yaml change they make doesn't need its own commit). Paste the summary lines, not a claim.
-  - Never game the checks. Without the user's explicit approval, do not edit `design-build/lint.config.json`, `design-build/lint-baseline.json`, `design-build/inventory.json` ignore lists, `design-build/terrazzo.config.mjs`, `.githooks/`, `.github/workflows/`, `design-build/hooks/` or the check scripts; do not run `lint.mjs --baseline`; do not update or delete screenshots to make a comparison pass; do not add `justified` reasons to `avoid_defaults` that the user did not give; do not use `--no-verify`. Fix the design instead. If a check is wrong, say so and ask.
+  - Done means checked. Never call work "done", "finished" or "ready" until `design-build/state.yaml` → `checks` shows lint, render and a11y all `pass` with `commit` equal to the current `git rev-parse --short HEAD`. Commit the work first, then run `node design-system/design-build/lint.mjs --record` and `node design-system/design-build/render.mjs --record` (for an app in Phase 6: `render.mjs --url <dev-server URL> --record`); the state.yaml change they make doesn't need its own commit. Paste the summary lines, not a claim.
+  - Never game the checks. Without the user's explicit approval, do not edit `design-build/lint.config.json`, `design-build/lint-baseline.json`, `design-build/inventory.json` ignore lists, `design-build/terrazzo.config.mjs`, the installed git pre-commit hook, `.github/workflows/`, `design-build/ci/`, `design-build/hooks/`, `design-build/install-hooks.mjs` or the check scripts; do not run `lint.mjs --baseline`; do not update or delete screenshots to make a comparison pass; do not add `justified` reasons to `avoid_defaults` that the user did not give; do not use `--no-verify`. Fix the design instead. If a check is wrong, say so and ask.
+  - `design-build/project.json` (the app's code folders, excludes and dev-server URL) is a project setting, not a check, so it is NOT protected the same way. Write it in KICKSTART Step 2 after the user approves the folders, and you may ADD a code folder or set `app_url` later. Removing a folder from `code_dirs`, or adding to `exclude`, so that app code stops being linted needs the user's explicit approval, like editing the checks.
 ```
 
 ### 0.6 Rules for editing the system
@@ -130,7 +133,7 @@ agent_rules:
 ## §16 Build workflow for coding harnesses
 **FEEL:** "Show me, don't tell me — and don't keep me waiting."
 
-This is the procedure an AI coding harness (Claude Code, Cursor, Codex or similar) follows to turn this empty template into a design system that is about 90% complete, then finish it with the user. Follow the phases in order. Each phase ends at a **gate**, and the harness must not start the next phase until that gate passes.
+This is the procedure an AI coding harness (Claude Code, Cursor, Codex or similar) follows to turn this empty template into a design system that is about 90% complete, then finish it with the user (Phases 1–5) and, for an app or website, apply it to the app's code (Phase 6). Follow the phases in order. Each phase ends at a **gate**, and the harness must not start the next phase until that gate passes.
 
 ### 16.0 Hard limits (read first, never break)
 ```yaml
@@ -146,6 +149,7 @@ limits:
 - Never describe a color, font, icon or motion only in words when you could show it. Text-only research output is a defect.
 
 ### 16.1 Working folder
+Supported layout: the template in `design-system/` at the project root, with no nested `.git` (a nested repo becomes a git submodule pointer and its files are not committed). Copy it with `npx degit sidgonna/design-system-template design-system`, or `git clone --depth 1 https://github.com/sidgonna/design-system-template design-system && rm -rf design-system/.git`. The scripts find their own files from where they live and the project root from git (or the nearest `package.json` above `design-system/`); pass `--root <dir>` to override.
 ```
 design-build/
   state.yaml            ← current phase, gate status, timers, sources used, decisions, check results
@@ -155,12 +159,17 @@ design-build/
   research/notes.md     ← findings, one line per source with URL
   studies/index.html    ← Phase 3 visual studies
   preview/index.html    ← Phase 5 rendered design system (reads preview/tokens.css, generated from tokens_file)
+  preview/tokens.css    ← generated CSS variables, light + dark; the app imports it in Phase 6
+  preview/tokens.mjs    ← generated ES module (tokens, cssVar(), value()) for app code that needs a value in JS
+  project.json          ← the app's code folders, excludes and dev-server URL (KICKSTART Step 2; see §0.5)
   screenshots/          ← render.mjs output: <page>-<width>-<theme>.png (gitignored)
   lint.mjs              ← static checks (Phase 4 lint block, §15); zero dependencies
-  render.mjs            ← screenshots, layout checks and axe (needs `npm install` in design-build/)
+  render.mjs            ← screenshots, layout checks and axe on a page or the app's dev-server URL (needs `npm --prefix design-system/design-build ci` and `npx --prefix design-system/design-build playwright install chromium`)
   lint.config.json      ← what the lint treats as token files, code and allowed exceptions (protected, §0.5)
   test/run.mjs          ← self-test for the lint, with good and bad fixtures
-  hooks/                ← optional editor hooks that run the lint after each edit
+  install-hooks.mjs     ← installs the git pre-commit hook: `node design-system/design-build/install-hooks.mjs`
+  hooks/                ← pre-commit.mjs (lint + render on commit) and optional editor hooks that run the lint after each edit
+  ci/                   ← an optional GitHub Actions workflow for the app
 ```
 `state.yaml` is updated at the end of every step, so a harness that restarts can resume where it left off. The full command list is in the README under **Quality checks**.
 
@@ -273,8 +282,8 @@ seeds:
     - { name: "Landing.gallery", url: "https://landing.gallery/", use_for: "whole landing pages, to see how sections flow together (via @neropursue, 22 Oct 2026)" }
   open_licensed_media:   # added 2026-10-28 from @ElliotPadfield's post (x.com/ElliotPadfield/status/2110764303087288788)
     - { name: "Openverse API", url: "https://api.openverse.org/v1/", use_for: "free, no-key search of openly licensed audio (SFX, ambience, music) and images: §M3 sound picks and moodboard or placeholder imagery. Read each result's license field: skip NC for commercial work and log CC BY credits in the sources notes" }
-  motion_video_for_agents:   # §8 motion principles and §M3 video made in code; added 2026-10-28 from @Mnilax's and @RoundtableSpace's posts
-    - { name: "LottieFiles motion-design-skill", url: "https://github.com/LottieFiles/motion-design-skill", use_for: "timing, easing, choreography and Disney's 12 principles written for agents; seed for §8 motion tokens and FEEL lines" }
+  motion_video_for_agents:   # §10 motion principles and §M3 video made in code; added 2026-10-28 from @Mnilax's and @RoundtableSpace's posts
+    - { name: "LottieFiles motion-design-skill", url: "https://github.com/LottieFiles/motion-design-skill", use_for: "timing, easing, choreography and Disney's 12 principles written for agents; seed for §10 motion tokens and FEEL lines" }
     - { name: "Prompt Motion", url: "https://prompt-motion.com/", use_for: "226+ motion videos made with Claude Opus, each beside its prompt or skill; reference wall for Phase 3 motion studies" }
     - { name: "GSAP Skills (official)", url: "https://github.com/greensock/gsap-skills", use_for: "teaches agents correct GSAP timelines, scroll and plugin use" }
     - { name: "HyperFrames (HeyGen)", url: "https://github.com/heygen-com/hyperframes", use_for: "agent writes HTML, renders MP4 (Apache-2.0); §M3 video studies without After Effects" }
@@ -294,7 +303,7 @@ seeds:
     - { name: "React Bits", url: "https://reactbits.dev/", use_for: "animated React components and text effects; pick one or two for motion studies, never a whole page of effects" }
   animation_tools_for_people:   # visual tools for the user or a designer, not for agents; added 2026-10-28 from @Abmankendrick (4 Oct)
     - { name: "Jitter", url: "https://jitter.video/", use_for: "quick UI and social motion in the browser; export video, GIF or Lottie" }
-    - { name: "ProtoPie", url: "https://www.protopie.io/", use_for: "high-fidelity interactive prototypes to test §8 motion on real gestures" }
+    - { name: "ProtoPie", url: "https://www.protopie.io/", use_for: "high-fidelity interactive prototypes to test §10 motion on real gestures" }
     - { name: "Lottielab", url: "https://www.lottielab.com/", use_for: "make and edit Lottie animations without After Effects" }
   design_md_collections:   # TEARDOWN ONLY (see seed_rules): libraries of DESIGN.md files; added 2026-10-28 from @Skirook (15 Oct)
     - { name: "Devault DESIGN.md", url: "https://devault.design/design-md", use_for: "collection of DESIGN.md files to compare with ours (blocks automated access)" }
@@ -313,7 +322,7 @@ seeds:
     - { name: "Base44", url: "https://base44.com/", use_for: "AI app builder; only for a clickable prototype, never for design decisions" }
   web_and_motion_references:   # added 2026-10-28 from @neropursue (22 Oct) and @MaybeFlorent (12 Oct)
     - { name: "Inspora", url: "https://inspora.design/", use_for: "curated archive of recent visual design work for the moodboard" }
-    - { name: "Motionin", url: "https://motionin.design/", use_for: "physics-based, cursor-responsive web sections; motion references for §8" }
+    - { name: "Motionin", url: "https://motionin.design/", use_for: "physics-based, cursor-responsive web sections; motion references for §10" }
     - { name: "Oversight Supply", url: "https://supply.madebyoversight.com/", use_for: "192+ curated website design references" }
     - { name: "Oversight Supply sections", url: "https://supply.madebyoversight.com/sections", use_for: "interactive website sections to study section-level motion" }
   data_visualization:
@@ -359,12 +368,12 @@ Ask in **one** message, grouped and numbered, with examples so answers are quick
 | Imagery | Which photo and illustration direction fits? | 2 | §7 |
 | Localization | Which cultural, script and festival notes apply? | 2 | §12 |
 
-**Gate 2a:** show the plan. Proceed if the user approves or doesn't object.
+**Gate 2a:** show the plan and stop for the user's answer, like every gate. Proceed when the user approves or edits it.
 
 **2b. Execute** within §16.0 limits, **starting each area from its §16.2 seeds**, then searching the open web only for the gaps. Log each source as one line in `research/notes.md` with its URL and the takeaway. The timer starts at the first fetch. When a cap is hit, stop and go to Phase 3.
 
 ### Phase 3 · Visual studies (show, don't tell)
-Build `studies/index.html`, a single self-contained page. **Screenshots are required:** run `node design-build/render.mjs design-build/studies/index.html` and show the user the PNGs it writes to `design-build/screenshots/` (390, 768 and 1280 wide, light and dark). A study the user has not seen as an image or live page doesn't count. Offer **2–3 directions** per aspect, labeled A, B and C:
+Build `studies/index.html`, a single self-contained page. **Screenshots are required:** run `node design-system/design-build/render.mjs design-system/design-build/studies/index.html` and show the user the PNGs it writes to `design-build/screenshots/` (390, 768 and 1280 wide, light and dark). A study the user has not seen as an image or live page doesn't count. Offer **2–3 directions** per aspect, labeled A, B and C:
 - **Competitor wall:** screenshots or logo and color strips of the competitors, with a one-line gap note.
 - **Color:** swatches in real proportion (for example 60/30/10), text-on-background pairings with live contrast ratios, a light and dark preview, and data colors.
 - **Typography:** specimens at the real scale (display down to caption), a headline plus paragraph in each language from §12, and the font license noted.
@@ -386,7 +395,7 @@ Order matters, because later sections reference earlier ones:
 
 Anything that truly needs the user stays as `{{TBD: reason}}`.
 
-**Automated self-check (MUST pass before the gate):** `node design-build/lint.mjs` implements this block. Each key maps to a lint rule id, shown in the comment.
+**Automated self-check (MUST pass before the gate):** `node design-system/design-build/lint.mjs` implements this block. Each key maps to a lint rule id, shown in the comment.
 ```yaml
 lint:
   completion: "filled placeholders / total placeholders in enabled files >= 0.90"   # completion (enforced from phase 4; run with --phase 4)
@@ -399,7 +408,7 @@ lint:
   unknown_components: 0             # unknown-component: every component is in design-build/inventory.json
   checklist_15: "all items pass or are listed as TBD"   # checklist-15: automatable items run; the rest are listed for review
 ```
-Also run `npm --prefix design-build run tokens:check` (Terrazzo DTCG validation) when the dev dependencies are installed.
+Also run `npm --prefix design-system/design-build run tokens:check` (Terrazzo DTCG validation) when the dev dependencies are installed.
 **Gate:** the lint passes. Report the completion percentage and the TBD list.
 
 ### Phase 5 · Render, review and finish
@@ -414,15 +423,28 @@ Every section shows **Accept**, **Reject** and **Edit** options. (In a terminal-
 - **Reject:** go back to Phase 3 for that aspect only, with 2 fresh directions.
 
 After {{3}} review rounds, check in with the user about whether to keep going or ship.
-**Render and accessibility gate (MUST pass before "done"):** `node design-build/render.mjs` captures every page at 390, 768 and 1280 wide in light and dark, checks for horizontal overflow, key elements off-screen, overlapping controls and tap targets under 24 CSS pixels, and runs axe (`wcag2a`, `wcag2aa`, `wcag21aa`, `wcag22aa`). Any layout failure or serious/critical axe violation fails it. Fix the design, never the check (§0.5).
+**Render and accessibility gate (MUST pass before Phase 5 is done):** `node design-system/design-build/render.mjs` captures every page at 390, 768 and 1280 wide in light and dark, checks for horizontal overflow, key elements off-screen, overlapping controls and tap targets under 24 CSS pixels, and runs axe (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`). It also fails on a page error, a script or stylesheet that does not load, or a blank page. Any layout failure or serious/critical axe violation fails it. Fix the design, never the check (§0.5).
 
-**Done when:** every enabled section is accepted; `state.yaml` → `checks` shows lint, render and a11y `pass` on the current commit; completion is 100% or the remaining TBDs are explicitly waived; the version is bumped to `1.0.0`; and the changelog is updated.
+**Done when (the design system):** every enabled section is accepted; `state.yaml` → `checks` shows lint, render and a11y `pass` on the current commit; completion is 100% or the remaining TBDs are explicitly waived; the version is bumped to `1.0.0`; and the changelog is updated. Set `phase: 5` and `gate_passed: true`.
+For a project with no app code (marketing, print, video only), the build is done here. For an app or website, ask the user whether to start Phase 6; nothing in the app is changed before they say yes.
+
+### Phase 6 · Apply to the app
+Starts only after the Phase 5 gate passes and the user says to apply the system to the app. Set `phase: 6`. Work in small commits; the pre-commit hook lints every one.
+1. **Import the tokens.** Import `design-system/design-build/preview/tokens.css` once at the app's entry (e.g. `import '../design-system/design-build/preview/tokens.css'` in `src/main.tsx`, or a `<link>` in the root layout). Where JS needs a value (charts, canvas), import from `design-system/design-build/preview/tokens.mjs` (`cssVar('color.data.1')`). Never copy values out of these files; they are regenerated from `tokens_file`. The lint's `tokens-import` rule fails from Phase 6 if no app file imports them.
+2. **Wire the theme.** `tokens.css` switches on `prefers-color-scheme` and on `[data-theme="light"|"dark"]` on `<html>`. If the app has a theme toggle, set `data-theme` on `document.documentElement` and persist the choice; otherwise do nothing and the system setting applies. Remove the app's old theme variables once nothing uses them.
+3. **Replace hard-coded values.** Work through `node design-system/design-build/lint.mjs` findings in the app's code, file by file; each one names the token to use (`var(--…)`). If the user approved a baseline, the counts may only go down: after each batch, ask the user to lower the ceiling (`lint.mjs --baseline`) so the gain is locked in, until it reaches 0 or the target the user agreed (record the target in `state.yaml` → `apply.target_errors`).
+4. **Map or build components.** For each `inventory.json` component, map the existing app component onto the system (tokens, states, variants) or build the planned one, and record its real `import_path` (e.g. `src/components/Button.tsx`) with `status: existing`. Reuse, then extend, then create (§0.5); creating needs the user's yes.
+5. **Check the real app.** Run the lint, then start the dev server and run `node design-system/design-build/render.mjs --url <dev-server URL>` for the main routes (repeat `--url` per route; set `app_url` in `project.json`). Render and axe run on the app, not the preview. Fix the app until both pass; never the checks (§0.5).
+6. **Record.** Commit, then run `lint.mjs --record` and `render.mjs --url <dev-server URL> --record`, so `state.yaml` → `checks` shows lint, render and a11y `pass` with the app commit.
+7. **User acceptance.** Show the user the app's screenshots (390, 768 and 1280 wide, light and dark) and the summary lines. Record their answer in `state.yaml` → `apply.accepted_by` and `decisions`.
+
+**Done when (the app):** the app imports `tokens.css` (and `tokens.mjs` where JS needs values); lint passes with 0 hard-coded value errors in app code, or at or below the agreed target with a baseline the user approved; render and axe pass on the dev-server URL for every listed route in light and dark; `state.yaml` → `checks` are `pass` on the current app commit; and the user accepted it. Then set `phase: done`.
 
 ---
 
 ## §15 Pre-delivery checklist
 Run before shipping any piece of work (humans and agents alike):
-Run `node design-build/lint.mjs` (static: placeholders, raw values, tokens, contrast, role slots, defaults, components) and `node design-build/render.mjs` (rendered: layout, tap targets, axe). Items marked *(auto)* are covered by those scripts; the rest need a person.
+Run `node design-system/design-build/lint.mjs` (static, on the design files and the app's code: placeholders, raw values, tokens, contrast, role slots, defaults, components) and `node design-system/design-build/render.mjs` (rendered: layout, tap targets, page errors, blank pages, axe; for an app add `--url <dev-server URL>`). Items marked *(auto)* are covered by those scripts; the rest need a person.
 - [ ] No unfilled `{{PLACEHOLDER}}` in sections this work touches *(auto: lint `completion`)*
 - [ ] No raw values outside §13; every value is a `{token}` *(auto: lint `raw-value`, `unresolved-token`)*
 - [ ] Matches §1 personality sliders and `is_not` list; no unjustified §2 `avoid_defaults` *(partly auto: lint `avoid-default`)*
@@ -435,3 +457,4 @@ Run `node design-build/lint.mjs` (static: placeholders, raw values, tokens, cont
 - [ ] Only enabled modules used; their rules narrow core and never contradict it
 - [ ] Every → §N reference points to the owning file in §0.3
 - [ ] Any new conflict logged in §14.4
+- [ ] App work (Phase 6): the app imports `tokens.css`; no hard-coded values in app code above the agreed target *(auto: lint `raw-value`, `tokens-import`)*; render and axe pass on the dev-server URL *(auto: `render.mjs --url`)*; the user accepted it

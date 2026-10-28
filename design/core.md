@@ -363,7 +363,7 @@ modes:   # only the values that change; anything not listed is the same in every
       focus: "{{#5cc2b1}}"
 ```
 - In `tokens_file`, dimensions are `{ "value": 4, "unit": "px" }`, durations `{ "value": 150, "unit": "ms" }`, colors `{ "colorSpace": "srgb", "components": [r, g, b], "hex": "#rrggbb" }` (add `"alpha"` for translucency), easing a 4-number array and font families an array. Group `$type` is inherited by its tokens.
-- Check it: `node design-build/lint.mjs` (sync, aliases, contrast) and, with the dev dependencies installed, `npm --prefix design-build run tokens:check` (Terrazzo DTCG validation).
+- Check it: `node design-build/lint.mjs` (sync, aliases, contrast) and, with the dev dependencies installed, `npm --prefix design-build run tokens:check` (Terrazzo DTCG validation). From an app root, prefix the paths with `design-system/` (design.md §0.5).
 
 ---
 

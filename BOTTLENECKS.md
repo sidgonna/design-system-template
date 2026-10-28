@@ -1,15 +1,15 @@
 # Where AI coding agents stumble on design-system work
 
-> **Status: mostly implemented (28 Oct 2026).** These are known ways AI coding agents (Claude Code, Cursor, Codex, v0, Lovable and similar) go wrong on design-system and UI work, based on reports from Oct 2025 to Oct 2026. Each one has fix options for this template. 21 of the 24 options are implemented in their owning files, 1 is partial (8b) and 2 are not yet (6c, 7c). The table below says where each one lives.
+> **Status: mostly implemented (28 Oct 2026).** These are known ways AI coding agents (Claude Code, Cursor, Codex, v0, Lovable and similar) go wrong on design-system and UI work, based on reports from Oct 2025 to Oct 2026. Each one has fix options for this template. 21 of the 24 options are implemented in their owning files, 1 is partial (8b) and 2 are not yet (6c, 7c). The table below says where each one lives. Since the 28 Oct 2026 readiness review, the checks also run from an app root with the template in `design-system/`, lint the app's own code, and §16 Phase 6 applies the system to the app; that path has been dry-run on a fresh Vite + React app, not yet on a large existing codebase.
 > The rules themselves live in [`design.md`](design.md), [`design/core.md`](design/core.md), the modules and [`KICKSTART.md`](KICKSTART.md). Where this file disagrees with them, **those files win**. The "Not yet" and "Partially" items are still proposals.
 
 **Implementation status**
 
 | # | Status | Where it lives now |
 |---|---|---|
-| 1a | Implemented | `design-build/lint.mjs` (+ `lib/`, `lint.config.json`). Every Phase 4 `lint` key in `design.md` maps to a rule id. It scans the design docs and `code_dirs`; point `--src` at project code. |
+| 1a | Implemented | `design-build/lint.mjs` (+ `lib/`, `lint.config.json`). Every Phase 4 `lint` key in `design.md` maps to a rule id. It scans the design docs, the design system's pages and the app's code (auto-detected `src/`, `app/`, `pages/`, `components/`, `styles/`, top-level and `public/` HTML, or `design-build/project.json` → `code_dirs`). Runs from the app root (`node design-system/design-build/lint.mjs`). |
 | 1b | Implemented | lint rule `role-slot`. It reads the §4 "Never use for" column and checks CSS properties and Tailwind classes. |
-| 1c | Implemented | `lint.mjs --baseline` → `design-build/lint-baseline.json`. A run fails only when a rule's count rises, and prints a lower-the-ceiling reminder when a count drops. |
+| 1c | Implemented | `lint.mjs --baseline` → `design-build/lint-baseline.json`. A run fails only when a rule's count rises, and prints a lower-the-ceiling reminder when a count drops. Offered in KICKSTART Step 2 for an existing app, only with the user's yes; §16 Phase 6 lowers it to 0 or an agreed target. |
 | 2a | Implemented | `design/core.md` §2 `avoid_defaults`: 9 entries, 7 `checked: lint`, 2 `checked: review`. |
 | 2b | Implemented | `design.md` Phase 3: each direction carries a `breaks: … · signature: … · differs from competitors by: …` line. |
 | 2c | Implemented | lint rule `avoid-default`: sole default font, purple-blue gradient, pill buttons, mono eyebrow, emoji icons, glassmorphism, colored or italic heading word. A `justified` entry turns the error into info. |
@@ -19,14 +19,14 @@
 | 4a | Implemented | `design-build/render.mjs`: axe `wcag2a/aa`, `wcag21a/aa`, `wcag22aa` in light and dark at every width. Serious or critical fails. Output in `a11y-report.json`. |
 | 4b | Implemented | lint rule `contrast`: every §4 pairing in light and dark, using its own OKLCH → sRGB math. |
 | 4c | Implemented | `design/core.md` §11 `structure` key, plus the rule → check table. A missing skip link or label fails through axe; landmarks and heading order are best-practice warnings. |
-| 5a | Implemented | `design-build/render.mjs`: `screenshots/<page>-<w>-<theme>.png`; checks overflow, off-viewport, overlap, tap targets (24px floor with the 2.5.8 spacing exception) and focus visibility. Output in `render-report.json`. |
+| 5a | Implemented | `design-build/render.mjs`: `screenshots/<page>-<w>-<theme>.png`; checks overflow, off-viewport, overlap, tap targets (24px floor with the 2.5.8 spacing exception) and focus visibility. Also fails on page errors, scripts or stylesheets that fail to load, and blank pages; `--url` renders the app's dev server (§16 Phase 6). Output in `render-report.json`. |
 | 5b | Implemented | `design.md` Phase 3 (screenshots required) and §15 render item. |
 | 5c | Implemented | `design/digital-product.md` §M1.3, plus `{viewport.*}` tokens, which `render.mjs` reads as its default widths. |
 | 6a | Implemented | `design.md` §0.5 (look it up in `inventory.json` before use). |
 | 6b | Implemented | lint rule `unknown-component`: `data-component`/`data-variant` in HTML, JSX imports and tags, §M1.1 rows. |
 | 6c | Not yet | No `tsc --noEmit` step. |
 | 7a | Implemented | `design-build/state.yaml` → `decisions`, `locked_sections`; the §0.5 re-read rule; Phase 3 and 5 record picks there. |
-| 7b | Implemented | §0.5 "after any edit, run lint", backed by `.githooks/pre-commit`, the CI workflow (`.github/workflows/design-checks.yml`) and the optional agent hooks in `design-build/hooks/`. |
+| 7b | Implemented | §0.5 "after any edit, run lint", backed by the git pre-commit hook (`design-build/install-hooks.mjs` → `hooks/pre-commit.mjs`; lints app code and design files, renders on visual changes, fails loudly if the scripts are missing), CI (the template's `.github/workflows/design-checks.yml`; `design-build/ci/app-design-checks.example.yml` for apps) and the optional agent hooks in `design-build/hooks/`. |
 | 7c | Not yet | No separate hard-rules card. §0.5 `agent_rules` is the nearest equivalent. |
 | 8a | Implemented | `design.md` §16.2 `seed_rules` (teardown only, never §13 values); TEARDOWN ONLY labels in the seeds and KICKSTART; lint rule `seed-cap`. |
 | 8b | Partially | Covered only by the 8a wording. There is no `research/competitors.json` value check in the lint yet. |
