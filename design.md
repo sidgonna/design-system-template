@@ -249,6 +249,11 @@ seeds:
     - { name: "Minimal Gallery", url: "https://minimal.gallery/", use_for: "curated high-craft sites for the competitor wall and moodboard" }
     - { name: "AppShot Gallery", url: "https://appshot.gallery/", use_for: "real mobile app screens, no login (an alternative to Mobbin)" }
     - { name: "Motion Primitives", url: "https://motion-primitives.com/", use_for: "ready animation and interaction components for Phase 3 motion studies" }
+  page_section_galleries:   # landing and web section patterns for §M1 and §M2; added 2026-10-28 from @amananimates' list (x.com/amananimates/status/2110584646794887669)
+    - { name: "Navbar Gallery", url: "https://www.navbar.gallery/", use_for: "navigation patterns, for the §M1 Navigation component" }
+    - { name: "Supahero", url: "https://supahero.io/", use_for: "hero sections, the first screen where §1 personality shows most" }
+    - { name: "CTA.gallery", url: "https://www.cta.gallery/", use_for: "call-to-action blocks, paired with the §6 label rules" }
+    - { name: "Footer.design", url: "https://www.footer.design/", use_for: "footer patterns: sitemap, legal, language switch (§12)" }
   data_visualization:
     - { name: "Carbon Data Visualization", url: "https://carbondesignsystem.com/data-visualization/getting-started/", use_for: "chart rules and color use" }
     - { name: "Datawrapper Academy", url: "https://academy.datawrapper.de/", use_for: "chart choice and labeling" }
