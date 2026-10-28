@@ -21,6 +21,8 @@ node design-system/design-build/install-hooks.mjs
 node design-system/design-build/lint.mjs
 ```
 
+Your app's own linter (ESLint, oxlint, Biome) should skip `design-system/design-build/`: it holds Node tooling and test fixtures that are bad on purpose. Keep `design-system/components/` linted. For example `"ignorePatterns": ["design-system/design-build/**"]` in `.oxlintrc.json`, or `globalIgnores(['dist', 'design-system/design-build'])` in `eslint.config.js`.
+
 On an existing app, step 4 usually fails with a list of hard-coded colors and sizes in your code. That is expected: KICKSTART Step 2 shows you the counts and asks whether to freeze them as a ceiling (`--baseline`), and §16 Phase 6 brings them down.
 
 5. Open your coding harness in the project and paste the prompt below. The harness reads the system, works out your project type from the files, asks the intake questions and walks you through visual directions before it builds anything. For an app it then applies the system to your code (§16 Phase 6).

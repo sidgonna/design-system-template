@@ -4,7 +4,7 @@
      design-build/inventory.json → screens:
        "<id>": { "name": "…", "route": "/path or file", "purpose": "…", "source": ["src/pages/….tsx"],
                  "components": [ { "component": "Button", "variants": ["primary"], "states": ["default", "loading"] } ] }
-     then run `node design-system/design-build/ui-inventory.mjs`: it writes the generated block below from the JSON.
+     then run `node design-system/design-build/ui-inventory.mjs`: it writes the generated block under the title from the JSON.
      The JSON is the source of truth for route, purpose and components; this file holds only the notes. -->
 
 ## Layout
