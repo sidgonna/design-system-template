@@ -254,6 +254,8 @@ seeds:
     - { name: "Supahero", url: "https://supahero.io/", use_for: "hero sections, the first screen where §1 personality shows most" }
     - { name: "CTA.gallery", url: "https://www.cta.gallery/", use_for: "call-to-action blocks, paired with the §6 label rules" }
     - { name: "Footer.design", url: "https://www.footer.design/", use_for: "footer patterns: sitemap, legal, language switch (§12)" }
+  open_licensed_media:   # added 2026-10-28 from @ElliotPadfield's post (x.com/ElliotPadfield/status/2110764303087288788)
+    - { name: "Openverse API", url: "https://api.openverse.org/v1/", use_for: "free, no-key search of openly licensed audio (SFX, ambience, music) and images: §M3 sound picks and moodboard or placeholder imagery. Read each result's license field: skip NC for commercial work and log CC BY credits in the sources notes" }
   data_visualization:
     - { name: "Carbon Data Visualization", url: "https://carbondesignsystem.com/data-visualization/getting-started/", use_for: "chart rules and color use" }
     - { name: "Datawrapper Academy", url: "https://academy.datawrapper.de/", use_for: "chart choice and labeling" }

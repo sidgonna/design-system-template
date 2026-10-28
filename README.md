@@ -55,6 +55,7 @@ Before any open web search in §16 Phase 2, read the seeds for each area. §16.2
 - Motion libraries: Motion https://motion.dev/ · GSAP https://gsap.com/ · Anime.js https://animejs.com/ · Lottie https://airbnb.io/lottie/ · AutoAnimate https://auto-animate.formkit.com/
 - Agent-ready references: DESIGN.md https://designmd.ai/ · 21st.dev (MCP) https://21st.dev/ · Refero Styles https://styles.refero.design/ · Minimal Gallery https://minimal.gallery/ · AppShot https://appshot.gallery/ · Motion Primitives https://motion-primitives.com/
 - Page sections (web and landing): Navbar Gallery https://www.navbar.gallery/ · Supahero https://supahero.io/ · CTA.gallery https://www.cta.gallery/ · Footer.design https://www.footer.design/
+- Open media (sound and images, check each license): Openverse API https://api.openverse.org/v1/
 - Data viz: Carbon Data Viz https://carbondesignsystem.com/data-visualization/getting-started/ · ColorBrewer https://colorbrewer2.org/
 - Competitors and inspiration: Brandfetch https://brandfetch.com/ · Brand New https://www.underconsideration.com/brandnew/ · Wayback Machine https://web.archive.org/
 - Ad and social formats: Meta Ads Guide https://www.facebook.com/business/ads-guide
