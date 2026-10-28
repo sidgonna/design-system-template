@@ -14,6 +14,10 @@
     D = { tokens: {}, pairings: [] };
   }
   var T = D.tokens;
+  var THEMES = D.themes || D.modes || ['light', 'dark'];   // design.md front matter themes, first = default
+  // Light or dark UA scheme for a theme name (same rule as tokens-css.mjs schemeOf): dark, brand-dark… are dark.
+  function schemeOf(theme) { return /(^|-)dark($|-)/.test(theme) ? 'dark' : 'light'; }
+  function perTheme(k) { var seen = []; THEMES.forEach(function (m) { var x = val(k, m); if (seen.indexOf(x) < 0) seen.push(x); }); return seen.join(' / '); }
   function $(id) { return document.getElementById(id); }
   function all(sel, scope) { return Array.prototype.slice.call((scope || document).querySelectorAll(sel)); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -42,6 +46,36 @@
   press(themeButtons, function (b) { return b.getAttribute('data-theme-choice') === current; });
   themeButtons.forEach(function (b) { b.addEventListener('click', function () { setTheme(b.getAttribute('data-theme-choice')); }); });
 
+  // ---------- sub-brand (core.md §13.5): data-brand re-seeds the palette; the roles follow through var() ----------
+  var brandButtons = all('[data-brand-choice]');
+  function setBrand(id) {
+    if (id) root.setAttribute('data-brand', id); else root.removeAttribute('data-brand');
+    store('preview-brand', id || null);
+    press(brandButtons, function (b) { return b.getAttribute('data-brand-choice') === (id || ''); });
+  }
+  press(brandButtons, function (b) { return b.getAttribute('data-brand-choice') === (root.getAttribute('data-brand') || ''); });
+  brandButtons.forEach(function (b) { b.addEventListener('click', function () { setBrand(b.getAttribute('data-brand-choice')); }); });
+
+  // ---------- reference ramps: one strip per palette.<name>, steps 50–950 ----------
+  var rp = $('ramps');
+  if (rp) {
+    var ramps = {};
+    keys('palette.').forEach(function (k) { var parts = k.split('.'); if (parts.length === 3) (ramps[parts[1]] = ramps[parts[1]] || []).push(k); });
+    Object.keys(ramps).forEach(function (name) {
+      var row = el('div', 'ramp'), strip = el('ol', 'ramp-steps');
+      row.appendChild(tok('strong', 'tok', 'palette.' + name));
+      strip.setAttribute('aria-label', 'palette.' + name + ' steps');
+      ramps[name].forEach(function (k) {
+        var li = el('li', 'ramp-step'), chip = el('span', 'ramp-chip');
+        chip.style.setProperty('background', v(k)); chip.setAttribute('aria-hidden', 'true');
+        li.title = k + ' · ' + val(k, 'base');
+        li.appendChild(chip); li.appendChild(el('span', 'ramp-label', k.split('.').pop()));
+        strip.appendChild(li);
+      });
+      row.appendChild(strip); rp.appendChild(row);
+    });
+  }
+
   // ---------- specimens ----------
   var sw = $('swatches');
   if (sw) keys('color.').filter(function (k) { return k.indexOf('color.data.') !== 0; }).forEach(function (k) {
@@ -56,7 +90,7 @@
       chip.style.setProperty('background', v(k));
     }
     meta.appendChild(tok('strong', 'tok', k));
-    meta.appendChild(el('span', null, val(k, 'light') + ' / ' + val(k, 'dark')));
+    meta.appendChild(el('span', null, perTheme(k)));
     card.appendChild(chip); card.appendChild(meta); sw.appendChild(card);
   });
 
@@ -86,7 +120,9 @@
     tb.appendChild(pairRow(p, function (tr) {
       tr.appendChild(el('td', null, p.fg)); tr.appendChild(el('td', null, p.bg));
       tr.appendChild(el('td', null, p.target + ':1 (' + p.size + ')'));
-      ['light', 'dark'].forEach(function (m) { tr.appendChild(ratioCell(p.ratio[m], p.target)); });
+      THEMES.forEach(function (m) { tr.appendChild(ratioCell(p.ratio[m], p.target)); });
+      // APCA Lc per theme: advisory only (core.md §4.5), so no pass/fail colouring
+      tr.appendChild(el('td', 'apca', THEMES.map(function (m) { var lc = p.apca && p.apca[m]; return lc == null ? 'n/a' : String(Math.round(Math.abs(lc))); }).join(' / ')));
       return tr;
     }));
   });
@@ -127,7 +163,7 @@
   if (tt) Object.keys(T).forEach(function (k) {
     var tr = el('tr');
     tr.appendChild(tok('td', 'tok', k)); tr.appendChild(tok('td', 'tok', T[k].var));
-    tr.appendChild(el('td', null, val(k, 'light'))); tr.appendChild(el('td', null, val(k, 'dark')));
+    THEMES.forEach(function (m) { tr.appendChild(el('td', null, val(k, m))); });
     tt.appendChild(tr);
   });
 
@@ -194,11 +230,11 @@
   // ---------- one mode's tokens on one element (side by side, studies) ----------
   function applyMode(node, vars, mode) {
     Object.keys(vars).forEach(function (name) { var c = vars[name]; node.style.setProperty(name, c[mode] != null ? c[mode] : c.base); });
-    node.style.setProperty('color-scheme', mode);
+    node.style.setProperty('color-scheme', schemeOf(mode));
   }
   function tokenVars() { var out = {}; Object.keys(T).forEach(function (k) { out[T[k].var] = T[k].css; }); return out; }
 
-  // ---------- light and dark side by side ----------
+  // ---------- every theme side by side ----------
   var duoBtn = $('toggle-duo'), duo = $('duo');
   function fillDuo() {
     var vars = tokenVars();

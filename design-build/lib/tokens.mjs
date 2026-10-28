@@ -1,5 +1,5 @@
 // DTCG (Design Tokens Community Group, format 2025.10) loader for tokens/tokens.json. Zero dependencies.
-// Modes (light/dark) follow the Terrazzo convention: "$extensions": { "mode": { "light": <value>, "dark": <value> } }.
+// Modes (themes: light, dark, high-contrast…) follow the Terrazzo convention: "$extensions": { "mode": { "light": <value>, "dark": <value> } }.
 import fs from 'node:fs';
 import { parseDtcgColor, toHex } from './color.mjs';
 
@@ -107,6 +107,23 @@ function deepResolve(tokens, v, mode, seen) {
   return v;
 }
 
+/** True when a token's value in `mode` differs from its base: its own mode value, or an alias chain that reaches one. */
+export function dependsOnMode(tokens, path, mode, seen = new Set()) {
+  if (seen.has(path)) return false;
+  seen.add(path);
+  const t = tokens.get(path);
+  if (!t) return false;
+  if (t.modes[mode] !== undefined) return true;
+  return collectAliases(t.value).some((ref) => dependsOnMode(tokens, ref, mode, seen));
+}
+
+/** The alias target when a token's value (in a mode, else $value) is exactly one "{path}" reference. */
+export function aliasOf(t, mode) {
+  const raw = mode && t.modes[mode] !== undefined ? t.modes[mode] : t.value;
+  const m = typeof raw === 'string' ? raw.match(ALIAS) : null;
+  return m ? m[1] : null;
+}
+
 const quoteFamily = (f) => (/^[a-z-]+$/i.test(f) && !/\s/.test(f) ? f : `"${f}"`);
 const dim = (v) => (v && typeof v === 'object' && 'unit' in v ? `${v.value}${v.value === 0 ? '' : v.unit}` : String(v));
 
@@ -123,9 +140,18 @@ export function toCss(type, v) {
       const list = Array.isArray(v) ? v : [v];
       return list.map((s) => `${s.inset ? 'inset ' : ''}${dim(s.offsetX)} ${dim(s.offsetY)} ${dim(s.blur)} ${dim(s.spread ?? 0)} ${toCss('color', s.color)}`).join(', ');
     }
+    case 'strokeStyle': return typeof v === 'string' ? v : 'solid';
+    case 'typography': {
+      // The CSS `font` shorthand (weight size/line-height family); letter-spacing and features are separate vars.
+      if (!v || typeof v !== 'object') return String(v);
+      return [v.fontWeight, `${toCss('dimension', v.fontSize)}${v.lineHeight !== undefined ? `/${v.lineHeight}` : ''}`, toCss('fontFamily', v.fontFamily)].filter((x) => x !== undefined && x !== '').join(' ');
+    }
     default: return typeof v === 'object' ? JSON.stringify(v) : String(v);
   }
 }
+
+/** The CSS sub-properties of a typography token (each becomes --type-<role>-<prop>). */
+export const TYPE_PROPS = { fontFamily: ['font-family', 'fontFamily'], fontSize: ['font-size', 'dimension'], fontWeight: ['font-weight', 'fontWeight'], lineHeight: ['line-height', 'number'], letterSpacing: ['letter-spacing', 'dimension'] };
 
 /** CSS custom property name for a token path: color.text.primary -> --color-text-primary */
 export const varName = (path) => `--${path.replace(/[._]/g, '-')}`;
@@ -137,7 +163,8 @@ export function flatten(loaded) {
     const entry = { type: t.type, line: t.line, css: {}, color: {}, px: null };
     for (const m of [undefined, ...loaded.modes]) {
       const key = m || 'base';
-      if (m && t.modes[m] === undefined) continue;
+      // a mode entry when the token, or anything its aliases reach, has a value for that mode
+      if (m && !dependsOnMode(loaded.tokens, t.path, m)) continue;
       const v = resolveValue(loaded.tokens, t.path, m);
       entry.css[key] = toCss(t.type, v);
       if (t.type === 'color') entry.color[key] = parseDtcgColor(v);

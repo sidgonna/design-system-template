@@ -1,20 +1,19 @@
 /* components/base.css — optional page defaults from the tokens. Import once in the app entry, after tokens.css.
  * Without it the browser default applies (Times New Roman on a white page, no dark mode), because components.css
- * styles only [data-component] elements. It sets the body and heading fonts, text and page colors, and the base
- * line height, so the app follows the tokens in light and dark. Skip it if your app already has its own base styles.
+ * styles only [data-component] elements. It applies the body and h1–h3 type roles (fluid sizes; :lang(te|hi) overrides
+ * come from tokens.css), text and page colors, so the app follows the tokens in light and dark. Skip it if your app already has its own base styles.
  * The font stacks fall back to system fonts until you self-host the files (assets/fonts/README.md). */
 body {
   margin: 0;
-  font-family: var(--font-family-body);
-  font-size: var(--font-size-body);
-  line-height: var(--font-line-height-base);
+  font: var(--type-body);   /* the body type role (core.md §5): weight, fluid size, line height, family */
+  letter-spacing: var(--type-body-letter-spacing);
+  font-feature-settings: var(--type-body-font-feature-settings);
   color: var(--color-text-primary);
   background: var(--color-surface-default);
 }
-h1, h2, h3 { font-family: var(--font-family-heading); line-height: var(--font-line-height-tight); }
-h1 { font-size: var(--font-size-h1); }
-h2 { font-size: var(--font-size-h2); }
-h3 { font-size: var(--font-size-h3); }
+h1 { font: var(--type-h1); letter-spacing: var(--type-h1-letter-spacing); font-feature-settings: var(--type-h1-font-feature-settings); }
+h2 { font: var(--type-h2); letter-spacing: var(--type-h2-letter-spacing); font-feature-settings: var(--type-h2-font-feature-settings); }
+h3 { font: var(--type-h3); letter-spacing: var(--type-h3-letter-spacing); font-feature-settings: var(--type-h3-font-feature-settings); }
 code, kbd, pre, samp { font-family: var(--font-family-mono); }
 a { color: var(--color-brand-primary); }
 :focus-visible { outline: var(--border-width-thick) solid var(--color-focus); outline-offset: var(--border-width-thick); }

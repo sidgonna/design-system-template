@@ -16,10 +16,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadContext, pairingResults, gitHead, recordCheck, readJson } from './lib/context.mjs';
-import { inSection, yamlBlock, yamlBlockKeys, table, placeholders, unwrap } from './lib/markdown.mjs';
-import { parseColor, parseDtcgColor, toHex, deltaE, srgbToOklch, suggestPassingColor } from './lib/color.mjs';
-import { varName, toPx } from './lib/tokens.mjs';
+import { loadContext, pairingResults, gitHead, recordCheck, readJson, colorIn } from './lib/context.mjs';
+import { inSection, yamlBlock, yamlBlockKeys, table, unfilled, unwrap } from './lib/markdown.mjs';
+import { parseColor, parseDtcgColor, toHex, deltaE, srgbToOklch, suggestPassingColor, contrastRatio, mixOklab, simulateCvd, CVD_TYPES } from './lib/color.mjs';
+import { varName, toPx, TYPE_PROPS } from './lib/tokens.mjs';
+import { TYPE_EXT } from './lib/tokens-css.mjs';
+import { RAMP_EXT, checkRamps } from './lib/ramps.mjs';
 import { generate } from './tokens-css.mjs';
 import { staleFiles as boardStale } from './board.mjs';
 import { STATES, DOC_STATES, COMPONENT_HEADINGS, UI_DIR, expected as uiExpected, blockOf, screensOf, resolveSource } from './lib/ui-inventory.mjs';
@@ -30,7 +32,11 @@ const RULES = {
   'raw-value': 'raw hex/rgb/hsl/oklch/px/ms value outside the token-owning sections and files',
   'unresolved-token': '{token.path} or var(--token) that does not exist in tokens_file',
   'role-slot': 'token used in a slot its §4 "Never use for" column forbids',
-  contrast: '§4 pairing below the §11 contrast minimum in a mode',
+  contrast: '§4 pairing below the §11 contrast minimum in a theme or sub-brand',
+  'on-pair': 'a fill without its on-colour, or an on-colour / component fg below 4.5:1 on its fill at rest or under a §4.3 state layer',
+  'token-tier': 'a component token or component code that skips the system tier and names palette.* directly (core.md §13.1)',
+  themes: 'design.md themes: and the token modes disagree, or a sub-brand file holds more than palette ramps',
+  cvd: 'two color.data.* series too close to tell apart under protanopia, deuteranopia or tritanopia (core.md §4.5)',
   'avoid-default': 'unjustified AI-look default from core.md §2 avoid_defaults',
   'unknown-component': 'component, variant or prop not in design-build/inventory.json',
   'ui-inventory': 'a screen or component without a complete ui-inventory doc, a doc out of sync with inventory.json, or a doc token that does not exist',
@@ -124,7 +130,7 @@ function slotAt(line, index) {
   return Object.entries(SLOT_OF).find(([, re]) => re.test(prop))?.[0] || null;
 }
 // Token groups that never fit a slot: text colors are not backgrounds, surfaces are not text.
-const WRONG_GROUP = { background: ['text'], foreground: ['surface'], border: [] };
+const WRONG_GROUP = { background: ['text', 'on', 'on-container'], foreground: ['surface', 'container'], border: [] };
 const fitsSlot = (p, slot) => !slot || !WRONG_GROUP[slot].includes(p.split('.')[1]);
 
 function suggestFor(ctx, idx, hit, inCode, slot = null) {
@@ -258,7 +264,9 @@ export function lint(opts = {}) {
     }
   }
   const themed = [...ctx.loaded.tokens.values()].filter((t) => t.type === 'color' && Object.keys(t.modes).length);
-  for (const t of themed) for (const m of ctx.loaded.modes) if (t.modes[m] === undefined)
+  // every mode used in the file, and with more than one theme every design.md theme, on every themed colour
+  const needModes = [...new Set([...ctx.loaded.modes, ...(ctx.themes.length > 1 ? ctx.themes : [])])];
+  for (const t of themed) for (const m of needModes) if (t.modes[m] === undefined)
     add('tokens-format', 'error', ctx.tokensRel, t.line, `${t.path} has $extensions.mode values but no "${m}"`, `add "${m}": { "colorSpace": "srgb", … } under $extensions.mode, and the same value to §13 modes.${m}`);
 
   // ---- design files: raw values, references, placeholders ----
@@ -267,8 +275,8 @@ export function lint(opts = {}) {
   for (const f of ctx.files.values()) {
     let count = 0;
     for (const L of f.analysis.lines) {
-      if (L.frontMatter) { count += placeholders(L.text).length; continue; }
-      count += placeholders(L.text).length;
+      if (L.frontMatter) { count += unfilled(L.text); continue; }
+      count += unfilled(L.text);
       // raw values
       if (!isTokenSection(f.rel, L.section)) {
         for (const h of findRaw(L.text)) {
@@ -314,38 +322,74 @@ export function lint(opts = {}) {
   }
 
   // ---- tokens-sync: core.md §13 yaml vs tokens_file ----
+  const defTheme = ctx.themes[0];
   if (ctx.core) {
-    const blk = yamlBlockKeys(ctx.core.analysis, 'tokens', ['tokens', 'modes']);
+    const blk = yamlBlockKeys(ctx.core.analysis, 'tokens', ['tokens', 'modes', 'ramps']);
     if (!blk?.tokens) add('tokens-sync', 'error', 'design/core.md', 1, '§13 has no ```yaml block starting with "tokens:"', 'restore the §13 tokens block');
     else {
       const seen = new Set();
+      const filled = (yv) => { const v = String(unwrap(yv) ?? ''); return /^TBD|…|\.\.\./.test(v) || v === '' ? null : v; };
       const compare = (yv, mode, p, line) => {
         const t = ctx.loaded.tokens.get(p);
         seen.add(p);
         if (!t) { add('tokens-sync', 'error', 'design/core.md', line, `§13 defines ${p}, but ${ctx.tokensRel} has no such token`, `add "${p.split('.').pop()}" under ${p.split('.').slice(0, -1).join('.')} in ${ctx.tokensRel}, or remove it from §13`); return; }
-        const v = String(unwrap(yv) ?? '');
-        if (/^TBD|…|\.\.\./.test(v) || v === '') return; // not filled yet
+        const v = filled(yv);
+        if (v === null) return; // not filled yet
         const e = ctx.flat.get(p);
-        const raw = mode ? t.modes[mode] : (t.modes.light ?? t.value);
-        if (typeof raw === 'string' && /^\{/.test(raw)) { if (v !== raw) add('tokens-sync', 'error', 'design/core.md', line, `${p}: §13 says "${v}", ${ctx.tokensRel} aliases "${raw}"`, 'make them the same alias'); return; }
-        const css = mode ? e.css[mode] : (e.css.light ?? e.css.base);
+        const raw = mode ? t.modes[mode] : (t.modes[defTheme] ?? t.value);
+        if (typeof raw === 'string' && /^\{/.test(raw)) { if (v !== raw) add('tokens-sync', 'error', 'design/core.md', line, `${p}${mode ? ` (${mode})` : ''}: §13 says "${v}", ${ctx.tokensRel} aliases "${raw}"`, 'make them the same alias'); return; }
+        const css = mode ? e.css[mode] : (e.css[defTheme] ?? e.css.base);
         if (!sameValue(e.type, v, css)) add('tokens-sync', 'error', 'design/core.md', line, `${p}${mode ? ` (${mode})` : ''}: §13 says "${v}", ${ctx.tokensRel} has "${css}"`, `change one so both say the same value (§13 is the source; then run node design-build/tokens-css.mjs)`, { value: v });
       };
+      // a typography role: its five DTCG fields are aliases; features / fluid / scripts live in $extensions["org.design-system.type"]
+      const typeScripts = blk.tokens.value?.type?.scripts;
+      const compareType = (node, p, line) => {
+        const t = ctx.loaded.tokens.get(p);
+        seen.add(p);
+        if (!t) { add('tokens-sync', 'error', 'design/core.md', line, `§13 defines ${p}, but ${ctx.tokensRel} has no such token`, `add a typography token "${p.split('.').pop()}" under type in ${ctx.tokensRel}, or remove it from §13`); return; }
+        const ext = t.extensions[TYPE_EXT] || {};
+        const want = { ...Object.fromEntries(Object.keys(TYPE_PROPS).map((k) => [k, t.value?.[k]])), features: ext.fontFeatures, fluid: ext.fluid?.min, scripts: ext.scripts };
+        const got = { ...node, scripts: node.scripts ?? typeScripts };
+        for (const k of Object.keys(want)) {
+          const a = k === 'features' ? JSON.stringify(got[k] ?? []) : JSON.stringify(got[k] ?? null), b = k === 'features' ? JSON.stringify(want[k] ?? []) : JSON.stringify(want[k] ?? null);
+          if (filled(got[k]) === null && got[k] !== undefined && typeof got[k] !== 'object') continue;
+          if (a !== b) add('tokens-sync', 'error', 'design/core.md', line, `${p}.${k}: §13 says ${a}, ${ctx.tokensRel} has ${b}`, k in TYPE_PROPS ? 'make them the same alias' : `make §13 and $extensions["${TYPE_EXT}"] agree`);
+        }
+      };
       const walk = (node, pre, mode, lines, lp) => {
+        if (pre === 'type.scripts') return;
+        if (/^type\.[^.]+$/.test(pre) && node && typeof node === 'object' && !Array.isArray(node)) { compareType(node, pre, lines.get(lp)); return; }
         if (node && typeof node === 'object' && !Array.isArray(node)) { for (const [k, v] of Object.entries(node)) walk(v, pre ? `${pre}.${k}` : k, mode, lines, lp ? `${lp}.${k}` : k); return; }
         compare(node, mode, pre, lines.get(lp));
       };
       walk(blk.tokens.value, '', null, blk.tokens.lines, 'tokens');
-      for (const t of ctx.loaded.tokens.values()) if (!seen.has(t.path)) add('tokens-sync', 'error', ctx.tokensRel, t.line, `${t.path} is in ${ctx.tokensRel} but not in core.md §13`, `add it to the §13 tokens block, or delete it from ${ctx.tokensRel}`);
-      const dark = blk.modes?.value || {};
-      for (const [m, tree] of Object.entries(dark)) {
+      // ramps: §13 ramps: <name>: seed ↔ palette.<name> in tokens_file, and every step = what the seed makes (design-build/ramps.mjs)
+      const seeds = blk.ramps?.value || {};
+      const rampLine = (k) => blk.ramps?.lines.get(`ramps.${k}`) ?? blk.ramps?.lines.get('ramps');
+      for (const [name, sv] of Object.entries(seeds)) {
+        const seed = filled(sv);
+        const grp = ctx.loaded.json?.palette?.[name];
+        if (!grp || typeof grp !== 'object') { add('tokens-sync', 'error', 'design/core.md', rampLine(name), `§13 ramps.${name} has no palette.${name} group in ${ctx.tokensRel}`, 'run: node design-build/ramps.mjs'); continue; }
+        const stored = grp.$extensions?.[RAMP_EXT]?.seed;
+        if (seed && stored && seed.toLowerCase() !== String(stored).toLowerCase()) add('tokens-sync', 'error', 'design/core.md', rampLine(name), `ramps.${name}: §13 seed "${seed}", palette.${name} was made from "${stored}"`, 'run: node design-build/ramps.mjs (it rewrites the ramp from the §13 seed)', { value: seed });
+      }
+      const rampProblems = checkRamps(ctx.loaded.json, ctx.tokensRel);
+      for (const r of [...rampProblems, ...ctx.brands.flatMap((b) => checkRamps(b.own, b.rel))]) add('tokens-sync', 'error', r.file, r.path ? (r.file === ctx.tokensRel ? (ctx.loaded.tokens.get(r.path)?.line ?? 1) : 1) : 1, r.message, 'run: node design-build/ramps.mjs (never hand-edit a ramp step)');
+      for (const t of ctx.loaded.tokens.values()) {
+        if (seen.has(t.path)) continue;
+        if (t.segs[0] === 'palette' && t.segs.length === 3 && seeds[t.segs[1]] !== undefined) continue; // generated ramp step, checked above
+        if (t.segs[0] === 'palette' && t.segs.length === 3) { add('tokens-sync', 'error', ctx.tokensRel, t.line, `${t.path} is a ramp step but §13 ramps: has no "${t.segs[1]}" seed`, `add ${t.segs[1]}: "<seed hex>" under §13 ramps:, or delete palette.${t.segs[1]}`); seen.add(`palette.${t.segs[1]}.*`); continue; }
+        add('tokens-sync', 'error', ctx.tokensRel, t.line, `${t.path} is in ${ctx.tokensRel} but not in core.md §13`, `add it to the §13 tokens block, or delete it from ${ctx.tokensRel}`);
+      }
+      const modesBlk = blk.modes?.value || {};
+      for (const [m, tree] of Object.entries(modesBlk)) {
         const seenM = new Set();
         const w2 = (node, pre, lp) => {
           if (node && typeof node === 'object' && !Array.isArray(node)) { for (const [k, v] of Object.entries(node)) w2(v, pre ? `${pre}.${k}` : k, `${lp}.${k}`); return; }
           seenM.add(pre); compare(node, m, pre, blk.modes.lines.get(lp));
         };
         w2(tree, '', `modes.${m}`);
-        for (const t of themed) if (t.modes[m] !== undefined && !seenM.has(t.path) && JSON.stringify(t.modes[m]) !== JSON.stringify(t.modes.light ?? t.value))
+        for (const t of themed) if (t.modes[m] !== undefined && !seenM.has(t.path) && JSON.stringify(t.modes[m]) !== JSON.stringify(t.modes[defTheme] ?? t.value))
           add('tokens-sync', 'error', ctx.tokensRel, t.line, `${t.path} has a different ${m} value in ${ctx.tokensRel} but §13 modes.${m} doesn't list it`, `add ${t.path.split('.').pop()}: "${ctx.flat.get(t.path).css[m]}" under §13 modes.${m}`);
       }
     }
@@ -381,6 +425,97 @@ export function lint(opts = {}) {
     }
   }
 
+  const themeNames = ctx.loaded.modes.length ? ctx.loaded.modes : ['base'];
+  const where_ = (b, m) => `${b ? `sub-brand "${b}", ` : ''}${m === 'base' ? 'the only theme' : `${m} theme`}`;
+  for (const p of pr) for (const [b, ms] of Object.entries(p.brands)) for (const [m, r] of Object.entries(ms)) {
+    if (!r || r.pass) continue;
+    add('contrast', 'error', 'design/core.md', p.line, `{${p.fg}} on {${p.bg}} is ${r.ratio.toFixed(2)}:1 in ${where_(b, m)}; ${p.size} needs ${p.target}:1 (WCAG 1.4.3 / 1.4.11)`, `change the seed in tokens/brands/${b}.json (then node design-build/ramps.mjs), or point the role at another ramp step in §13`, { value: `${r.ratio.toFixed(2)}:1`, mode: m, brand: b });
+  }
+  // APCA (advisory, core.md §4.5): one info line listing the pairings under the suggested Lc; never fails
+  const LC_ADVICE = { normal: 75, large: 60, ui: 45 };
+  const lowLc = pr.flatMap((p) => Object.entries(p.modes).filter(([, r]) => r && Math.abs(r.lc) < (LC_ADVICE[p.size] ?? 75)).map(([m, r]) => ({ p, m, lc: Math.abs(r.lc) })));
+  if (lowLc.length) {
+    const first = lowLc.sort((a, b) => a.lc - b.lc)[0];
+    add('contrast', 'info', 'design/core.md', first.p.line, `APCA advisory: ${lowLc.length} pairing×theme results are under the suggested Lc (${Object.entries(LC_ADVICE).map(([k, v]) => `${k} ${v}`).join(', ')}); lowest {${first.p.fg}} on {${first.p.bg}} (${first.m}) Lc ${first.lc.toFixed(0)}. WCAG 2 passes, so nothing fails`, 'optional: see the Lc column of the board pairing table; move a role a ramp step further from its background (core.md §4.5)');
+  }
+
+  // ---- on-pair: every fill has its on-colour, and each pair holds 4.5:1 at rest and under the state layers (core.md §4.1, §4.3) ----
+  const tline = (p) => ctx.loaded.tokens.get(p)?.line ?? 1;
+  const FILLS = (name) => [`color.brand.${name}`, `color.${name}`, `color.semantic.${name}`];
+  const onPairs = [];
+  for (const f of [...ctx.flat.keys()].filter((k) => /^color\.(brand\.[^.]+|accent|semantic\.[^.]+)$/.test(k))) {
+    const name = f.split('.').pop();
+    if (!ctx.flat.has(`color.on.${name}`)) add('on-pair', 'error', ctx.tokensRel, tline(f), `${f} is a fill but there is no color.on.${name} for the text and icons on it`, `add color.on.${name} (an alias of the ramp step that reaches 4.5:1 on it, e.g. {palette.neutral.50}) to §13 and ${ctx.tokensRel}`);
+  }
+  for (const k of ctx.flat.keys()) {
+    let m;
+    if ((m = k.match(/^color\.on\.([^.]+)$/))) {
+      const fill = FILLS(m[1]).find((x) => ctx.flat.has(x));
+      if (!fill) add('on-pair', 'error', ctx.tokensRel, tline(k), `${k} has no fill to sit on (none of ${FILLS(m[1]).join(', ')})`, `rename it to match a fill, or add the fill`);
+      else onPairs.push([k, fill, ['hover', 'pressed']]);
+    }
+    if ((m = k.match(/^color\.container\.([^.]+)$/))) {
+      if (!ctx.flat.has(`color.on-container.${m[1]}`)) add('on-pair', 'error', ctx.tokensRel, tline(k), `${k} has no color.on-container.${m[1]}`, `add color.on-container.${m[1]} to §13 and ${ctx.tokensRel}`);
+      else onPairs.push([`color.on-container.${m[1]}`, k, ['hover', 'pressed', 'selected']]);
+    }
+    if ((m = k.match(/^color\.on-container\.([^.]+)$/)) && !ctx.flat.has(`color.container.${m[1]}`)) add('on-pair', 'error', ctx.tokensRel, tline(k), `${k} has no color.container.${m[1]} to sit on`, `add the container or remove ${k}`);
+    if ((m = k.match(/^(component\..+)\.fg$/)) && ctx.flat.has(`${m[1]}.bg`)) onPairs.push([k, `${m[1]}.bg`, ['hover', 'pressed']]);
+  }
+  const stateOf = (st) => { const e = ctx.flat.get(`state.${st}`); const v = e ? Number(e.css.base ?? Object.values(e.css)[0]) : NaN; return Number.isFinite(v) ? v : null; };
+  const target = C.contrast.normal;
+  const flats = [[null, ctx.flat], ...ctx.brands.filter((b) => b.flat).map((b) => [b.id, b.flat])];
+  for (const [fg, bg, states] of onPairs) for (const [b, flat] of flats) for (const m of themeNames) {
+    const fc = colorIn(flat, fg, m), bc = colorIn(flat, bg, m);
+    if (!fc || !bc) continue;
+    const layers = [['at rest', bc], ...states.filter((st) => stateOf(st) !== null).map((st) => [`with the ${st} layer (state.${st} ${stateOf(st)})`, mixOklab(bc, fc, stateOf(st))])];
+    for (const [label, bgc] of layers) {
+      const r = contrastRatio(fc, bgc);
+      if (r >= target) continue;
+      add('on-pair', 'error', ctx.tokensRel, tline(fg), `{${fg}} on {${bg}} ${label} is ${r.toFixed(2)}:1 in ${where_(b, m)}; text on a fill needs ${target}:1`, b ? `change the seed in tokens/brands/${b}.json, or the ramp steps the roles use` : `point {${bg}} or {${fg}} at a ramp step further apart (§13), so the pair keeps ${target}:1 under every state layer`, { value: `${r.toFixed(2)}:1`, mode: m, brand: b });
+      break;
+    }
+  }
+
+  // ---- token-tier: component tokens alias system roles, never the reference ramps (core.md §13.1) ----
+  for (const t of ctx.loaded.tokens.values()) {
+    if (t.segs[0] !== 'component') continue;
+    for (const v of [t.value, ...Object.values(t.modes)]) if (typeof v === 'string' && /\{palette\./.test(v)) {
+      add('token-tier', 'error', ctx.tokensRel, t.line, `${t.path} aliases ${v}: a component token must alias a system role, not a ramp step`, `alias the role that ramp step is for, e.g. "{color.brand.primary}" (add a role in §4 if none fits)`, { value: v }); break;
+    }
+  }
+  for (const t of ctx.loaded.tokens.values()) if (t.segs[0] === 'color') for (const v of [t.value, ...Object.values(t.modes)]) if (typeof v === 'string' && /\{component\./.test(v))
+    add('token-tier', 'error', ctx.tokensRel, t.line, `${t.path} aliases ${v}: a role cannot point down at a component token`, 'alias a {palette.*} step instead'), 0;
+
+  // ---- themes: design.md themes: ↔ token modes; sub-brand files hold only palette ramps ----
+  if (ctx.index) {
+    const fmThemes = Array.isArray(ctx.index.fm.themes) ? ctx.index.fm.themes.map(String) : null;
+    const fmLine = ctx.index.analysis.lines.find((L) => L.frontMatter && /^themes:/.test(L.text))?.n ?? 1;
+    const modes = ctx.loaded.modes;
+    if (!fmThemes) add('themes', 'error', ctx.config.index, fmLine, 'front matter has no themes: list', `add themes: [${modes.length ? modes.join(', ') : 'light'}] (core.md §4.4)`);
+    else if (fmThemes.length === 1 && modes.length) add('themes', 'error', ctx.config.index, fmLine, `themes: [${fmThemes[0]}] is one theme, but ${ctx.tokensRel} has modes ${modes.join(', ')}`, `list them all in themes:, or drop $extensions.mode and §13 modes: (a one-theme system has neither)`);
+    else if (fmThemes.length > 1) {
+      const miss = fmThemes.filter((t) => !modes.includes(t)), extra = modes.filter((t) => !fmThemes.includes(t));
+      if (miss.length || extra.length) add('themes', 'error', ctx.config.index, fmLine, `themes: [${fmThemes.join(', ')}] but ${ctx.tokensRel} modes are [${modes.join(', ')}]${miss.length ? `; missing in tokens: ${miss.join(', ')}` : ''}${extra.length ? `; not in themes: ${extra.join(', ')}` : ''}`, 'make them the same list: add the theme to every themed token\'s $extensions.mode and to §13 modes:, or remove it from themes:');
+    }
+    for (const b of ctx.brands) {
+      if (!b.own) { add('themes', 'error', b.rel, 1, `sub-brand "${b.id}" is listed in design.md brands: but ${b.rel} is missing or not JSON`, `create ${b.rel} with palette.<ramp> groups (core.md §13.5), then run node design-build/ramps.mjs`); continue; }
+      for (const k of Object.keys(b.own)) if (!k.startsWith('$') && k !== 'palette') add('themes', 'error', b.rel, 1, `${b.rel} sets "${k}": a sub-brand file may only hold palette ramps`, 'move it to the shared tokens_file, or into a palette.<ramp> group (core.md §13.5)');
+    }
+  }
+
+  // ---- cvd: the data series stay distinct under colour-vision deficiency (core.md §4.5) ----
+  const dataKeys = [...ctx.flat.keys()].filter((k) => /^color\.data\.[^.]+$/.test(k));
+  if (C.cvd && dataKeys.length > 1) for (const m of themeNames) {
+    const cs = dataKeys.map((k) => colorIn(ctx.flat, k, m));
+    if (cs.some((c) => !c)) continue;
+    for (const type of CVD_TYPES) {
+      const sim = cs.map((c) => simulateCvd(c, type));
+      let worst = null;
+      for (let i = 0; i < sim.length; i++) for (let j = i + 1; j < sim.length; j++) { const d = deltaE(sim[i], sim[j]); if (!worst || d < worst.d) worst = { d, i, j }; }
+      if (worst && worst.d < C.cvd.min_delta_e) add('cvd', 'error', ctx.tokensRel, tline(dataKeys[worst.j]), `${dataKeys[worst.i]} and ${dataKeys[worst.j]} are ΔE ${worst.d.toFixed(1)} apart under ${type}${m === 'base' ? '' : ` (${m})`}; the series needs ≥ ${C.cvd.min_delta_e}`, `move one of them in lightness (OKLCH L) or hue, keeping 3:1 on the chart surface; lightness differences survive every CVD type`, { value: worst.d.toFixed(1), mode: m });
+    }
+  }
+
   // ---- seed-cap ----
   if (ctx.index) {
     const sb = yamlBlock(ctx.index.analysis, 'seeds');
@@ -411,6 +546,9 @@ export function lint(opts = {}) {
   const codeFiles = [...new Set([...ownFiles, ...appFiles, ...srcFiles])].filter((f) => !generated.has(f));
   const bpPx = new Map(idx.dims.filter((d) => /^(breakpoint|viewport)\./.test(d.path)).map((d) => [d.px, d.path]));
   const varNames = new Map([...ctx.flat.keys()].map((p) => [varName(p), p]));
+  // typography composites also emit one variable per field (tokens-css.mjs): --type-body-font-size, ...-font-feature-settings
+  for (const [p, e] of ctx.flat) if (e.type === 'typography') for (const prop of [...Object.values(TYPE_PROPS).map(([c]) => c), 'font-feature-settings']) varNames.set(`${varName(p)}-${prop}`, p);
+  const numTokens = (re) => [...ctx.flat].filter(([p, e]) => re.test(p) && e.type === 'number').map(([p, e]) => ({ path: p, v: Number(e.css.base ?? Object.values(e.css)[0]) })).filter((t) => Number.isFinite(t.v));
 
   // role slots from §4 table
   const neverSlots = new Map(); // token path -> Set(slot)
@@ -516,6 +654,10 @@ export function lint(opts = {}) {
         add('raw-value', 'error', f, n, `raw ${h.kind === 'color-fn' ? 'color' : h.kind} value "${h.value}"`, suggestFor(ctx, idx, h, true, slotAt(noComment, h.index)), { value: h.value });
       }
       for (const m of noComment.matchAll(/var\(\s*(--[\w-]+)/g)) {
+        if (/^--palette-/.test(m[1]) && varNames.has(m[1]) && !f.startsWith('design-build/preview/')) {
+          const roles = [...ctx.flat.keys()].filter((k) => /^color\./.test(k) && [ctx.loaded.tokens.get(k)?.value, ...Object.values(ctx.loaded.tokens.get(k)?.modes || {})].includes(`{${varNames.get(m[1])}}`)).slice(0, 3);
+          add('token-tier', 'error', f, n, `var(${m[1]}) is a reference ramp step; code uses system roles or component tokens (core.md §13.1)`, roles.length ? `use ${roles.map((r) => `var(${varName(r)})`).join(' or ')} (they alias this step), or a component token` : 'use the §4 role this colour is for (add one if none fits)', { value: `var(${m[1]})` });
+        }
         if (varNames.has(m[1]) || localVars.has(m[1])) continue;
         const dym = didYouMean(m[1], [...varNames.keys(), ...localVars]);
         add('unresolved-token', 'error', f, n, `var(${m[1]}) is not a token or a variable defined in this file`, dym.length ? `did you mean ${dym.map((d) => `var(${d})`).join(', ')}?` : `use a token variable from preview/tokens.css (generated from ${ctx.tokensRel})`, { value: `var(${m[1]})` });
@@ -549,6 +691,17 @@ export function lint(opts = {}) {
       if (slot) for (const m of d.value.matchAll(/var\(\s*(--[\w-]+)/g)) {
         const p = varNames.get(m[1]);
         if (p && neverSlots.get(p)?.has(slot)) add('role-slot', 'error', f, d.line, `${d.prop}: var(${m[1]}) uses {${p}} as a ${slot}; §4 "Never use for" says ${[...neverSlots.get(p)].join(', ')}`, `use ${roleMsg(p, slot).map((a) => `var(${varName(a)})`).join(' or ')} for ${d.prop}`, { value: `${d.prop}: var(${m[1]})` });
+      }
+      // raw opacity and z-index (core.md §13.2): 0, 1 (and -1 / auto for z-index) are not design values
+      const num = d.value.trim().replace(/\s*!important$/, '');
+      if (/^(opacity|fill-opacity|stroke-opacity)$/.test(d.prop) && /^(\d*\.\d+|\d+%)$/.test(num) && ![0, 1].includes(parseFloat(num) / (num.endsWith('%') ? 100 : 1))) {
+        const v = parseFloat(num) / (num.endsWith('%') ? 100 : 1);
+        const near = numTokens(/^(opacity|state)\./).sort((a, b) => Math.abs(a.v - v) - Math.abs(b.v - v)).slice(0, 3);
+        add('raw-value', 'error', f, d.line, `raw opacity "${d.prop}: ${num}"`, near.length ? `use ${near.map((t) => `var(${varName(t.path)}) (${t.v})`).join(', ')}${near[0].v === v ? '' : ', or add an opacity.* token to §13'}` : 'add an opacity.* token to §13 and tokens_file', { value: `${d.prop}: ${num}` });
+      }
+      if (d.prop === 'z-index' && /^-?\d+$/.test(num) && ![0, 1, -1].includes(+num)) {
+        const near = numTokens(/^z-index\./).sort((a, b) => Math.abs(a.v - +num) - Math.abs(b.v - +num)).slice(0, 3);
+        add('raw-value', 'error', f, d.line, `raw z-index "${num}"`, near.length ? `use a layer from the stacking order: ${near.map((t) => `var(${varName(t.path)}) (${t.v})`).join(', ')} (core.md §9)` : 'add z-index.* tokens to §13 and tokens_file', { value: `z-index: ${num}` });
       }
       const stops = /gradient\(/.test(d.value) ? gradientStops(d.value) : null;
       if (stops && isPurpleBlue(stops)) fp('purple-blue-gradient', f, d.line, `purple-to-blue gradient in ${d.prop}`, 'use a flat surface color from §4, or a gradient built only from brand tokens that §2 asks for', d.value.slice(0, 60));
@@ -749,7 +902,7 @@ export function format(res, baseline) {
     failing = errors.filter((e) => rose.includes(e.rule));
   }
   const ok = failing.length === 0;
-  return { ok, phase: res.phase, summary: { errors: errors.length, failing: failing.length, warnings: warnings.length, info: res.findings.length - errors.length - warnings.length, counts, baseline: baseline ? baseline.counts : null, rules_over_baseline: rose, rules_under_baseline: fell, completion: Number(res.completion.toFixed(4)), placeholders_remaining: res.remaining, code_files: res.fileCount, app_code_files: res.appFileCount, project_root: res.where.project, app_code: res.app.how, pairings_checked: res.ctx.pairings.length, modes: res.ctx.loaded.modes, tokens: res.ctx.loaded.tokens.size }, errors, warnings, info: res.findings.filter((f) => f.severity === 'info') };
+  return { ok, phase: res.phase, summary: { errors: errors.length, failing: failing.length, warnings: warnings.length, info: res.findings.length - errors.length - warnings.length, counts, baseline: baseline ? baseline.counts : null, rules_over_baseline: rose, rules_under_baseline: fell, completion: Number(res.completion.toFixed(4)), placeholders_remaining: res.remaining, code_files: res.fileCount, app_code_files: res.appFileCount, project_root: res.where.project, app_code: res.app.how, pairings_checked: res.ctx.pairings.length, modes: res.ctx.loaded.modes, themes: res.ctx.themes, tokens: res.ctx.loaded.tokens.size }, errors, warnings, info: res.findings.filter((f) => f.severity === 'info') };
 }
 
 function main() {
@@ -777,7 +930,7 @@ function main() {
   if (!opts.quiet) for (const i of out.info) console.log(`${i.file}:${i.line}  info ${i.rule}  ${i.message}`);
   const s = out.summary;
   console.log(`\napp code: ${res.app.how} · project root: ${res.where.project} (${res.where.how})`);
-  console.log(`design lint: ${out.ok ? 'PASS' : 'FAIL'} — ${s.errors} error(s)${baseline ? ` (${s.failing} over baseline in: ${s.rules_over_baseline.join(', ') || 'none'})` : ''}, ${s.warnings} warning(s), ${s.info} info · ${s.tokens} tokens, ${s.modes.join('/')} modes, ${s.pairings_checked} pairings, ${s.code_files} code files (${s.app_code_files} app) · completion ${(s.completion * 100).toFixed(1)}% (phase ${out.phase}${out.phase < 4 ? ', enforced from phase 4' : ''})`);
+  console.log(`design lint: ${out.ok ? 'PASS' : 'FAIL'} — ${s.errors} error(s)${baseline ? ` (${s.failing} over baseline in: ${s.rules_over_baseline.join(', ') || 'none'})` : ''}, ${s.warnings} warning(s), ${s.info} info · ${s.tokens} tokens, ${s.themes.length > 1 ? `${s.themes.join('/')} themes` : `one theme (${s.themes[0]})`}, ${s.pairings_checked} pairings, ${s.code_files} code files (${s.app_code_files} app) · completion ${(s.completion * 100).toFixed(1)}% (phase ${out.phase}${out.phase < 4 ? ', enforced from phase 4' : ''})`);
   if (baseline && s.rules_under_baseline.length) console.log(`baseline: counts dropped (${s.rules_under_baseline.join(', ')}). Ask the user to lower the ceiling with \`${fixHint(res.where, 'node design-build/lint.mjs --baseline')}\` so the gain is locked in.`);
   process.exit(out.ok ? 0 : 1);
 }

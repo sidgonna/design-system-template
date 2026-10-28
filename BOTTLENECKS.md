@@ -82,6 +82,8 @@ Agents type raw hex and px values even when a token already exists, and they inv
 
 **Pick: 1a.** Every other check in this file (1b, 1c, 2c, 6b, 8b) plugs into it, and right now the "MUST pass" lint is never run.
 
+**Status (28 Oct 2026, upgrade step 1):** 1a–1c are done. Added on top: three token tiers (`palette.*` OKLCH ramps from `design-build/ramps.mjs` → system roles → `component.*`), with lint rule `token-tier` failing a component token or component/app code that names `palette.*`, and `raw-value` now also flagging raw opacity and z-index (use the `opacity.*` and `z-index.*` tokens). Matching on role, not value, is now structural: a component token can only alias a role.
+
 ---
 
 ## 2. Generic "AI-looking" UI
@@ -177,6 +179,8 @@ Contrast is the most common failure. Missing skip links, landmarks, input labels
 | 4d | **Motion proof.** A script that checks animations really play and really stop under `prefers-reduced-motion` (about 1 in 3 AI-built frontends ignore it). | Phase 6 step 5, CI self-test | M: reduced motion is easy to claim and rarely tested. | M: Playwright. |
 
 **Pick: 4a.** The evidence shows that rules in prose don't work and checks on the rendered page do. It needs the render harness (5a), so build that first.
+
+**Status (28 Oct 2026, upgrade step 1):** 4a, 4b and 4d are done, and 4b now covers every theme in design.md `themes:` (dark-only and three-theme systems are self-tested) and every sub-brand. New: rule `on-pair` (every fill has its `on.*` colour, readable at rest and under the §4.3 hover, pressed and focus state layers), APCA Lc as advice next to the WCAG 2 gate, and rule `cvd` for `color.data.*` series under protanopia, deuteranopia and tritanopia.
 
 ---
 
@@ -332,4 +336,5 @@ Quick wins to add with step 2, since they're wording only: 6a (look-up-before-us
 | **D. Lint extensions** (needs C) | 1b role-slot, 4b both-theme contrast, 1c `--baseline` ceiling, then 2c fingerprints, 6b component existence, 8b competitor values | `design-build/lint.mjs`, `design-build/lint-baseline.json` (created on first run), `design-build/research/competitors.json` (8b) | Each check has a small fixture that fails as expected. A rising count fails `--baseline`, and a falling count prints the "lower baseline" reminder. |
 | **E. Render harness** (5a) | Playwright, 390/768/1280 × light/dark, overflow, off-screen, overlap and tap-target checks | `design-build/render.mjs` (new), a minimal `design-build/package.json` for the Playwright dependency, Phase 3 and 5 text in `design.md` | Running it on `studies/index.html` writes 6 PNGs. A page with a deliberately overflowing element exits 1. |
 | **F. Accessibility gate** (4a, needs E) | `@axe-core/playwright` in `render.mjs`, both themes | `design-build/render.mjs`, `design-build/a11y-report.json` (output), §15 line | A page with an unlabelled input or a low-contrast pairing fails. A clean page passes. |
+| **H. Upgrade step 1** (28 Oct 2026) | Valid front matter (`# TODO(intake)` defaults), token tiers and ramps, on-pairs and state layers, themes list, sub-brands, APCA advice, CVD check, composite type tokens, new token groups (opacity, z-index, blur, border, container, density) | `design.md`, `design/core.md` §4/§5/§9/§12/§13, `tokens/tokens.json`, `design-build/lint.mjs`, `ramps.mjs`, `board.mjs`, `tokens-css.mjs`, `terrazzo.config.mjs`, `test/run.mjs` | The front matter parses with js-yaml, the self-test passes including the dark-only and three-theme fixtures, and fresh Vite and Next apps render with 0 console errors in light and dark. |
 | **G. Wire it up** | Gates and checklist name the scripts; this file's implemented items move into their owning files and get removed here | `design.md` (Phase 3/4/5 gates, §15), README "How it works", this file | Running the kickstart on a fresh project runs lint and render at the right gates without extra prompting. Each implemented fix is marked "done" or removed here. |

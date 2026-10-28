@@ -9,9 +9,9 @@
    "empty": 14
   },
   "placeholders": {
-   "remaining": 245,
-   "initial": 245,
-   "counted_in_tiles": 245,
+   "remaining": 324,
+   "initial": 324,
+   "counted_in_tiles": 324,
    "completion": 0,
    "phase4_min": 0.9
   },
@@ -60,7 +60,7 @@
      "status": "empty",
      "module": "on",
      "counted_in_coverage": true,
-     "placeholders": 18,
+     "placeholders": 19,
      "to_fill": [
       {
        "line": 3,
@@ -103,27 +103,31 @@
        "hint": "tokens/tokens.json"
       },
       {
-       "line": 19,
-       "hint": "true|false"
-      },
-      {
-       "line": 20,
-       "hint": "true|false"
+       "line": 17,
+       "hint": "themes: the themes to ship, first = default: any of light, dark, high-contrast or a brand variant (core.md…"
       },
       {
        "line": 21,
-       "hint": "true|false"
+       "hint": "digital_product: true if the brief needs this part"
       },
       {
        "line": 22,
-       "hint": "true|false"
+       "hint": "marketing_content: true if the brief needs this part"
       },
       {
-       "line": 25,
-       "hint": "BRAND_NAME"
+       "line": 23,
+       "hint": "motion_video: true if the brief needs this part"
+      },
+      {
+       "line": 24,
+       "hint": "print_physical: true if the brief needs this part"
       },
       {
        "line": 27,
+       "hint": "BRAND_NAME"
+      },
+      {
+       "line": 29,
        "hint": "e.g. \"Calm confidence — like a friend who already sorted it out for you."
       },
       {
@@ -341,55 +345,55 @@
      "placeholders": 13,
      "to_fill": [
       {
-       "line": 167,
+       "line": 190,
        "hint": "e.g. \"Sounds like a smart friend, never like a bank."
       },
       {
-       "line": 169,
+       "line": 192,
        "hint": "3 traits matching §1 personality"
       },
       {
-       "line": 173,
+       "line": 196,
        "hint": "warm"
       },
       {
-       "line": 173,
+       "line": 196,
        "hint": "to fill"
       },
       {
-       "line": 174,
+       "line": 197,
        "hint": "calm, helpful"
       },
       {
-       "line": 174,
+       "line": 197,
        "hint": "to fill"
       },
       {
-       "line": 175,
+       "line": 198,
        "hint": "to fill"
       },
       {
-       "line": 176,
+       "line": 199,
        "hint": "to fill"
       },
       {
-       "line": 177,
+       "line": 200,
        "hint": "to fill"
       },
       {
-       "line": 177,
+       "line": 200,
        "hint": "to fill"
       },
       {
-       "line": 178,
+       "line": 201,
        "hint": "verb-first, ≤3 words"
       },
       {
-       "line": 178,
+       "line": 201,
        "hint": "sentence case"
       },
       {
-       "line": 179,
+       "line": 202,
        "hint": "₹ before number, DD Mon YYYY"
       }
      ],
@@ -412,43 +416,43 @@
      "placeholders": 10,
      "to_fill": [
       {
-       "line": 185,
+       "line": 208,
        "hint": "to fill"
       },
       {
-       "line": 189,
+       "line": 212,
        "hint": "natural light, real people, Indian contexts"
       },
       {
-       "line": 190,
+       "line": 213,
        "hint": "flat, icon.stroke stroke, brand palette only"
       },
       {
-       "line": 191,
+       "line": 214,
        "hint": "1:1"
       },
       {
-       "line": 191,
+       "line": 214,
        "hint": "4:5"
       },
       {
-       "line": 191,
+       "line": 214,
        "hint": "9:16"
       },
       {
-       "line": 191,
+       "line": 214,
        "hint": "16:9"
       },
       {
-       "line": 192,
+       "line": 215,
        "hint": "overlay color.surface.inverse at 40% for text"
       },
       {
-       "line": 193,
+       "line": 216,
        "hint": "allowed with review / not allowed"
       },
       {
-       "line": 196,
+       "line": 219,
        "hint": "stock clichés, fake smiles, off-palette filters"
       }
      ],
@@ -471,47 +475,47 @@
      "placeholders": 11,
      "to_fill": [
       {
-       "line": 202,
+       "line": 225,
        "hint": "e.g. \"Light, friendly, never shouting."
       },
       {
-       "line": 206,
+       "line": 229,
        "hint": "custom | Lucide | Phosphor | Material Symbols"
       },
       {
-       "line": 208,
+       "line": 231,
        "hint": "outline"
       },
       {
-       "line": 211,
+       "line": 234,
        "hint": "drawn on icon.size.lg with icon.padding padding"
       },
       {
-       "line": 212,
+       "line": 235,
        "hint": "rounded joins"
       },
       {
-       "line": 214,
+       "line": 237,
        "hint": "selected / active"
       },
       {
-       "line": 218,
+       "line": 241,
        "hint": "parcel-track"
       },
       {
-       "line": 220,
+       "line": 243,
        "hint": "Track an order"
       },
       {
-       "line": 221,
+       "line": 244,
        "hint": "nav"
       },
       {
-       "line": 221,
+       "line": 244,
        "hint": "order card"
       },
       {
-       "line": 222,
+       "line": 245,
        "hint": "shipping cost"
       }
      ],
@@ -537,31 +541,27 @@
      "status": "empty",
      "module": "on",
      "counted_in_coverage": true,
-     "placeholders": 6,
+     "placeholders": 5,
      "to_fill": [
       {
        "line": 95,
        "hint": "to fill"
       },
       {
-       "line": 101,
+       "line": 102,
        "hint": "to fill"
       },
       {
-       "line": 101,
+       "line": 102,
        "hint": "to fill"
       },
       {
-       "line": 103,
+       "line": 104,
        "hint": "max ~10% of any surface"
       },
       {
-       "line": 112,
+       "line": 117,
        "hint": "e.g. 60% surface, 30% brand, 10% accent"
-      },
-      {
-       "line": 142,
-       "hint": "supported / not supported"
       }
      ],
      "review": {
@@ -583,19 +583,19 @@
      "placeholders": 4,
      "to_fill": [
       {
-       "line": 147,
+       "line": 167,
        "hint": "to fill"
       },
       {
-       "line": 157,
+       "line": 179,
        "hint": "60–75 characters"
       },
       {
-       "line": 160,
+       "line": 183,
        "hint": "e.g. one display line per screen or poster"
       },
       {
-       "line": 161,
+       "line": 184,
        "hint": "2"
       }
      ],
@@ -615,38 +615,42 @@
      "status": "empty",
      "module": "on",
      "counted_in_coverage": true,
-     "placeholders": 8,
+     "placeholders": 9,
      "to_fill": [
       {
-       "line": 229,
+       "line": 252,
        "hint": "e.g. \"Room to breathe."
       },
       {
-       "line": 236,
+       "line": 259,
        "hint": "12 col, gutter {space.6"
       },
       {
-       "line": 237,
+       "line": 260,
        "hint": "6 col, margin {space.8"
       },
       {
-       "line": 238,
+       "line": 261,
        "hint": "12 col, safe area 5%"
       },
       {
-       "line": 239,
+       "line": 262,
        "hint": "→ §M4"
       },
       {
-       "line": 241,
+       "line": 264,
+       "hint": "default"
+      },
+      {
+       "line": 267,
        "hint": "One focal point per frame"
       },
       {
-       "line": 242,
+       "line": 268,
        "hint": "Align to grid; optical adjustments only for logos and icons"
       },
       {
-       "line": 243,
+       "line": 269,
        "hint": "Whitespace is a brand element, not leftover space"
       }
      ],
@@ -669,47 +673,47 @@
      "placeholders": 11,
      "to_fill": [
       {
-       "line": 249,
+       "line": 275,
        "hint": "e.g. \"Quick, sure, gentle landing."
       },
       {
-       "line": 253,
+       "line": 279,
        "hint": "snappy | smooth | playful | calm"
       },
       {
-       "line": 256,
+       "line": 282,
        "hint": "state changes"
       },
       {
-       "line": 256,
+       "line": 282,
        "hint": "entrances"
       },
       {
-       "line": 256,
+       "line": 282,
        "hint": "feedback"
       },
       {
-       "line": 257,
+       "line": 283,
        "hint": "body text"
       },
       {
-       "line": 257,
+       "line": 283,
        "hint": "logo, except in M3 intro"
       },
       {
-       "line": 263,
+       "line": 289,
        "hint": "card-enter"
       },
       {
-       "line": 264,
+       "line": 290,
        "hint": "appears on screen"
       },
       {
-       "line": 268,
+       "line": 294,
        "hint": "motion/card-enter.json"
       },
       {
-       "line": 269,
+       "line": 295,
        "hint": "arrives, doesn't bounce"
       }
      ],
@@ -732,27 +736,27 @@
      "placeholders": 6,
      "to_fill": [
       {
-       "line": 280,
+       "line": 306,
        "hint": "WCAG 2.2 AA"
       },
       {
-       "line": 282,
+       "line": 308,
        "hint": "body at font.size.body or larger"
       },
       {
-       "line": 282,
+       "line": 308,
        "hint": "readable at phone arm's length"
       },
       {
-       "line": 282,
+       "line": 308,
        "hint": "→ §M3"
       },
       {
-       "line": 290,
+       "line": 316,
        "hint": "diverse representation"
       },
       {
-       "line": 290,
+       "line": 316,
        "hint": "plain language"
       }
      ],
@@ -772,46 +776,38 @@
      "status": "empty",
      "module": "on",
      "counted_in_coverage": true,
-     "placeholders": 10,
+     "placeholders": 8,
      "to_fill": [
       {
-       "line": 313,
+       "line": 339,
        "hint": "e.g. \"Feels made here, not translated."
       },
       {
-       "line": 317,
+       "line": 343,
        "hint": "see primary_languages in ../design.md"
       },
       {
-       "line": 318,
+       "line": 344,
        "hint": "transcreate headlines, translate UI"
       },
       {
-       "line": 319,
+       "line": 345,
        "hint": "30–40%"
       },
       {
-       "line": 321,
-       "hint": "+10%"
-      },
-      {
-       "line": 322,
-       "hint": "+10%"
-      },
-      {
-       "line": 323,
+       "line": 349,
        "hint": "English brand name stays Latin inside regional copy"
       },
       {
-       "line": 324,
+       "line": 350,
        "hint": "colors/symbols to avoid by region"
       },
       {
-       "line": 324,
+       "line": 350,
        "hint": "festival calendar → §M2"
       },
       {
-       "line": 325,
+       "line": 351,
        "hint": "native speaker sign-off required"
       }
      ],
@@ -831,402 +827,722 @@
      "status": "partial",
      "module": "on",
      "counted_in_coverage": true,
-     "placeholders": 99,
+     "placeholders": 179,
      "to_fill": [
       {
-       "line": 340,
+       "line": 390,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 396,
+       "hint": "palette.primary.700"
+      },
+      {
+       "line": 396,
+       "hint": "palette.secondary.700"
+      },
+      {
+       "line": 397,
+       "hint": "palette.accent.700"
+      },
+      {
+       "line": 398,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 398,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 398,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 398,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 398,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 398,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 398,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 399,
+       "hint": "palette.primary.100"
+      },
+      {
+       "line": 399,
+       "hint": "palette.secondary.100"
+      },
+      {
+       "line": 399,
+       "hint": "palette.accent.100"
+      },
+      {
+       "line": 399,
+       "hint": "palette.success.100"
+      },
+      {
+       "line": 399,
+       "hint": "palette.warning.100"
+      },
+      {
+       "line": 399,
+       "hint": "palette.error.100"
+      },
+      {
+       "line": 399,
+       "hint": "palette.info.100"
+      },
+      {
+       "line": 400,
+       "hint": "palette.primary.900"
+      },
+      {
+       "line": 400,
+       "hint": "palette.secondary.900"
+      },
+      {
+       "line": 400,
+       "hint": "palette.accent.900"
+      },
+      {
+       "line": 400,
+       "hint": "palette.success.900"
+      },
+      {
+       "line": 400,
+       "hint": "palette.warning.900"
+      },
+      {
+       "line": 400,
+       "hint": "palette.error.900"
+      },
+      {
+       "line": 400,
+       "hint": "palette.info.900"
+      },
+      {
+       "line": 401,
+       "hint": "palette.neutral.100"
+      },
+      {
+       "line": 401,
+       "hint": "palette.white"
+      },
+      {
+       "line": 401,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 401,
+       "hint": "palette.white"
+      },
+      {
+       "line": 401,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 402,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 402,
+       "hint": "palette.neutral.700"
+      },
+      {
+       "line": 402,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 403,
+       "hint": "palette.neutral.200"
+      },
+      {
+       "line": 403,
+       "hint": "palette.neutral.400"
+      },
+      {
+       "line": 403,
+       "hint": "palette.neutral.600"
+      },
+      {
+       "line": 404,
+       "hint": "palette.success.700"
+      },
+      {
+       "line": 404,
+       "hint": "palette.warning.700"
+      },
+      {
+       "line": 404,
+       "hint": "palette.error.700"
+      },
+      {
+       "line": 404,
+       "hint": "palette.info.700"
+      },
+      {
+       "line": 405,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 340,
+       "line": 405,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 341,
+       "line": 405,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 342,
+       "line": 405,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 342,
+       "line": 405,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 342,
+       "line": 405,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 343,
+       "line": 405,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 343,
+       "line": 405,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 343,
-       "hint": "to fill (template example in design/core.md)"
+       "line": 406,
+       "hint": "palette.primary.700"
       },
       {
-       "line": 344,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 344,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 344,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 344,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 345,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 345,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 345,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 345,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 345,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 345,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 345,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 345,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 346,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 348,
+       "line": 408,
        "hint": "Source Serif 4, Georgia, serif"
       },
       {
-       "line": 348,
+       "line": 408,
        "hint": "Atkinson Hyperlegible, Verdana, sans-serif"
       },
       {
-       "line": 348,
+       "line": 408,
        "hint": "JetBrains Mono, ui-monospace, monospace"
       },
       {
-       "line": 348,
+       "line": 408,
        "hint": "Noto Sans Telugu, sans-serif"
       },
       {
-       "line": 348,
+       "line": 408,
        "hint": "Noto Sans Devanagari, sans-serif"
       },
       {
-       "line": 349,
+       "line": 409,
        "hint": "3rem"
       },
       {
-       "line": 349,
+       "line": 409,
        "hint": "2.25rem"
       },
       {
-       "line": 349,
+       "line": 409,
        "hint": "1.75rem"
       },
       {
-       "line": 349,
+       "line": 409,
        "hint": "1.375rem"
       },
       {
-       "line": 349,
+       "line": 409,
        "hint": "1.125rem"
       },
       {
-       "line": 349,
+       "line": 409,
        "hint": "1rem"
       },
       {
-       "line": 349,
+       "line": 409,
        "hint": "0.875rem"
       },
       {
-       "line": 349,
+       "line": 409,
        "hint": "0.75rem"
       },
       {
-       "line": 350,
+       "line": 410,
        "hint": "400"
       },
       {
-       "line": 350,
+       "line": 410,
        "hint": "600"
       },
       {
-       "line": 350,
+       "line": 410,
        "hint": "700"
       },
       {
-       "line": 351,
+       "line": 411,
        "hint": "1.15"
       },
       {
-       "line": 351,
+       "line": 411,
        "hint": "1.5"
       },
       {
-       "line": 352,
+       "line": 411,
+       "hint": "1.7"
+      },
+      {
+       "line": 412,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 352,
+       "line": 412,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 352,
+       "line": 424,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 352,
+       "line": 424,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 352,
+       "line": 424,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 352,
+       "line": 424,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 352,
+       "line": 424,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 353,
+       "line": 424,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 353,
+       "line": 424,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 353,
+       "line": 426,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 354,
+       "line": 426,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 354,
+       "line": 426,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 355,
+       "line": 426,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 355,
+       "line": 427,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 355,
+       "line": 427,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 356,
+       "line": 427,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 356,
+       "line": 428,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 356,
+       "line": 428,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 356,
+       "line": 430,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 356,
+       "line": 430,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 358,
+       "line": 430,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 358,
+       "line": 431,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 358,
+       "line": 431,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 358,
+       "line": 431,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 359,
+       "line": 432,
+       "hint": "0.08"
+      },
+      {
+       "line": 432,
+       "hint": "0.1"
+      },
+      {
+       "line": 432,
+       "hint": "0.12"
+      },
+      {
+       "line": 432,
+       "hint": "0.16"
+      },
+      {
+       "line": 432,
+       "hint": "0.16"
+      },
+      {
+       "line": 432,
+       "hint": "0.38"
+      },
+      {
+       "line": 433,
+       "hint": "0.5"
+      },
+      {
+       "line": 433,
+       "hint": "0.25"
+      },
+      {
+       "line": 433,
+       "hint": "0.2"
+      },
+      {
+       "line": 435,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 435,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 435,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 435,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 435,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 437,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 437,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 437,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 437,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 438,
        "hint": "cubic-bezier(0.2, 0, 0, 1)"
       },
       {
-       "line": 359,
+       "line": 438,
        "hint": "cubic-bezier(0, 0, 0, 1)"
       },
       {
-       "line": 359,
+       "line": 438,
        "hint": "cubic-bezier(0.3, 0, 1, 1)"
       },
       {
-       "line": 361,
+       "line": 440,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 361,
+       "line": 440,
        "hint": "10"
       },
       {
-       "line": 362,
+       "line": 441,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 363,
+       "line": 442,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 363,
+       "line": 442,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 363,
+       "line": 442,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 363,
+       "line": 442,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 369,
+       "line": 458,
+       "hint": "palette.primary.300"
+      },
+      {
+       "line": 458,
+       "hint": "palette.secondary.300"
+      },
+      {
+       "line": 459,
+       "hint": "palette.accent.300"
+      },
+      {
+       "line": 460,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 460,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 460,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 460,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 460,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 460,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 460,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 461,
+       "hint": "palette.primary.900"
+      },
+      {
+       "line": 461,
+       "hint": "palette.secondary.900"
+      },
+      {
+       "line": 461,
+       "hint": "palette.accent.900"
+      },
+      {
+       "line": 461,
+       "hint": "palette.success.900"
+      },
+      {
+       "line": 461,
+       "hint": "palette.warning.900"
+      },
+      {
+       "line": 461,
+       "hint": "palette.error.900"
+      },
+      {
+       "line": 461,
+       "hint": "palette.info.900"
+      },
+      {
+       "line": 462,
+       "hint": "palette.primary.100"
+      },
+      {
+       "line": 462,
+       "hint": "palette.secondary.100"
+      },
+      {
+       "line": 462,
+       "hint": "palette.accent.100"
+      },
+      {
+       "line": 462,
+       "hint": "palette.success.100"
+      },
+      {
+       "line": 462,
+       "hint": "palette.warning.100"
+      },
+      {
+       "line": 462,
+       "hint": "palette.error.100"
+      },
+      {
+       "line": 462,
+       "hint": "palette.info.100"
+      },
+      {
+       "line": 463,
+       "hint": "palette.black"
+      },
+      {
+       "line": 463,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 463,
+       "hint": "palette.neutral.900"
+      },
+      {
+       "line": 463,
+       "hint": "palette.neutral.800"
+      },
+      {
+       "line": 463,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 464,
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 464,
+       "hint": "palette.neutral.300"
+      },
+      {
+       "line": 464,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 465,
+       "hint": "palette.neutral.800"
+      },
+      {
+       "line": 465,
+       "hint": "palette.neutral.600"
+      },
+      {
+       "line": 465,
+       "hint": "palette.neutral.400"
+      },
+      {
+       "line": 466,
+       "hint": "palette.success.300"
+      },
+      {
+       "line": 466,
+       "hint": "palette.warning.300"
+      },
+      {
+       "line": 466,
+       "hint": "palette.error.300"
+      },
+      {
+       "line": 466,
+       "hint": "palette.info.300"
+      },
+      {
+       "line": 467,
+       "hint": "palette.primary.300"
+      },
+      {
+       "line": 468,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 369,
+       "line": 468,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 370,
+       "line": 468,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 371,
+       "line": 468,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 371,
+       "line": 468,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 371,
+       "line": 468,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 372,
+       "line": 468,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 372,
+       "line": 468,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 372,
+       "line": 469,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 373,
+       "line": 469,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 373,
+       "line": 469,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 373,
+       "line": 472,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 373,
+       "line": 473,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 374,
+       "line": 474,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 375,
+       "line": 475,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 375,
+       "line": 476,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 375,
+       "line": 477,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 375,
+       "line": 478,
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 375,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 375,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 375,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 375,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 376,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 376,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 376,
+       "line": 479,
        "hint": "to fill (template example in design/core.md)"
       }
      ],
@@ -1859,15 +2175,15 @@
      "placeholders": 3,
      "to_fill": [
       {
-       "line": 390,
+       "line": 499,
        "hint": "to fill"
       },
       {
-       "line": 390,
+       "line": 499,
        "hint": "to fill"
       },
       {
-       "line": 390,
+       "line": 499,
        "hint": "owner"
       }
      ],
@@ -1890,11 +2206,11 @@
      "placeholders": 2,
      "to_fill": [
       {
-       "line": 396,
+       "line": 505,
        "hint": "kebab-case, {brand}-{type}-{variant}-{size}.{ext"
       },
       {
-       "line": 397,
+       "line": 506,
        "hint": "Google Drive / Figma / repo path"
       }
      ],
@@ -1917,7 +2233,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 402,
+       "line": 511,
        "hint": "to fill"
       }
      ],
@@ -1940,11 +2256,11 @@
      "placeholders": 2,
      "to_fill": [
       {
-       "line": 406,
+       "line": 515,
        "hint": "0.1.0"
       },
       {
-       "line": 406,
+       "line": 515,
        "hint": "to fill"
       }
      ],
@@ -1967,7 +2283,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 64,
+       "line": 66,
        "hint": "PLACEHOLDER"
       }
      ],
@@ -1990,7 +2306,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 464,
+       "line": 471,
        "hint": "PLACEHOLDER"
       }
      ],
@@ -2013,35 +2329,35 @@
      "placeholders": 8,
      "to_fill": [
       {
-       "line": 145,
+       "line": 148,
        "hint": "20"
       },
       {
-       "line": 146,
+       "line": 149,
        "hint": "25"
       },
       {
-       "line": 146,
+       "line": 149,
        "hint": "5"
       },
       {
-       "line": 146,
+       "line": 149,
        "hint": "3"
       },
       {
-       "line": 147,
+       "line": 150,
        "hint": "30"
       },
       {
-       "line": 370,
+       "line": 373,
        "hint": "5"
       },
       {
-       "line": 407,
+       "line": 410,
        "hint": "TBD: reason"
       },
       {
-       "line": 440,
+       "line": 447,
        "hint": "3"
       }
      ],
@@ -2086,12 +2402,12 @@
      "color": {
       "base": "#0b5d52",
       "light": "#0b5d52",
-      "dark": "#5cc2b1"
+      "dark": "#a0cbc2"
      },
      "background": {
       "base": "#ffffff",
       "light": "#ffffff",
-      "dark": "#161514"
+      "dark": "#191714"
      }
     }
    },
@@ -2103,14 +2419,14 @@
     "background": "{color.surface.default}",
     "hex": {
      "color": {
-      "base": "#1c1b19",
-      "light": "#1c1b19",
-      "dark": "#f5f4f1"
+      "base": "#191714",
+      "light": "#191714",
+      "dark": "#f6f5f5"
      },
      "background": {
       "base": "#ffffff",
       "light": "#ffffff",
-      "dark": "#161514"
+      "dark": "#191714"
      }
     }
    },
@@ -2124,12 +2440,12 @@
      "color": {
       "base": "#0b5d52",
       "light": "#0b5d52",
-      "dark": "#5cc2b1"
+      "dark": "#a0cbc2"
      },
      "background": {
       "base": "#ffffff",
       "light": "#ffffff",
-      "dark": "#161514"
+      "dark": "#191714"
      }
     }
    },
@@ -2141,14 +2457,14 @@
     "background": "{color.surface.default}",
     "hex": {
      "color": {
-      "base": "#1c1b19",
-      "light": "#1c1b19",
-      "dark": "#f5f4f1"
+      "base": "#191714",
+      "light": "#191714",
+      "dark": "#f6f5f5"
      },
      "background": {
       "base": "#ffffff",
       "light": "#ffffff",
-      "dark": "#161514"
+      "dark": "#191714"
      }
     }
    },
@@ -2160,14 +2476,14 @@
     "background": "{color.brand.primary}",
     "hex": {
      "color": {
-      "base": "#fafaf9",
-      "light": "#fafaf9",
-      "dark": "#1c1b19"
+      "base": "#f6f5f5",
+      "light": "#f6f5f5",
+      "dark": "#191714"
      },
      "background": {
       "base": "#0b5d52",
       "light": "#0b5d52",
-      "dark": "#5cc2b1"
+      "dark": "#a0cbc2"
      }
     }
    },
@@ -2181,117 +2497,517 @@
      "color": {
       "base": "#0b5d52",
       "light": "#0b5d52",
-      "dark": "#5cc2b1"
+      "dark": "#a0cbc2"
      },
      "background": {
       "base": "#ffffff",
       "light": "#ffffff",
-      "dark": "#161514"
+      "dark": "#191714"
      }
     }
    }
   ]
  },
  "colors": {
+  "palette.white": {
+   "base": "#ffffff"
+  },
+  "palette.black": {
+   "base": "#000000"
+  },
+  "palette.primary.50": {
+   "base": "#f0f8f6"
+  },
+  "palette.primary.100": {
+   "base": "#deeeea"
+  },
+  "palette.primary.200": {
+   "base": "#c2dfd9"
+  },
+  "palette.primary.300": {
+   "base": "#a0cbc2"
+  },
+  "palette.primary.400": {
+   "base": "#78b1a6"
+  },
+  "palette.primary.500": {
+   "base": "#53968a"
+  },
+  "palette.primary.600": {
+   "base": "#317a6e"
+  },
+  "palette.primary.700": {
+   "base": "#0b5d52"
+  },
+  "palette.primary.800": {
+   "base": "#004a41"
+  },
+  "palette.primary.900": {
+   "base": "#00352e"
+  },
+  "palette.primary.950": {
+   "base": "#001c18"
+  },
+  "palette.secondary.50": {
+   "base": "#fcf4ee"
+  },
+  "palette.secondary.100": {
+   "base": "#f8e6db"
+  },
+  "palette.secondary.200": {
+   "base": "#f0d1bd"
+  },
+  "palette.secondary.300": {
+   "base": "#e3b799"
+  },
+  "palette.secondary.400": {
+   "base": "#d09871"
+  },
+  "palette.secondary.500": {
+   "base": "#b97b4d"
+  },
+  "palette.secondary.600": {
+   "base": "#a1612f"
+  },
+  "palette.secondary.700": {
+   "base": "#8a4b14"
+  },
+  "palette.secondary.800": {
+   "base": "#6b3500"
+  },
+  "palette.secondary.900": {
+   "base": "#4b2300"
+  },
+  "palette.secondary.950": {
+   "base": "#2a1000"
+  },
+  "palette.accent.50": {
+   "base": "#fff3ef"
+  },
+  "palette.accent.100": {
+   "base": "#ffe3db"
+  },
+  "palette.accent.200": {
+   "base": "#ffcaba"
+  },
+  "palette.accent.300": {
+   "base": "#fea98e"
+  },
+  "palette.accent.400": {
+   "base": "#ef8461"
+  },
+  "palette.accent.500": {
+   "base": "#db6139"
+  },
+  "palette.accent.600": {
+   "base": "#c2410c"
+  },
+  "palette.accent.700": {
+   "base": "#9d3000"
+  },
+  "palette.accent.800": {
+   "base": "#792300"
+  },
+  "palette.accent.900": {
+   "base": "#551600"
+  },
+  "palette.accent.950": {
+   "base": "#300800"
+  },
+  "palette.neutral.50": {
+   "base": "#f6f5f5"
+  },
+  "palette.neutral.100": {
+   "base": "#ebeae8"
+  },
+  "palette.neutral.200": {
+   "base": "#d9d7d5"
+  },
+  "palette.neutral.300": {
+   "base": "#c3c0bc"
+  },
+  "palette.neutral.400": {
+   "base": "#a7a49f"
+  },
+  "palette.neutral.500": {
+   "base": "#8c8883"
+  },
+  "palette.neutral.600": {
+   "base": "#716d68"
+  },
+  "palette.neutral.700": {
+   "base": "#57534e"
+  },
+  "palette.neutral.800": {
+   "base": "#44403c"
+  },
+  "palette.neutral.900": {
+   "base": "#302d29"
+  },
+  "palette.neutral.950": {
+   "base": "#191714"
+  },
+  "palette.success.50": {
+   "base": "#eff9f0"
+  },
+  "palette.success.100": {
+   "base": "#dbf1df"
+  },
+  "palette.success.200": {
+   "base": "#bee3c4"
+  },
+  "palette.success.300": {
+   "base": "#98d0a3"
+  },
+  "palette.success.400": {
+   "base": "#6db77e"
+  },
+  "palette.success.500": {
+   "base": "#449d5c"
+  },
+  "palette.success.600": {
+   "base": "#15803d"
+  },
+  "palette.success.700": {
+   "base": "#00692e"
+  },
+  "palette.success.800": {
+   "base": "#005122"
+  },
+  "palette.success.900": {
+   "base": "#003915"
+  },
+  "palette.success.950": {
+   "base": "#001e08"
+  },
+  "palette.warning.50": {
+   "base": "#fff3ed"
+  },
+  "palette.warning.100": {
+   "base": "#ffe4d6"
+  },
+  "palette.warning.200": {
+   "base": "#fbcdb5"
+  },
+  "palette.warning.300": {
+   "base": "#f2b08d"
+  },
+  "palette.warning.400": {
+   "base": "#e18e61"
+  },
+  "palette.warning.500": {
+   "base": "#cc6f38"
+  },
+  "palette.warning.600": {
+   "base": "#b45309"
+  },
+  "palette.warning.700": {
+   "base": "#904000"
+  },
+  "palette.warning.800": {
+   "base": "#6f2f00"
+  },
+  "palette.warning.900": {
+   "base": "#4e1f00"
+  },
+  "palette.warning.950": {
+   "base": "#2c0e00"
+  },
+  "palette.error.50": {
+   "base": "#fff3f1"
+  },
+  "palette.error.100": {
+   "base": "#ffe3df"
+  },
+  "palette.error.200": {
+   "base": "#ffcac2"
+  },
+  "palette.error.300": {
+   "base": "#ffa79c"
+  },
+  "palette.error.400": {
+   "base": "#f77d71"
+  },
+  "palette.error.500": {
+   "base": "#e4594e"
+  },
+  "palette.error.600": {
+   "base": "#ce3932"
+  },
+  "palette.error.700": {
+   "base": "#b91c1c"
+  },
+  "palette.error.800": {
+   "base": "#8e0008"
+  },
+  "palette.error.900": {
+   "base": "#630004"
+  },
+  "palette.error.950": {
+   "base": "#380001"
+  },
+  "palette.info.50": {
+   "base": "#f1f6ff"
+  },
+  "palette.info.100": {
+   "base": "#e0ebff"
+  },
+  "palette.info.200": {
+   "base": "#c6d9ff"
+  },
+  "palette.info.300": {
+   "base": "#a3c1ff"
+  },
+  "palette.info.400": {
+   "base": "#79a3ff"
+  },
+  "palette.info.500": {
+   "base": "#4f83ff"
+  },
+  "palette.info.600": {
+   "base": "#3166ef"
+  },
+  "palette.info.700": {
+   "base": "#1d4ed8"
+  },
+  "palette.info.800": {
+   "base": "#0931b4"
+  },
+  "palette.info.900": {
+   "base": "#01178b"
+  },
+  "palette.info.950": {
+   "base": "#000159"
+  },
   "color.brand.primary": {
    "base": "#0b5d52",
    "light": "#0b5d52",
-   "dark": "#5cc2b1"
+   "dark": "#a0cbc2"
   },
   "color.brand.secondary": {
    "base": "#8a4b14",
    "light": "#8a4b14",
-   "dark": "#e0a46b"
+   "dark": "#e3b799"
   },
   "color.accent": {
-   "base": "#c2410c",
-   "light": "#c2410c",
-   "dark": "#fb923c"
+   "base": "#9d3000",
+   "light": "#9d3000",
+   "dark": "#fea98e"
+  },
+  "color.on.primary": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "color.on.secondary": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "color.on.accent": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "color.on.success": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "color.on.warning": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "color.on.error": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "color.on.info": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "color.container.primary": {
+   "base": "#deeeea",
+   "light": "#deeeea",
+   "dark": "#00352e"
+  },
+  "color.container.secondary": {
+   "base": "#f8e6db",
+   "light": "#f8e6db",
+   "dark": "#4b2300"
+  },
+  "color.container.accent": {
+   "base": "#ffe3db",
+   "light": "#ffe3db",
+   "dark": "#551600"
+  },
+  "color.container.success": {
+   "base": "#dbf1df",
+   "light": "#dbf1df",
+   "dark": "#003915"
+  },
+  "color.container.warning": {
+   "base": "#ffe4d6",
+   "light": "#ffe4d6",
+   "dark": "#4e1f00"
+  },
+  "color.container.error": {
+   "base": "#ffe3df",
+   "light": "#ffe3df",
+   "dark": "#630004"
+  },
+  "color.container.info": {
+   "base": "#e0ebff",
+   "light": "#e0ebff",
+   "dark": "#01178b"
+  },
+  "color.on-container.primary": {
+   "base": "#00352e",
+   "light": "#00352e",
+   "dark": "#deeeea"
+  },
+  "color.on-container.secondary": {
+   "base": "#4b2300",
+   "light": "#4b2300",
+   "dark": "#f8e6db"
+  },
+  "color.on-container.accent": {
+   "base": "#551600",
+   "light": "#551600",
+   "dark": "#ffe3db"
+  },
+  "color.on-container.success": {
+   "base": "#003915",
+   "light": "#003915",
+   "dark": "#dbf1df"
+  },
+  "color.on-container.warning": {
+   "base": "#4e1f00",
+   "light": "#4e1f00",
+   "dark": "#ffe4d6"
+  },
+  "color.on-container.error": {
+   "base": "#630004",
+   "light": "#630004",
+   "dark": "#ffe3df"
+  },
+  "color.on-container.info": {
+   "base": "#01178b",
+   "light": "#01178b",
+   "dark": "#e0ebff"
+  },
+  "color.surface.sunken": {
+   "base": "#ebeae8",
+   "light": "#ebeae8",
+   "dark": "#000000"
   },
   "color.surface.default": {
    "base": "#ffffff",
    "light": "#ffffff",
-   "dark": "#161514"
+   "dark": "#191714"
   },
   "color.surface.raised": {
-   "base": "#f5f4f1",
-   "light": "#f5f4f1",
-   "dark": "#22201e"
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#302d29"
+  },
+  "color.surface.overlay": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#44403c"
   },
   "color.surface.inverse": {
-   "base": "#1c1b19",
-   "light": "#1c1b19",
-   "dark": "#f5f4f1"
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
   },
   "color.text.primary": {
-   "base": "#1c1b19",
-   "light": "#1c1b19",
-   "dark": "#f5f4f1"
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
   },
   "color.text.secondary": {
    "base": "#57534e",
    "light": "#57534e",
-   "dark": "#b8b2aa"
+   "dark": "#c3c0bc"
   },
   "color.text.inverse": {
-   "base": "#fafaf9",
-   "light": "#fafaf9",
-   "dark": "#1c1b19"
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "color.border.subtle": {
+   "base": "#d9d7d5",
+   "light": "#d9d7d5",
+   "dark": "#44403c"
+  },
+  "color.border.default": {
+   "base": "#a7a49f",
+   "light": "#a7a49f",
+   "dark": "#716d68"
+  },
+  "color.border.strong": {
+   "base": "#716d68",
+   "light": "#716d68",
+   "dark": "#a7a49f"
   },
   "color.semantic.success": {
-   "base": "#15803d",
-   "light": "#15803d",
-   "dark": "#4ade80"
+   "base": "#00692e",
+   "light": "#00692e",
+   "dark": "#98d0a3"
   },
   "color.semantic.warning": {
-   "base": "#b45309",
-   "light": "#b45309",
-   "dark": "#fbbf24"
+   "base": "#904000",
+   "light": "#904000",
+   "dark": "#f2b08d"
   },
   "color.semantic.error": {
    "base": "#b91c1c",
    "light": "#b91c1c",
-   "dark": "#f87171"
+   "dark": "#ffa79c"
   },
   "color.semantic.info": {
    "base": "#1d4ed8",
    "light": "#1d4ed8",
-   "dark": "#93c5fd"
+   "dark": "#a3c1ff"
   },
   "color.data.1": {
-   "base": "#be7900",
-   "light": "#be7900",
-   "dark": "#e69f00"
+   "base": "#d37107",
+   "light": "#d37107",
+   "dark": "#fcc035"
   },
   "color.data.2": {
-   "base": "#2c90c3",
-   "light": "#2c90c3",
-   "dark": "#56b4e9"
+   "base": "#2995d6",
+   "light": "#2995d6",
+   "dark": "#74ceff"
   },
   "color.data.3": {
-   "base": "#009b70",
-   "light": "#009b70",
-   "dark": "#009e73"
+   "base": "#0f7c4d",
+   "light": "#0f7c4d",
+   "dark": "#08b765"
   },
   "color.data.4": {
-   "base": "#978a00",
-   "light": "#978a00",
-   "dark": "#f0e442"
+   "base": "#a18b61",
+   "light": "#a18b61",
+   "dark": "#fffa6a"
   },
   "color.data.5": {
-   "base": "#0072b2",
-   "light": "#0072b2",
-   "dark": "#0875b5"
+   "base": "#0a568e",
+   "light": "#0a568e",
+   "dark": "#0c76e7"
   },
   "color.data.6": {
-   "base": "#d55e00",
-   "light": "#d55e00",
-   "dark": "#d55e00"
+   "base": "#bf4d07",
+   "light": "#bf4d07",
+   "dark": "#bf571a"
   },
   "color.data.7": {
-   "base": "#bf6d9b",
-   "light": "#bf6d9b",
-   "dark": "#cc79a7"
+   "base": "#c269b3",
+   "light": "#c269b3",
+   "dark": "#c98cbc"
   },
   "color.data.8": {
    "base": "#7f7f7f",
@@ -2301,7 +3017,147 @@
   "color.focus": {
    "base": "#0b5d52",
    "light": "#0b5d52",
-   "dark": "#5cc2b1"
+   "dark": "#a0cbc2"
+  },
+  "component.button.primary.bg": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.button.primary.fg": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "component.button.primary.border": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.button.secondary.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.button.secondary.fg": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.button.secondary.border": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.button.ghost.fg": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.button.danger.bg": {
+   "base": "#b91c1c",
+   "light": "#b91c1c",
+   "dark": "#ffa79c"
+  },
+  "component.button.danger.fg": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "component.button.danger.border": {
+   "base": "#b91c1c",
+   "light": "#b91c1c",
+   "dark": "#ffa79c"
+  },
+  "component.button.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.input.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.input.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.input.border": {
+   "base": "#716d68",
+   "light": "#716d68",
+   "dark": "#a7a49f"
+  },
+  "component.input.hint": {
+   "base": "#57534e",
+   "light": "#57534e",
+   "dark": "#c3c0bc"
+  },
+  "component.input.error": {
+   "base": "#b91c1c",
+   "light": "#b91c1c",
+   "dark": "#ffa79c"
+  },
+  "component.input.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.card.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.card.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.card.border": {
+   "base": "#d9d7d5",
+   "light": "#d9d7d5",
+   "dark": "#44403c"
+  },
+  "component.card.border-hover": {
+   "base": "#716d68",
+   "light": "#716d68",
+   "dark": "#a7a49f"
+  },
+  "component.card.link": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.badge.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.badge.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.badge.success": {
+   "base": "#00692e",
+   "light": "#00692e",
+   "dark": "#98d0a3"
+  },
+  "component.badge.warning": {
+   "base": "#904000",
+   "light": "#904000",
+   "dark": "#f2b08d"
+  },
+  "component.badge.error": {
+   "base": "#b91c1c",
+   "light": "#b91c1c",
+   "dark": "#ffa79c"
+  },
+  "component.badge.info": {
+   "base": "#1d4ed8",
+   "light": "#1d4ed8",
+   "dark": "#a3c1ff"
   }
  },
  "pairings": [
@@ -2311,8 +3167,8 @@
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 17.21,
-    "dark": 16.58
+    "light": 17.91,
+    "dark": 16.51
    }
   },
   {
@@ -2322,7 +3178,7 @@
    "target": 4.5,
    "ratio": {
     "light": 7.63,
-    "dark": 8.67
+    "dark": 9.87
    }
   },
   {
@@ -2331,8 +3187,8 @@
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 15.65,
-    "dark": 14.76
+    "light": 16.51,
+    "dark": 12.68
    }
   },
   {
@@ -2341,8 +3197,8 @@
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 6.94,
-    "dark": 7.72
+    "light": 7.03,
+    "dark": 7.58
    }
   },
   {
@@ -2351,28 +3207,58 @@
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 16.48,
-    "dark": 15.65
+    "light": 16.51,
+    "dark": 16.51
    }
   },
   {
-   "fg": "color.text.inverse",
+   "fg": "color.text.primary",
+   "bg": "color.surface.sunken",
+   "size": "normal",
+   "target": 4.5,
+   "ratio": {
+    "light": 14.87,
+    "dark": 19.36
+   }
+  },
+  {
+   "fg": "color.text.primary",
+   "bg": "color.surface.overlay",
+   "size": "normal",
+   "target": 4.5,
+   "ratio": {
+    "light": 17.91,
+    "dark": 9.42
+   }
+  },
+  {
+   "fg": "color.border.strong",
+   "bg": "color.surface.default",
+   "size": "ui",
+   "target": 3,
+   "ratio": {
+    "light": 5.13,
+    "dark": 7.2
+   }
+  },
+  {
+   "fg": "color.on.primary",
    "bg": "color.brand.primary",
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 7.44,
-    "dark": 8.04
+    "light": 7.16,
+    "dark": 10.04
    }
   },
   {
-   "fg": "color.text.inverse",
+   "fg": "color.on.error",
    "bg": "color.semantic.error",
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 6.19,
-    "dark": 6.22
+    "light": 5.96,
+    "dark": 9.61
    }
   },
   {
@@ -2382,7 +3268,7 @@
    "target": 4.5,
    "ratio": {
     "light": 7.77,
-    "dark": 8.52
+    "dark": 10.04
    }
   },
   {
@@ -2391,8 +3277,8 @@
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 7.07,
-    "dark": 7.58
+    "light": 7.16,
+    "dark": 7.72
    }
   },
   {
@@ -2402,7 +3288,7 @@
    "target": 3,
    "ratio": {
     "light": 6.78,
-    "dark": 8.42
+    "dark": 9.8
    }
   },
   {
@@ -2411,8 +3297,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 5.18,
-    "dark": 8.06
+    "light": 7.37,
+    "dark": 9.58
    }
   },
   {
@@ -2421,8 +3307,8 @@
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 5.01,
-    "dark": 10.47
+    "light": 6.85,
+    "dark": 10.16
    }
   },
   {
@@ -2431,8 +3317,8 @@
    "size": "normal",
    "target": 4.5,
    "ratio": {
-    "light": 5.02,
-    "dark": 10.92
+    "light": 7.19,
+    "dark": 9.7
    }
   },
   {
@@ -2442,7 +3328,7 @@
    "target": 4.5,
    "ratio": {
     "light": 6.47,
-    "dark": 6.59
+    "dark": 9.61
    }
   },
   {
@@ -2452,7 +3338,7 @@
    "target": 4.5,
    "ratio": {
     "light": 6.7,
-    "dark": 10.11
+    "dark": 9.92
    }
   },
   {
@@ -2462,7 +3348,7 @@
    "target": 3,
    "ratio": {
     "light": 7.77,
-    "dark": 8.52
+    "dark": 10.04
    }
   },
   {
@@ -2471,8 +3357,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 7.07,
-    "dark": 7.58
+    "light": 7.16,
+    "dark": 7.72
    }
   },
   {
@@ -2481,8 +3367,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 3.22,
-    "dark": 7.21
+    "light": 3.16,
+    "dark": 8.34
    }
   },
   {
@@ -2491,8 +3377,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 3.24,
-    "dark": 7.04
+    "light": 3.04,
+    "dark": 7.87
    }
   },
   {
@@ -2501,8 +3387,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 3.22,
-    "dark": 4.75
+    "light": 4.83,
+    "dark": 5.22
    }
   },
   {
@@ -2511,8 +3397,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 3.21,
-    "dark": 12.28
+    "light": 3.03,
+    "dark": 12.54
    }
   },
   {
@@ -2521,8 +3407,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 4.71,
-    "dark": 3.26
+    "light": 7.08,
+    "dark": 3.12
    }
   },
   {
@@ -2531,8 +3417,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 3.52,
-    "dark": 4.2
+    "light": 4.52,
+    "dark": 3.01
    }
   },
   {
@@ -2541,8 +3427,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 3.25,
-    "dark": 5.3
+    "light": 3.24,
+    "dark": 5.22
    }
   },
   {
@@ -2551,8 +3437,8 @@
    "size": "ui",
    "target": 3,
    "ratio": {
-    "light": 3.64,
-    "dark": 4.05
+    "light": 3.69,
+    "dark": 3.44
    }
   }
  ],

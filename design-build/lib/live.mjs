@@ -127,7 +127,7 @@ export function tileChunks(html) {
 }
 const titleOf = (chunk, id) => { const m = chunk.match(/<h3 id="tile-[^"]+-h">([\s\S]*?)<\/h3>/); return m ? m[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim() : id; };
 // Tiles whose specimens preview.js draws from tokens.js at load time (so their HTML does not change with a value).
-const TOKEN_TARGETS = [['swatches', /^color\.(?!data\.)/], ['pairings', /^color\./], ['type-scale', /^font\./], ['space-scale', /^space\./], ['shapes', /^(radius|shadow)\./], ['breakpoints', /^(breakpoint|viewport)\./], ['chart', /^color\.data\./], ['token-table', /./]];
+const TOKEN_TARGETS = [['ramps', /^palette\./], ['swatches', /^color\.(?!data\.)/], ['pairings', /^color\./], ['type-scale', /^font\./], ['space-scale', /^space\./], ['shapes', /^(radius|shadow)\./], ['breakpoints', /^(breakpoint|viewport)\./], ['chart', /^color\.data\./], ['token-table', /./]];
 /** Token paths whose value (any mode) differs between two { path → signature } maps. */
 export function changedTokens(a, b) {
   if (!a || !b) return [];

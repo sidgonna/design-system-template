@@ -194,3 +194,43 @@ export function suggestPassingColor(fg, bg, target) {
   }
   return best;
 }
+
+/**
+ * APCA lightness contrast Lc (APCA-W3 0.0.98G-4g constants). Advisory only: WCAG 2 stays the gate (§4).
+ * Positive = dark text on light background, negative = light on dark; compare |Lc| (60 body, 45 large, 30 UI).
+ */
+export function apcaContrast(fg, bg) {
+  const solidBg = (bg.a ?? 1) < 1 ? composite(bg, { r: 1, g: 1, b: 1 }) : bg;
+  const solidFg = (fg.a ?? 1) < 1 ? composite(fg, solidBg) : fg;
+  const y = ({ r, g, b }) => 0.2126729 * r ** 2.4 + 0.7151522 * g ** 2.4 + 0.072175 * b ** 2.4;
+  const clampBlack = (v) => (v > 0.022 ? v : v + (0.022 - v) ** 1.414);
+  const yt = clampBlack(y(solidFg)), yb = clampBlack(y(solidBg));
+  if (Math.abs(yb - yt) < 0.0005) return 0;
+  let lc;
+  if (yb > yt) { const s = (yb ** 0.56 - yt ** 0.57) * 1.14; lc = s < 0.1 ? 0 : s - 0.027; }
+  else { const s = (yb ** 0.65 - yt ** 0.62) * 1.14; lc = s > -0.1 ? 0 : s + 0.027; }
+  return lc * 100;
+}
+
+// Colour-vision-deficiency simulation (Machado, Oliveira & Fernandes 2009, severity 1.0), applied in linear sRGB.
+const CVD = {
+  protan: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
+  deutan: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.01182, 0.04294, 0.968881]],
+  tritan: [[1.255528, -0.076749, -0.178779], [-0.078411, 0.930809, 0.147602], [0.004733, 0.691367, 0.3039]],
+};
+export const CVD_TYPES = Object.keys(CVD);
+/** How a colour looks to someone with protanopia, deuteranopia or tritanopia. */
+export function simulateCvd(c, type) {
+  const m = CVD[type];
+  if (!m) throw new Error(`unknown CVD type ${type}`);
+  const lin = [toLinear(c.r), toLinear(c.g), toLinear(c.b)];
+  const [r, g, b] = m.map((row) => clamp01(row[0] * lin[0] + row[1] * lin[1] + row[2] * lin[2])).map(toGamma);
+  return { r, g, b, a: c.a ?? 1 };
+}
+
+/** CSS color-mix(in oklab, a, b t): b mixed into a at fraction t (0–1). Used for state layers (core.md §4.3). */
+export function mixOklab(a, b, t) {
+  const A = srgbToOklab(a), B = srgbToOklab(b);
+  const c = oklabToSrgb(A.L + (B.L - A.L) * t, A.a + (B.a - A.a) * t, A.b + (B.b - A.b) * t);
+  return { r: c.r, g: c.g, b: c.b };
+}

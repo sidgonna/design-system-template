@@ -12,9 +12,10 @@
     { "file": "design/marketing-content.md", "section": "§M2.1", "rule": "raw-value", "reason": "Platform safe areas and sizes are fixed by each platform's published spec (Meta, YouTube), not brand values, so they are not tokens." }
   ],
   "contrast": { "normal": 4.5, "large": 3, "ui": 3 },
+  "cvd": { "$comment": "core.md §4.5: minimum OKLab ΔE (×100; about 2 is just noticeable) between any two color.data.* series under protanopia, deuteranopia and tritanopia (Machado 2009), in every theme", "min_delta_e": 6 },
   "completion_min": 0.9,
   "seed_group_max": 6,
-  "template_placeholders": { "$comment": "{{…}} counts in the untouched template; completion = 1 − remaining/initial", "design.md": 26, "design/core.md": 219, "design/digital-product.md": 5, "design/marketing-content.md": 8, "design/motion-video.md": 11, "design/print.md": 7 },
+  "template_placeholders": { "$comment": "{{…}} plus front matter # TODO(intake) counts in the untouched template; completion = 1 − remaining/initial", "design.md": 27, "design/core.md": 297, "design/digital-product.md": 5, "design/marketing-content.md": 8, "design/motion-video.md": 11, "design/print.md": 7 },
   "default_fonts": ["inter", "roboto", "arial", "helvetica", "helvetica neue", "segoe ui", "system-ui", "-apple-system", "blinkmacsystemfont", "ui-sans-serif", "open sans", "geist", "sf pro", "sf pro text", "sf pro display"],
   "role_slot_words": {
     "background": ["background", "backgrounds", "fill", "fills"],

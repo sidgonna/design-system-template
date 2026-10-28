@@ -30,7 +30,7 @@ code { font-family: var(--font-family-mono); font-size: var(--font-size-caption)
 .sr-only { position: absolute; inline-size: var(--border-width-thin); block-size: var(--border-width-thin); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .note-text { color: var(--color-text-secondary); font-size: var(--font-size-caption); }
 
-.skip-link { position: absolute; inset-inline-start: var(--space-2); inset-block-start: var(--space-2); transform: translateY(calc(-100% - var(--space-4))); background: var(--color-surface-inverse); color: var(--color-text-inverse); padding: var(--space-2) var(--space-4); border-radius: var(--radius-sm); z-index: 10; }
+.skip-link { position: absolute; inset-inline-start: var(--space-2); inset-block-start: var(--space-2); transform: translateY(calc(-100% - var(--space-4))); background: var(--color-surface-inverse); color: var(--color-text-inverse); padding: var(--space-2) var(--space-4); border-radius: var(--radius-sm); z-index: var(--z-index-tooltip); }
 .skip-link:focus { transform: none; color: var(--color-text-inverse); }
 
 /* ---------- toolbar ---------- */
@@ -118,6 +118,15 @@ caption { caption-side: bottom; text-align: start; padding-block-start: var(--sp
 .swatch .chip { block-size: var(--space-12); display: flex; align-items: center; justify-content: center; font-family: var(--font-family-heading); font-size: var(--font-size-h3); }
 .swatch .meta { padding: var(--space-1) var(--space-2); font-size: var(--font-size-caption); overflow-wrap: break-word; }
 .swatch .meta strong { display: block; }
+/* reference ramps (palette.*): one strip per seed, 11 steps; wraps to two rows on a phone */
+.ramps { display: grid; gap: var(--space-2); margin-block-end: var(--space-4); }
+.ramp { display: grid; gap: var(--space-1); }
+.ramp > .tok { font-size: var(--font-size-caption); }
+.ramp-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-8) * 1.25), 1fr)); gap: var(--border-width-thick); }
+.ramp-step { display: grid; gap: var(--space-1); justify-items: center; }
+.ramp-chip { inline-size: 100%; block-size: var(--space-8); border-radius: var(--radius-sm); border: var(--border-width-thin) solid var(--color-border-subtle); }
+.ramp-label { font-size: var(--font-size-caption); color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+td.apca { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ring-sample { display: inline-block; inline-size: var(--space-12); block-size: var(--space-6); border-radius: var(--radius-sm); outline: var(--border-width-thick) solid var(--color-focus); outline-offset: var(--border-width-thick); background: var(--color-surface-raised); }
 .pair-mark { display: inline-block; vertical-align: middle; inline-size: var(--space-6); block-size: var(--space-3); border-radius: var(--radius-sm); }
 .pair-sample { display: inline-block; padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); font-size: var(--font-size-body); font-weight: var(--font-weight-semibold); }
@@ -237,7 +246,7 @@ caption { caption-side: bottom; text-align: start; padding-block-start: var(--sp
 .ring-wrap > * { grid-area: 1 / 1; }
 .ring { inline-size: 100%; block-size: 100%; }
 .ring circle { fill: none; stroke-width: var(--space-1); }
-.ring-track { stroke: var(--color-text-secondary); stroke-opacity: 0.25; }
+.ring-track { stroke: var(--color-text-secondary); stroke-opacity: var(--opacity-muted); }
 .ring-value { stroke: var(--color-brand-primary); }
 .ring-goal { stroke: var(--color-text-primary); stroke-width: var(--space-2); }
 .ring-text { margin: 0; text-align: center; display: grid; line-height: var(--font-line-height-tight); }
@@ -285,7 +294,7 @@ caption { caption-side: bottom; text-align: start; padding-block-start: var(--sp
   :root[data-view="canvas"] .zone[data-zone="0"], :root[data-view="canvas"] .zone[data-zone="3"], :root[data-view="canvas"] .zone[data-zone="6"] { grid-column: 1 / -1; }
   :root[data-view="canvas"] .minimap { display: block; position: absolute; inset-inline-end: var(--space-4); inset-block-end: var(--space-4); inline-size: calc(var(--space-12) * 4); aspect-ratio: 4 / 3; background: var(--color-surface-raised); border: var(--border-width-thin) solid var(--color-text-secondary); border-radius: var(--radius-md); box-shadow: var(--shadow-2); cursor: pointer; overflow: hidden; }
   .minimap-board { position: absolute; inset: 0; }
-  .minimap-zone { position: absolute; background: var(--color-surface-inverse); opacity: 0.18; border-radius: var(--radius-sm); }
+  .minimap-zone { position: absolute; background: var(--color-surface-inverse); opacity: var(--opacity-faint); border-radius: var(--radius-sm); }
   .minimap-view { position: absolute; border: var(--border-width-thick) solid var(--color-focus); border-radius: var(--radius-sm); }
 }
 
@@ -313,8 +322,8 @@ caption { caption-side: bottom; text-align: start; padding-block-start: var(--sp
 
 /* ---------- the live board (board.mjs --serve; lib/live.mjs adds these elements to served pages only) ----------
    Nothing moves: the toast appears and goes, changed tiles get an outline for a few seconds, no transitions. */
-.live-toast { position: fixed; inset-block-end: var(--space-4); inset-inline-end: var(--space-4); z-index: 20; max-inline-size: min(calc(100vw - var(--space-8)), calc(var(--space-12) * 10)); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface-inverse); color: var(--color-text-inverse); box-shadow: var(--shadow-2); font-size: var(--font-size-body); overflow-wrap: break-word; }
-.live-banner { position: fixed; inset-block-start: var(--space-2); inset-inline: var(--space-2); z-index: 21; display: grid; gap: var(--space-2); justify-items: start; max-block-size: 40vh; overflow: auto; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: var(--space-2) solid var(--color-semantic-error); background: var(--color-surface-inverse); color: var(--color-text-inverse); box-shadow: var(--shadow-3); }
+.live-toast { position: fixed; inset-block-end: var(--space-4); inset-inline-end: var(--space-4); z-index: var(--z-index-toast); max-inline-size: min(calc(100vw - var(--space-8)), calc(var(--space-12) * 10)); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface-inverse); color: var(--color-text-inverse); box-shadow: var(--shadow-2); font-size: var(--font-size-body); overflow-wrap: break-word; }
+.live-banner { position: fixed; inset-block-start: var(--space-2); inset-inline: var(--space-2); z-index: var(--z-index-toast); display: grid; gap: var(--space-2); justify-items: start; max-block-size: 40vh; overflow: auto; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: var(--space-2) solid var(--color-semantic-error); background: var(--color-surface-inverse); color: var(--color-text-inverse); box-shadow: var(--shadow-3); }
 .live-banner-title { margin: 0; font-weight: var(--font-weight-bold); }
 .live-banner ul { margin: 0; padding-inline-start: var(--space-4); }
 .live-banner code { overflow-wrap: anywhere; }

@@ -2,7 +2,7 @@
 // render.mjs — screenshot + layout + accessibility harness for this design system.
 //
 // Usage (from the app root): node design-system/design-build/render.mjs [target ...] [--url <url>] [--app]
-//          [--widths 390,768,1280 (default: tokens viewport.*)] [--themes light,dark] [--root <dir>]
+//          [--widths 390,768,1280 (default: tokens viewport.*)] [--themes light,dark (default: design.md themes)] [--root <dir>]
 //          [--out <dir>] [--reports <dir>] [--json] [--record] [--quiet] [--no-best-practice]
 //   target       URL (http/https/file) or file path. Default: the design system's preview page.
 //                File paths are served from the project root by a built-in static server, so relative links work.
@@ -12,7 +12,8 @@
 //   --root <dir> the project (app) root (default: git top level, else the nearest package.json above design-system/)
 //   --record     write the results to design-build/state.yaml → checks.render and checks.a11y
 //
-// For each target × width × theme (prefers-color-scheme emulated, reduced motion on, animations disabled,
+// For each target × width × theme (prefers-color-scheme from the theme's scheme, prefers-contrast: more for
+// high-contrast, and <html data-theme> for any other named theme; reduced motion on, animations disabled,
 // fonts awaited) it saves design-build/screenshots/<page>-<width>-<theme>.png and checks:
 //   overflow        the page scrolls sideways (fail)
 //   off-viewport    a key element ([data-key], h1, main) or a control sits outside the viewport (fail)
@@ -32,7 +33,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { gitHead, recordCheck } from './lib/context.mjs';
+import { gitHead, recordCheck, loadContext } from './lib/context.mjs';
+import { schemeOf } from './lib/tokens-css.mjs';
 import { findProject, fixHint, projectConfig } from './lib/project.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -52,8 +54,19 @@ function tokenWidths() {
   } catch { return null; }
 }
 
+// Default themes: design.md front matter `themes:` (core.md §4.4), else light and dark.
+function designThemes() {
+  try { const t = loadContext(DS).themes; return t?.length ? t : null; } catch { return null; }
+}
+// How a theme is emulated: light/dark via prefers-color-scheme (what an app follows by default), high-contrast via
+// prefers-contrast: more, and any other name (brand-dark, sepia…) also via <html data-theme>, which only it uses.
+export function themeEmulation(theme) {
+  const MEDIA_THEMES = ['light', 'dark', 'high-contrast'];
+  return { colorScheme: schemeOf(theme), contrast: theme === 'high-contrast' ? 'more' : 'no-preference', dataTheme: MEDIA_THEMES.includes(theme) ? null : theme };
+}
+
 function parseArgs(argv) {
-  const a = { targets: [], widths: tokenWidths() || [390, 768, 1280], themes: ['light', 'dark'], out: path.join(HERE, 'screenshots'), reports: HERE, json: false, record: false, quiet: false, bestPractice: true };
+  const a = { targets: [], widths: tokenWidths() || [390, 768, 1280], themes: designThemes() || ['light', 'dark'], out: path.join(HERE, 'screenshots'), reports: HERE, json: false, record: false, quiet: false, bestPractice: true };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (k === '--widths') a.widths = argv[++i].split(',').map(Number);
@@ -67,7 +80,7 @@ function parseArgs(argv) {
     else if (k === '--url') { const u = argv[++i]; if (!/^https?:\/\//.test(u || '')) { console.error(`render: --url needs an http(s) URL, got "${u}"`); process.exit(2); } a.targets.push(u); }
     else if (k === '--app') { const u = projectConfig(DS).app_url; if (!u) { console.error(hint('render: --app needs "app_url" in design-build/project.json (e.g. "http://localhost:5173/"). Or pass --url <your dev-server URL>.')); process.exit(2); } a.targets.push(u); }
     else if (k === '--root') i++;
-    else if (k === '--help' || k === '-h') { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 32).map((l) => l.replace(/^\/\/ ?/, '')).join('\n')); process.exit(0); }
+    else if (k === '--help' || k === '-h') { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1).filter((l, i, a) => a.slice(0, i + 1).every((x) => x.startsWith('//'))).map((l) => l.replace(/^\/\/ ?/, '')).join('\n')); process.exit(0); }
     else if (k.startsWith('--')) { console.error(`render: unknown flag ${k}`); process.exit(2); }
     else a.targets.push(k);
   }
@@ -279,7 +292,9 @@ async function main() {
   for (const target of opts.targets) {
     const url = resolveTarget(target), name = pageName(target);
     sizes: for (const width of opts.widths) for (const theme of opts.themes) {
-      const ctx = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: theme, reducedMotion: 'reduce', deviceScaleFactor: 1 });
+      const emu = themeEmulation(theme);
+      const ctx = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: emu.colorScheme, contrast: emu.contrast, reducedMotion: 'reduce', deviceScaleFactor: 1 });
+      if (emu.dataTheme) await ctx.addInitScript((t) => { const set = () => { if (!document.documentElement) return false; document.documentElement.setAttribute('data-theme', t); return true; }; if (!set()) new MutationObserver((m, o) => { if (set()) o.disconnect(); }).observe(document, { childList: true }); }, emu.dataTheme);
       const page = await ctx.newPage();
       const consoleErrors = [], pageErrors = [], loadErrors = [];
       page.on('pageerror', (e) => pageErrors.push(String(e.message || e).split('\n')[0]));

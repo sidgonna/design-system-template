@@ -14,12 +14,14 @@ owner: "{{OWNER_NAME_OR_TEAM}}"
 primary_languages: ["{{en}}", "{{te}}", "{{hi}}"]
 asset_root: "{{assets}}"
 tokens_file: "{{tokens/tokens.json}}"
+themes: [light, dark]   # TODO(intake): the themes to ship, first = default: any of light, dark, high-contrast or a brand variant (core.md §4.4); one is fine
+brands: []              # optional sub-brands under this parent brand, e.g. [{ id: kids, name: "Kids" }] (core.md §13.5)
 parts:
   core:                { file: "design/core.md",              always_load: true }
-  digital_product:     { file: "design/digital-product.md",   enabled: {{true|false}} }
-  marketing_content:   { file: "design/marketing-content.md", enabled: {{true|false}} }
-  motion_video:        { file: "design/motion-video.md",      enabled: {{true|false}} }
-  print_physical:      { file: "design/print.md",             enabled: {{true|false}} }
+  digital_product:     { file: "design/digital-product.md",   enabled: false }   # TODO(intake): true if the brief needs this part
+  marketing_content:   { file: "design/marketing-content.md", enabled: false }   # TODO(intake): true if the brief needs this part
+  motion_video:        { file: "design/motion-video.md",      enabled: false }   # TODO(intake): true if the brief needs this part
+  print_physical:      { file: "design/print.md",             enabled: false }   # TODO(intake): true if the brief needs this part
 ---
 
 # {{BRAND_NAME}} Design System
@@ -62,7 +64,8 @@ File names are fixed. New modules follow the same pattern: `design/<kebab-case-d
 | Convention | Meaning |
 |---|---|
 | `{{PLACEHOLDER}}` | Fill per brand or project. Unfilled means not ready. |
-| `{token.path}` | A value defined once in **§13** (core.md). Never write a raw hex, rgb, hsl, oklch, px or ms value anywhere else; `design-build/lint.mjs` flags it, in the design files and in the app's code, and names the token to use. |
+| `TODO(intake)` comment | Front matter only: a valid YAML default followed by a `TODO(intake)` comment (for example `enabled: false`, then the comment) that still counts as unfilled, so the file parses with any YAML reader. It means "not chosen yet", not "switched off". Replace the value with the real choice and delete the marker. |
+| `{token.path}` | A value defined once in **§13** (core.md), in three tiers: `palette.*` ramps, the system roles that alias them (`color.*`, `surface`, `border`, `on`, …) and `component.*` tokens that alias the roles. Only §13 and `tokens_file` name `palette.*`; components and app code use roles or component tokens (lint `token-tier`). Never write a raw hex, rgb, hsl, oklch, px or ms value anywhere else; `design-build/lint.mjs` flags it, in the design files and in the app's code, and names the token to use. |
 | `MUST` / `MUST NOT` | Hard rule. Breaking it is a defect. |
 | `SHOULD` / `AVOID` | Strong default. Breaking it needs a written reason. |
 | `FEEL:` | The human sense the rule protects. Read it before bending a rule. |
@@ -192,7 +195,7 @@ seed_rules:
   - Seeds count toward the §16.0 source cap. Record each one in research/notes.md like any other source.
   - Prefer specs and official systems over blog posts, listicles and AI-generated summaries.
   - Treat mature design systems as patterns to learn from, never as values to copy. Our values come from §1 and the user's picks.
-  - Color: generate candidate palettes with the palette_generators_for_agents tools (seed colors from §1 and the user), check every pairing for contrast, then show them in the Phase 3 studies. Link the matching human generator so the user can tweak a palette themselves.
+  - Color: generate candidate palettes with the palette_generators_for_agents tools (seed colors from §1 and the user); the chosen seeds become 11-step OKLCH ramps with `design-build/ramps.mjs` (core.md §4.1, §13.1). Check every pairing for contrast, then show them in the Phase 3 studies. Link the matching human generator so the user can tweak a palette themselves.
   - Motion: build Phase 3 motion studies with a motion_libraries option that fits the project's stack, and use plain CSS when there's no stack yet.
   - Sites that need a login or block automated access (e.g. Mobbin, Behance): skip them, note that in research/notes.md, and don't stall.
   - Teams can add their own seeds here. Keep each group to 6 or fewer, so the list stays a starting point and not a library (the lint counts them).
@@ -398,7 +401,7 @@ Write one manifest per direction, `design-build/studies/directions/<ID>.json` (n
 
 ### Phase 4 · Fill the template to about 90%
 Order matters, because later sections reference earlier ones:
-1. **§13 Tokens first**, from the chosen directions, also written to `tokens_file`.
+1. **§13 Tokens first**, from the chosen directions, also written to `tokens_file`: put the chosen seeds in §13 `ramps:` and run `node design-system/design-build/ramps.mjs` to write the `palette.*` ramps, then point the system roles at ramp steps and the component tokens at roles. Give every theme in the front matter `themes:` a mode, and every fill its `on.*` colour.
 2. **Core §1–§12** in order, referencing tokens only, with a `FEEL:` line written for each section.
 3. **§8 and §10 spec blocks**: one block per core icon and per named animation, with the asset files placed in `{asset_root}/icons` and `{asset_root}/motion`.
 4. **Enabled modules only**, each rule written as `NARROWS §N:` where it tightens core.
@@ -415,7 +418,11 @@ lint:
   raw_values_outside_tokens: 0      # raw-value: no hex, rgb, hsl, oklch, px or ms outside §13, tokens_file and generated files
   unresolved_tokens: 0              # unresolved-token: every {token.path} and var(--token) exists in tokens_file
   ownership_overlap: 0              # ownership-overlap: no § owned by two files (§0.3 and front matter)
-  contrast_failures: 0              # contrast: every §4 pairing passes §11, in light and dark
+  contrast_failures: 0              # contrast: every §4 pairing passes §11 (WCAG 2), in every theme and brand; APCA Lc is reported as info only
+  on_pair_failures: 0               # on-pair: every fill has its on-colour, readable at rest and under each §4.3 state layer
+  token_tier_skips: 0               # token-tier: no component token or component/app code names palette.*
+  theme_mismatch: 0                 # themes: front matter themes: and the token modes match; brand files hold only ramps
+  data_series_confusable: 0         # cvd: color.data.* series stay apart (OKLab ΔE ≥ 6) under protanopia, deuteranopia, tritanopia
   role_slot_misuse: 0               # role-slot: no token used in its §4 "Never use for" slot
   ai_default_fingerprints: 0        # avoid-default: no unjustified core.md §2 avoid_defaults
   unknown_components: 0             # unknown-component: every component is in design-build/inventory.json

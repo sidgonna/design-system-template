@@ -103,5 +103,13 @@ export function placeholders(s) {
   return out;
 }
 
+/**
+ * Unfilled items on a line: every outermost {{…}} placeholder, plus every `# TODO(intake)` marker. Front matter
+ * must stay valid YAML, so a value there that is not a string (enabled: false) holds a valid default and
+ * carries the marker instead of {{true|false}}; it counts as unfilled until the marker is deleted (§16 Phase 1).
+ */
+export const INTAKE_MARKER = /#\s*TODO\(intake\)/g;
+export const unfilled = (s) => placeholders(s).length + (String(s).match(INTAKE_MARKER) || []).length;
+
 /** Strip one level of {{ }} from a value: "{{#fff}}" -> "#fff" */
 export const unwrap = (v) => (typeof v === 'string' && /^\{\{[\s\S]*\}\}$/.test(v.trim()) ? v.trim().slice(2, -2).trim() : v);

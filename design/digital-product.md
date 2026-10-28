@@ -44,6 +44,7 @@ Which components use which `{radius.*}` and `{shadow.*}`; depth meaning: {{highe
 {{Forms, validation timing, confirmations, navigation patterns.}}
 ### M1.6 Data visualization
 Series colors `{color.data.*}`, axis/grid style, label rules, chart types allowed, never use 3D or pie with more than {{5}} slices.
+NARROWS §4.5: series are assigned in order `{color.data.1}`, `{color.data.2}`, …; the set stays distinguishable under protanopia, deuteranopia and tritanopia (lint `cvd`), and every series also gets a direct label, marker shape or dash pattern so colour is never the only signal (§11).
 - The starter series colors have light and dark values, and each one is at least 3:1 against `{color.surface.default}` and `{color.surface.raised}` in both modes (non-text contrast; the pairings in core.md §4 check it). They are for marks (bars, lines, dots), never for text: label every series and value with text in `{color.text.primary}` or `{color.text.secondary}`, so the chart reads without color.
 ### M1.7 SEO and content structure
 One H1 per page, heading order, meta title/description patterns, image alt and file naming → §11, §14.3.

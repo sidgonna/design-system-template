@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Generates design-build/preview/tokens.css, tokens.js and tokens.mjs from tokens_file (DTCG). Zero dependencies.
-//   tokens.css  CSS variables, light + dark (prefers-color-scheme and [data-theme]); the app imports this once
+//   tokens.css  CSS variables for every theme (prefers-color-scheme / prefers-contrast and [data-theme]) and
+//               sub-brand ([data-brand]); the app imports this once
 //   tokens.mjs  ES module (tokens, cssVar(), value()) for app code that needs a value in JS
 //   tokens.js   window.DESIGN_TOKENS for the preview page
 // Usage (any folder): node design-system/design-build/tokens-css.mjs [--check]   (--check exits 1 if out of date)
@@ -13,12 +14,15 @@ import { findProject, dsPrefix } from './lib/project.mjs';
 
 export function generate(root) {
   const ctx = loadContext(root);
-  const pairings = pairingResults(ctx).map((p) => ({ fg: p.fg, bg: p.bg, size: p.size, target: p.target, ratio: Object.fromEntries(Object.entries(p.modes).map(([m, r]) => [m, r?.ratio ?? null])) }));
+  const pick = (k) => (modes) => Object.fromEntries(Object.entries(modes).map(([m, r]) => [m, r?.[k] ?? null]));
+  const pairings = pairingResults(ctx).map((p) => ({ fg: p.fg, bg: p.bg, size: p.size, target: p.target, ratio: pick('ratio')(p.modes), apca: pick('lc')(p.modes) }));
+  const opts = { themes: ctx.themes, brands: ctx.brands.filter((b) => b.loaded) };
+  const brands = ctx.brands.map((b) => ({ id: b.id, name: b.name }));
   return {
     ctx,
-    css: buildCss(ctx.loaded, ctx.tokensRel),
-    js: buildJs(ctx.loaded, { pairings }, ctx.tokensRel),
-    mjs: buildMjs(ctx.loaded, ctx.tokensRel),
+    css: buildCss(ctx.loaded, ctx.tokensRel, opts),
+    js: buildJs(ctx.loaded, { themes: ctx.themes, brands, pairings }, ctx.tokensRel),
+    mjs: buildMjs(ctx.loaded, ctx.tokensRel, opts),
   };
 }
 
@@ -26,8 +30,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const { ctx, css, js, mjs } = generate(root);
   const pre = dsPrefix(findProject(root));
-  if (ctx.loaded.problems.length) {
-    for (const p of ctx.loaded.problems) console.error(`${pre}${ctx.tokensRel}:${p.line} ${p.message} → fix: ${p.fix}`);
+  const problems = [...ctx.loaded.problems.map((p) => ({ ...p, rel: ctx.tokensRel })), ...ctx.brands.flatMap((b) => (b.own?.problems || []).map((p) => ({ ...p, rel: b.rel })))];
+  if (problems.length) {
+    for (const p of problems) console.error(`${pre}${p.rel}:${p.line} ${p.message} → fix: ${p.fix}`);
     process.exit(1);
   }
   const out = path.join(root, 'design-build/preview');
@@ -39,6 +44,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   } else {
     fs.mkdirSync(out, { recursive: true });
     for (const [f, c] of targets) fs.writeFileSync(path.join(out, f), c);
-    console.log(`wrote ${pre}design-build/preview/tokens.css, tokens.js and tokens.mjs (${ctx.loaded.tokens.size} tokens, modes: ${ctx.loaded.modes.join(', ')})`);
+    console.log(`wrote ${pre}design-build/preview/tokens.css, tokens.js and tokens.mjs (${ctx.loaded.tokens.size} tokens, ${ctx.loaded.modes.length ? `modes: ${ctx.loaded.modes.join(', ')}` : `one theme: ${ctx.themes[0]}`})`);
   }
 }

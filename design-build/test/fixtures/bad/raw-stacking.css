@@ -1,0 +1,7 @@
+/* expect: raw-value=4, token-tier=1 */
+.scrim { opacity: 0.5; }
+.chip-muted { fill-opacity: 40%; }
+.menu { z-index: 999; }
+.toast { z-index: 1500; }
+.brand-chip { background: var(--palette-primary-700); }
+.ok { opacity: 0; z-index: 1; stroke-opacity: 1; }

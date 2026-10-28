@@ -314,7 +314,7 @@ test('mutation: core.md edited without rebuilding the board → board-stale (war
   assert(boardCli(dir, '--check').status === 1, 'board.mjs --check should fail');
   assert(boardCli(dir).status === 0 && !lint({ root: dir, phase: 5 }).findings.some((f) => f.rule === 'board-stale'), 'rebuilding did not clear board-stale');
 }));
-test('board: a module with enabled: false is shown switched off (greyed out), not hidden', () => withSandbox(({ edit }) => edit('design.md', (s) => s.replace(/(digital_product:[^\n]*enabled: )\{\{true\|false\}\}/, '$1false')), (dir) => {
+test('board: a module with enabled: false is shown switched off (greyed out), not hidden', () => withSandbox(({ edit }) => edit('design.md', (s) => s.replace(/(digital_product:[^\n]*enabled: false \})[^\n]*# TODO\(intake\)[^\n]*/, '$1')), (dir) => {
   const r = boardCli(dir); assert(r.status === 0, r.stderr);
   const b = boardJson(dir);
   assert(b.modules.find((m) => m.key === 'digital_product')?.state === 'off', JSON.stringify(b.modules));
@@ -452,6 +452,89 @@ test('agent hook: after-edit.mjs run from the app root flags a hard-coded color 
   const r = spawnSync(node, ['design-system/design-build/hooks/after-edit.mjs', '--format', 'claude'], { cwd: app, input: JSON.stringify({ tool_input: { file_path: path.join(app, 'src/Edit.css') } }), encoding: 'utf8' });
   assert(r.status === 2 && /src\/Edit\.css:1 raw-value/.test(r.stderr), `exit ${r.status}\n${r.stderr}${r.stdout}`);
 }));
+// ---------- 3b. tiers, on-colours, themes, data colours (upgrade step 1) ----------
+const tokenNode = (t, dotted) => dotted.split('.').reduce((o, k) => o?.[k], t);
+/** Point a colour role at another alias in tokens_file (every mode that held the old one, or just `mode`). */
+const setAlias = (json, dotted, alias, mode = null) => {
+  const t = JSON.parse(json), n = tokenNode(t, dotted);
+  if (!mode || mode === 'light') n.$value = alias;
+  if (n.$extensions?.mode) for (const m of Object.keys(n.$extensions.mode)) if (!mode || m === mode) n.$extensions.mode[m] = alias;
+  return JSON.stringify(t, null, 2);
+};
+/** The same change in the core.md §13 base block: `key: "{{ {old} }}"` → `key: "{new}"` on the line holding `group:`. */
+const setCoreAlias = (s, group, key, alias) => {
+  const lines = s.split('\n');
+  const i = lines.findIndex((l) => new RegExp(`^ {4}${group}: \\{`).test(l));
+  lines[i] = lines[i].replace(new RegExp(`(\\b${key}: )"[^"]*"`), `$1"${alias}"`);
+  return lines.join('\n');
+};
+const both = (dotted, group, key, alias) => ({ edit }) => { edit('tokens/tokens.json', (s) => setAlias(s, dotted, alias, 'light')); edit('design/core.md', (s) => setCoreAlias(s, group, key, alias)); };
+expectRule('on.primary pointed at a mid ramp step (low contrast on brand.primary)', 'on-pair', both('color.on.primary', 'on', 'primary', '{palette.primary.500}'));
+expectRule('a fill loses its on-colour (color.on.error deleted)', 'on-pair', ({ edit }) => {
+  edit('tokens/tokens.json', (s) => { const t = JSON.parse(s); delete t.color.on.error; return JSON.stringify(t, null, 2); });
+  edit('design/core.md', (s) => s.replace(/, error: "\{\{ \{palette\.neutral\.(50|950)\} \}\}"(?=, info)/g, ''));
+});
+expectRule('a component token names a ramp step directly', 'token-tier', ({ edit }) => {
+  edit('tokens/tokens.json', (s) => setAlias(s, 'component.button.primary.bg', '{palette.primary.700}'));
+  edit('design/core.md', (s) => s.replace('primary: { bg: "{color.brand.primary}"', 'primary: { bg: "{palette.primary.700}"'));
+});
+expectRule('components.css uses a ramp step', 'token-tier', ({ edit }) => edit('components/components.css', (s) => s + '\n.x { color: var(--palette-primary-700); }\n'));
+expectRule('design.md lists a theme the tokens do not have', 'themes', ({ edit }) => edit('design.md', (s) => s.replace(/^themes: \[light, dark\]/m, 'themes: [light, dark, high-contrast]')));
+expectRule('two data series nearly the same colour', 'cvd', ({ edit }) => {
+  edit('tokens/tokens.json', (s) => setColor(s, 'color.data.2', 'light', '#d37508'));
+  edit('design/core.md', (s) => s.replace('2: "{{#2995d6}}"', '2: "{{#d37508}}"'));
+});
+expectRule('§13 type role disagrees with tokens_file', 'tokens-sync', ({ edit }) => edit('design/core.md', (s) => s.replace(/(\n {4}body: \{ fontFamily: "\{font\.family\.body\}", fontSize: "\{font\.size\.body\}", fontWeight: )"\{font\.weight\.regular\}"/, '$1"{font.weight.bold}"')));
+expectRule('a ramp step hand-edited', 'tokens-sync', ({ edit }) => edit('tokens/tokens.json', (s) => { const t = s.replace(/("hex": )"#53968a"/, '$1"#66998c"'); assert(t !== s, 'ramp step not found'); return t; }));
+expectRule('§13 alias differs from tokens_file', 'tokens-sync', ({ edit }) => edit('design/core.md', (s) => s.replace('focus: "{{ {palette.primary.700} }}"', 'focus: "{{ {palette.primary.600} }}"')));
+test('front matter: every # TODO(intake) default is valid YAML and counts as unfilled', () => {
+  const md = fs.readFileSync(path.join(ROOT, 'design.md'), 'utf8');
+  const fm = md.match(/^---\n([\s\S]*?)\n---/)[1];
+  assert(!/\{\{[^}]*\|[^}]*\}\}/.test(fm), 'a {{a|b}} choice placeholder is back in the front matter (invalid YAML)');
+  let YAML = null; try { YAML = createRequire(path.join(BUILD, 'package.json'))('yaml'); } catch {}
+  if (YAML) { const doc = YAML.parseDocument(fm, { strict: true, uniqueKeys: true }); assert(!doc.errors.length, doc.errors.map(String).join('\n')); assert(doc.toJS().parts.digital_product.enabled === false, 'enabled is not a boolean'); }
+  const markers = (fm.match(/#\s*TODO\(intake\)/g) || []).length;
+  const res = lint({ root: ROOT });
+  const cfg = JSON.parse(fs.readFileSync(path.join(BUILD, 'lint.config.json'), 'utf8'));
+  assert(markers >= 5 && res.phPerFile['design.md'] === cfg.template_placeholders['design.md'], `markers ${markers}, lint ${res.phPerFile['design.md']}, config ${cfg.template_placeholders['design.md']}`);
+  const b = boardJson(ROOT);
+  assert(b.modules.every((m) => m.state === 'unset'), `a # TODO(intake) default should read "not chosen": ${JSON.stringify(b.modules)}`);
+});
+const THEME_FIX = path.join(FIX, 'themes/make.mjs');
+const { darkOnly, threeTheme } = await import(pathToFileURL(THEME_FIX).href);
+const tz = path.join(BUILD, 'node_modules/.bin/tz');
+for (const [kind, make, themes] of [['dark-only', darkOnly, ['dark']], ['three-theme', threeTheme, ['light', 'dark', 'high-contrast']]]) {
+  test(`theme fixture ${kind}: lint, Terrazzo, tokens.css, board and ui-inventory all pass`, () => withSandbox(({ dir }) => {
+    make(dir);
+    for (const s of ['tokens-css.mjs', 'board.mjs']) { const r = spawnSync(node, [path.join(dir, 'design-build', s)], { cwd: dir, encoding: 'utf8' }); assert(r.status === 0, `${s}: ${r.stdout}${r.stderr}`); }
+  }, (dir) => {
+    const res = lint({ root: dir });
+    const bad = res.findings.filter((f) => f.severity !== 'info');
+    assert(!bad.length, show(bad));
+    assert(JSON.stringify(res.ctx.themes) === JSON.stringify(themes), `themes ${res.ctx.themes}`);
+    for (const [s, ...a] of [['tokens-css.mjs', '--check'], ['board.mjs', '--check'], ['ui-inventory.mjs', '--check']]) { const r = spawnSync(node, [path.join(dir, 'design-build', s), ...a], { cwd: dir, encoding: 'utf8' }); assert(r.status === 0, `${s} ${a}: ${r.stdout}${r.stderr}`); }
+    const css = fs.readFileSync(path.join(dir, 'design-build/preview/tokens.css'), 'utf8');
+    for (const th of themes) assert(css.includes(`:root[data-theme="${th}"]`), `tokens.css has no [data-theme="${th}"] block`);
+    if (kind === 'dark-only') assert(!css.includes('prefers-color-scheme') && /color-scheme: dark/.test(css), 'dark-only tokens.css should be dark with no OS switch');
+    if (kind === 'three-theme') assert(css.includes('(prefers-contrast: more)'), 'no prefers-contrast block');
+    const b = fs.readFileSync(path.join(dir, 'design-build/preview/index.html'), 'utf8');
+    for (const th of themes) assert(b.includes(`data-theme-choice="${th}"`) , `board toolbar has no ${th} button`);
+    if (fs.existsSync(tz)) {
+      fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'design-build/node_modules'));
+      const r = spawnSync(tz, ['check', path.join(dir, 'tokens/tokens.json'), '--config', path.join(dir, 'design-build/terrazzo.config.mjs')], { cwd: path.join(dir, 'design-build'), encoding: 'utf8' });
+      assert(r.status === 0, `tz check: ${r.stdout}${r.stderr}`);
+    }
+  }));
+}
+if (fs.existsSync(tz)) test('Terrazzo: a colour role missing its dark mode fails tokens:check (required-modes covers color.on.*)', () => withSandbox(({ edit }) => edit('tokens/tokens.json', (s) => { const t = JSON.parse(s); delete t.color.on.primary.$extensions.mode.dark; return JSON.stringify(t, null, 2); }), (dir) => {
+  fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'design-build/node_modules'));
+  const r = spawnSync(tz, ['check', path.join(dir, 'tokens/tokens.json'), '--config', path.join(dir, 'design-build/terrazzo.config.mjs')], { cwd: path.join(dir, 'design-build'), encoding: 'utf8' });
+  assert(r.status !== 0 && /color\.on\.primary|required-modes|dark/i.test(r.stdout + r.stderr), `exit ${r.status}\n${r.stdout}${r.stderr}`);
+}));
+test('ramps.mjs: every palette step is what its seed makes (ramps --check)', () => {
+  const r = spawnSync(node, [path.join(BUILD, 'ramps.mjs'), '--check'], { cwd: ROOT, encoding: 'utf8' });
+  assert(r.status === 0, r.stdout + r.stderr);
+});
 const tokensMjs = await import(path.join(BUILD, 'preview/tokens.mjs'));
 test('tokens-css.mjs writes tokens.mjs and it resolves CSS variables', () => {
   const mod = tokensMjs;
@@ -532,6 +615,21 @@ if (hasPlaywright || args.has('--render')) {
     const r = spawnSync(node, [path.join(HERE, 'helpers-browser.mjs')], { encoding: 'utf8', cwd: BUILD });
     assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
   });
+  for (const [kind, make] of [['dark-only', darkOnly], ['three-theme', threeTheme]]) test(`render: the ${kind} fixture board passes render.mjs in every theme it lists`, () => withSandbox(({ dir }) => {
+    make(dir);
+    for (const s of ['tokens-css.mjs', 'board.mjs']) spawnSync(node, [path.join(dir, 'design-build', s)], { cwd: dir, encoding: 'utf8' });
+    fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'design-build/node_modules'));
+  }, (dir) => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'design-render-'));
+    try {
+      const r = spawnSync(node, [path.join(dir, 'design-build/render.mjs'), '--widths', '390,1280', '--root', dir, '--out', tmp, '--reports', tmp, '--json'], { cwd: dir, encoding: 'utf8' });
+      assert(r.status === 0, `exit ${r.status}\n${r.stdout.slice(0, 3000)}${r.stderr}`);
+      const shots = fs.readdirSync(tmp).filter((f) => f.endsWith('.png'));
+      const want = kind === 'dark-only' ? ['dark'] : ['light', 'dark', 'high-contrast'];
+      for (const th of want) assert(shots.some((f) => f.endsWith(`-${th}.png`)), `no ${th} screenshot: ${shots}`);
+      if (kind === 'dark-only') assert(!shots.some((f) => f.endsWith('-light.png')), `dark-only rendered light: ${shots}`);
+    } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  }));
 } else results.push('  skip render fixture (Playwright not installed: npm --prefix design-build ci && npx --prefix design-build playwright install chromium)');
 
 if (SSR.dir) fs.rmSync(SSR.dir, { recursive: true, force: true });

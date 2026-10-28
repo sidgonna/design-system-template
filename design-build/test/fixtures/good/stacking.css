@@ -1,0 +1,5 @@
+.scrim { opacity: var(--opacity-scrim); }
+.menu { z-index: var(--z-index-dropdown); }
+.hidden { opacity: 0; z-index: -1; }
+.card { background: var(--component-card-bg); color: var(--color-text-primary); }
+.btn:hover { background: color-mix(in oklab, var(--component-button-primary-bg), var(--component-button-primary-fg) calc(var(--state-hover) * 100%)); }

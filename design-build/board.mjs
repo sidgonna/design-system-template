@@ -22,7 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadContext, pairingResults, readJson } from './lib/context.mjs';
-import { placeholders } from './lib/markdown.mjs';
+import { placeholders, unfilled, INTAKE_MARKER } from './lib/markdown.mjs';
 import { loadTokens, flatten, varName } from './lib/tokens.mjs';
 import { toHex } from './lib/color.mjs';
 import { generate as generateTokens } from './tokens-css.mjs';
@@ -172,9 +172,11 @@ function renderBlocks(lines, src, { skipYaml = [], skipTables = [], label = 'Tab
 }
 
 // ---------- model ----------
-const sectionOf = (f, id) => (f ? f.analysis.lines.filter((L) => !L.frontMatter && L.section === id) : []);
-const countPh = (lines) => lines.reduce((s, L) => s + placeholders(L.text).length, 0);
-const hintsOf = (lines, src) => lines.flatMap((L) => placeholders(L.text).map((p) => ({ line: L.n, hint: safeHint(p.text, src) })));
+// deep: a core § tile also holds its numbered sub-sections (### 4.1 …) unless those are tiles of their own (§14.n)
+const sectionOf = (f, id, deep = false) => (f ? f.analysis.lines.filter((L) => !L.frontMatter && (L.section === id || (deep && typeof L.section === 'string' && L.section.startsWith(id + '.')))) : []);
+const countPh = (lines) => lines.reduce((s, L) => s + unfilled(L.text), 0);   // {{…}} plus front matter # TODO(intake) markers, as the lint counts
+const markerHint = (text) => text.slice(text.search(INTAKE_MARKER)).replace(/^#\s*TODO\(intake\):?\s*/, '') || 'decide in §16 Phase 1';
+const hintsOf = (lines, src) => lines.flatMap((L) => [...placeholders(L.text).map((p) => ({ line: L.n, hint: safeHint(p.text, src) })), ...(L.text.match(INTAKE_MARKER) || []).map(() => ({ line: L.n, hint: safeHint(`${L.text.trim().split(/[:\s]/)[0]}: ${markerHint(L.text)}`, src) }))]);
 function headingOf(f, id) {
   const L = sectionOf(f, id).find((x) => /^#{2,4}\s/.test(x.text));
   return L ? L.text.replace(/^#{2,4}\s+§?/, '').replace(/^(?:M\d+|\d+)(?:\.\d+)*\s*/, '').trim() : '';
@@ -184,14 +186,17 @@ function feelOf(lines) {
   return L ? L.text.trim().replace(/^\*\*FEEL:\*\*\s*/, '') : null;
 }
 
-/** design.md parts → on (always_load or enabled: true), off (enabled: false) or unset (still a {{placeholder}}). */
+/** design.md parts → on (always_load or enabled: true), off (enabled: false, chosen) or unset (still a {{placeholder}} or a # TODO(intake) default). */
 export function moduleStates(ctx) {
   const parts = ctx.index?.fm?.parts || {};
   const out = {};
   for (const [k, p] of Object.entries(parts)) {
     if (!p || typeof p !== 'object' || !p.file) continue;
     const rel = String(p.file).startsWith('design/') ? String(p.file) : `design/${p.file}`;
-    out[rel] = { key: k, state: p.always_load === true || p.enabled === true ? 'on' : p.enabled === false ? 'off' : 'unset' };
+    // `enabled: false   # TODO(intake)` is the unfilled default: not chosen yet, not switched off
+    const line = (ctx.index?.analysis?.lines || []).find((L) => L.frontMatter && new RegExp(`^\\s*${k}\\s*:`).test(L.text));
+    const pending = !!line && new RegExp(INTAKE_MARKER.source).test(line.text);
+    out[rel] = { key: k, state: p.always_load === true || p.enabled === true ? 'on' : p.enabled === false && !pending ? 'off' : 'unset' };
   }
   return out;
 }
@@ -257,7 +262,7 @@ export function model(root) {
   };
   const tileId = (id) => id.replace('§', '').toLowerCase().replace(/\./g, '-').replace(/^(\d)/, 's$1');
   const sec = (zone, rel, id, extra = {}) => {
-    const f = F(rel), lines = sectionOf(f, id), feel = feelOf(lines);
+    const f = F(rel), lines = sectionOf(f, id, extra.deep === true), feel = feelOf(lines);
     const mod = rel === 'design/core.md' ? 'on' : mods[rel]?.state ?? 'unset';
     return T({ zone, id: tileId(id), review: id, file: rel, sections: [id], title: `${id} ${headingOf(f, id)}`.trim(), feel, placeholders: countPh(lines), hints: hintsOf(lines, rel), status: f ? status(lines, feel) : 'empty', module: mod, counted: mod === 'on', lines, ...extra });
   };
@@ -267,8 +272,8 @@ export function model(root) {
   const brandRaw = String(idx?.fm?.brand_name ?? '{{BRAND_NAME}}');
   const feelLine = (idx?.analysis.lines.find((L) => /One-line feel:/.test(L.text))?.text || '').replace(/^>?\s*\*\*One-line feel:\*\*\s*/, '');
   T({ zone: 0, id: 'overview', review: 'overview', file: ctx.config.index, sections: ['front matter', 'intro'], title: 'Brand at a glance', feel: null, placeholders: countPh(introLines), hints: hintsOf(introLines, ctx.config.index), status: status(introLines, feelLine), module: 'on', counted: true, lines: [], kind: 'overview', wide: true, duo: true });
-  for (const n of [1, 2, 3, 6, 7, 8]) sec(1, 'design/core.md', `§${n}`, { duo: n === 3 });
-  for (const n of [4, 5, 9, 10, 11, 12, 13]) sec(2, 'design/core.md', `§${n}`, { duo: n === 4 || n === 5 });
+  for (const n of [1, 2, 3, 6, 7, 8]) sec(1, 'design/core.md', `§${n}`, { duo: n === 3, deep: true });
+  for (const n of [4, 5, 9, 10, 11, 12, 13]) sec(2, 'design/core.md', `§${n}`, { duo: n === 4 || n === 5, deep: true });
   const dp = 'design/digital-product.md';
   sec(3, dp, '§M1');
   for (let n = 1; n <= 7; n++) sec(3, dp, `§M1.${n}`, n === 1 ? { wide: true, duo: true } : {});
@@ -467,8 +472,9 @@ function bodyFor(t, M) {
   switch (t.review) {
     case '§1': return `${R({ skipTables: ['Axis'] })}<h4>Personality sliders</h4>${sliders(t.lines)}`;
     case '§3': return `${R()}<h4>Logo variants <span class="h-note">from ${esc(M.logo.rel)}</span></h4>${logoGallery(M)}`;
-    case '§4': return `<div class="grid-swatch" id="swatches"></div><h4>Roles</h4>${R({ skipYaml: ['pairings'] })}<h4>Contrast pairings</h4>
-<div class="table-scroll" role="region" aria-label="Contrast pairings" tabindex="0"><table><caption class="note-text">Computed from the tokens when the page loads; lint.mjs checks the same ratios in both modes.</caption><thead><tr><th scope="col">Sample</th><th scope="col">Foreground</th><th scope="col">Background</th><th scope="col">Needs</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody id="pairings"></tbody></table></div>`;
+    case '§4': return `<h4>Reference ramps <span class="h-note">palette.*, 50–950 from the §13 seeds (design-build/ramps.mjs)</span></h4><div class="ramps" id="ramps"></div>
+<h4>System roles</h4><div class="grid-swatch" id="swatches"></div><h4>Roles</h4>${R({ skipYaml: ['pairings'] })}<h4>Contrast pairings</h4>
+<div class="table-scroll" role="region" aria-label="Contrast pairings" tabindex="0"><table><caption class="note-text">WCAG 2 ratios per theme (the gate) and APCA Lc (advisory, core.md §4.5), computed from the tokens for the default brand; lint.mjs checks every theme, sub-brand and state layer.</caption><thead><tr><th scope="col">Sample</th><th scope="col">Foreground</th><th scope="col">Background</th><th scope="col">Needs</th>${themesOf(M).map((t) => `<th scope="col">${esc(themeLabel(t))}</th>`).join('')}<th scope="col">APCA Lc</th></tr></thead><tbody id="pairings"></tbody></table></div>`;
     case '§5': return `<div id="type-scale"></div>${specimen.scripts()}<h4>Rules</h4>${R()}`;
     case '§8': return specimen.icons() + R();
     case '§9': return `<div id="space-scale"></div>${R()}`;
@@ -479,7 +485,7 @@ function bodyFor(t, M) {
       for (const p of M.ctx.flat.keys()) { const g = p.split('.').slice(0, 2).join('.'); groups[g] = (groups[g] || 0) + 1; }
       return `<p>Raw values live only in <code>${esc(M.ctx.tokensRel)}</code> and the §13 yaml block, never in the board's markup: the table below reads them from <code>tokens.js</code> when the page loads.</p>
 <ul class="token-groups">${Object.entries(groups).map(([g, n]) => `<li><code>${esc(g)}</code> <span class="count">${n}</span></li>`).join('')}</ul>
-<details class="token-details"><summary>All ${M.ctx.flat.size} tokens, light and dark</summary><div class="table-scroll" role="region" aria-label="All tokens" tabindex="0"><table><thead><tr><th scope="col">Token</th><th scope="col">CSS variable</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody id="token-table"></tbody></table></div></details>`;
+<details class="token-details"><summary>All ${M.ctx.flat.size} tokens, ${esc(themesOf(M).map(themeLabel).join(', ').toLowerCase())}</summary><div class="table-scroll" role="region" aria-label="All tokens" tabindex="0"><table><thead><tr><th scope="col">Token</th><th scope="col">CSS variable</th>${themesOf(M).map((t) => `<th scope="col">${esc(themeLabel(t))}</th>`).join('')}</tr></thead><tbody id="token-table"></tbody></table></div></details>`;
     }
     case '§M1.1': return R() + specimen.components();
     case '§M1.3': return `${R()}<h4>Breakpoints from the tokens</h4><ul class="bp-list" id="breakpoints"></ul>`;
@@ -577,12 +583,14 @@ ${rel.fonts ? `<link rel="stylesheet" href="${esc(rel.fonts)}">\n` : ''}<link re
 <link rel="stylesheet" href="${rel.preview}preview.css">
 <script src="${rel.preview}tokens.js"></script>
 <script>
-  // Before first paint: the saved or requested theme (?theme=light|dark), layout (?view=canvas) and motion setting.
+  // Before first paint: the saved or requested theme (?theme=<one of design.md themes>), sub-brand (?brand=<id>),
+  // layout (?view=canvas) and motion setting.
   (function () {
-    var q = new URLSearchParams(location.search), r = document.documentElement;
+    var q = new URLSearchParams(location.search), r = document.documentElement, D = window.DESIGN_TOKENS || {};
     function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-    var t = q.get('theme') || get('preview-theme');
-    if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t);
+    var t = q.get('theme') || get('preview-theme'), b = q.get('brand') || get('preview-brand');
+    if ((D.themes || ['light', 'dark']).indexOf(t) >= 0) r.setAttribute('data-theme', t);
+    if (b && (D.brands || []).some(function (x) { return x.id === b; })) r.setAttribute('data-brand', b);
     if ((q.get('view') || get('board-view')) === 'canvas') r.setAttribute('data-view', 'canvas');
     if (get('board-motion') === 'reduce') r.setAttribute('data-motion', 'reduce');
   })();
@@ -590,11 +598,12 @@ ${rel.fonts ? `<link rel="stylesheet" href="${esc(rel.fonts)}">\n` : ''}<link re
 <script src="${rel.preview}preview.js" defer></script>
 </head>`;
 
-const toolbar = (label, { canvas = true, review = true } = {}) => `<a class="skip-link" href="#main">Skip to content</a>
+const toolbar = (label, { canvas = true, review = true, themes = ['light', 'dark'], brands = [] } = {}) => `<a class="skip-link" href="#main">Skip to content</a>
 <header class="board-bar">
 <h1 data-key>${esc(label)}</h1>
 <div class="bar-tools">
-<div class="tool-group" role="group" aria-label="Color theme" data-key><button type="button" class="tool" data-theme-choice="light" aria-pressed="false">Light</button><button type="button" class="tool" data-theme-choice="dark" aria-pressed="false">Dark</button><button type="button" class="tool" data-theme-choice="system" aria-pressed="true">System</button>${canvas ? '<button type="button" class="tool" id="toggle-duo" aria-pressed="false">Side by side</button>' : ''}</div>
+<div class="tool-group" role="group" aria-label="Color theme" data-key>${themes.map((t) => `<button type="button" class="tool" data-theme-choice="${esc(t)}" aria-pressed="false">${esc(themeLabel(t))}</button>`).join('')}${themes.length > 1 ? '<button type="button" class="tool" data-theme-choice="system" aria-pressed="true">System</button>' : ''}${canvas && themes.length > 1 ? '<button type="button" class="tool" id="toggle-duo" aria-pressed="false">Side by side</button>' : ''}</div>
+${brands.length ? `<div class="tool-group" role="group" aria-label="Brand" data-key><button type="button" class="tool" data-brand-choice="" aria-pressed="true">Main brand</button>${brands.map((b) => `<button type="button" class="tool" data-brand-choice="${esc(b.id)}" aria-pressed="false">${esc(stripPh(b.name || b.id))}</button>`).join('')}</div>` : ''}
 ${canvas ? '<div class="tool-group view-switch" role="group" aria-label="Layout"><button type="button" class="tool" data-view-choice="page" aria-pressed="true">Page</button><button type="button" class="tool" data-view-choice="canvas" aria-pressed="false">Canvas</button></div>' : ''}
 <div class="tool-group" role="group" aria-label="Motion"><button type="button" class="tool" id="replay-motion">Replay motion</button><button type="button" class="tool" id="toggle-reduce" aria-pressed="false">Reduce motion</button></div>
 ${review ? '<div class="tool-group" role="group" aria-label="Review"><button type="button" class="tool" id="toggle-review" aria-pressed="false">Review</button></div>' : ''}
@@ -618,10 +627,10 @@ ${inner}
   }).join('\n');
   const html = `${head('Design system board', 'Every part of the design system as a tile, built from the design files, tokens and UI inventory by design-build/board.mjs.', { preview: '', components: '../../components/', fonts: fontsHref(root, M.ctx) })}
 <body data-page="board">
-${toolbar('Design system board')}
+${toolbar('Design system board', { themes: themesOf(M), brands: M.ctx.brands.filter((b) => b.loaded) })}
 <nav class="zone-nav" aria-label="Board zones" data-key><ul>${ZONES.map(([z, name]) => `<li><a href="#zone-${z}">${z} · ${esc(name)}</a></li>`).join('')}</ul></nav>
 <main id="main" tabindex="-1">
-<section class="duo" id="duo" aria-label="Light and dark side by side" hidden><div class="duo-pane" data-mode="light"><h2 class="duo-title">Light</h2><div class="duo-body"></div></div><div class="duo-pane" data-mode="dark"><h2 class="duo-title">Dark</h2><div class="duo-body"></div></div></section>
+<section class="duo" id="duo" aria-label="${esc(themesOf(M).map(themeLabel).join(', '))} side by side" hidden>${themesOf(M).map((t) => `<div class="duo-pane" data-mode="${esc(t)}"><h2 class="duo-title">${esc(themeLabel(t))}</h2><div class="duo-body"></div></div>`).join('')}</section>
 <div class="canvas-shell">
 <div class="board-viewport" id="board-viewport" role="region" aria-label="Board. In canvas layout: arrow keys scroll, plus and minus zoom, 0 resets, F fits" tabindex="0">
 <div class="board" id="board">
@@ -651,7 +660,10 @@ ${zones}
 }
 
 const cell = (s) => String(s).replace(/\|/g, '/').replace(/\n/g, ' ');
-const hexPair = (h) => (h ? `${h.light ?? h.base} / ${h.dark ?? h.base}` : '');
+const hexPair = (h) => (h ? [...new Set(Object.entries(h).filter(([m]) => m !== 'base').map(([, x]) => x))].join(' / ') || h.base : '');
+/** design.md themes (first = default) and a button label for each: high-contrast → High contrast. */
+const themesOf = (M) => M.ctx.themes;
+const themeLabel = (t) => String(t).replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
 function companionMd(M, json) {
   const c = M.coverage, L = [];
   const state = (m) => (m === 'on' ? 'on' : m === 'off' ? 'switched off' : 'not chosen');
@@ -672,8 +684,9 @@ function companionMd(M, json) {
   L.push('## Logo', '', `Manifest: \`${json.logo.manifest}\`${json.logo.placeholder ? ' (placeholder artwork)' : ''}`, '', '| Variant | File | Color (light / dark) | Background (light / dark) |', '|---|---|---|---|');
   for (const v of json.logo.variants) L.push(`| ${v.name} | \`${v.file}\` | \`${v.color}\` ${hexPair(v.hex.color)} | \`${v.background}\` ${hexPair(v.hex.background)} |`);
   if (json.logo.problems.length) L.push('', `Problems: ${json.logo.problems.join('; ')}`);
-  L.push('', '## Colors', '', '| Token | Light | Dark |', '|---|---|---|');
-  for (const [p, h] of Object.entries(json.colors)) L.push(`| \`${p}\` | ${h.light ?? h.base} | ${h.dark ?? h.base} |`);
+  const TH = themesOf(M);
+  L.push('', '## Colors', '', `| Token | ${TH.map(themeLabel).join(' | ')} |`, `|---|${TH.map(() => '---|').join('')}`);
+  for (const [p, h] of Object.entries(json.colors)) L.push(`| \`${p}\` | ${TH.map((t) => h[t] ?? h.base).join(' | ')} |`);
   L.push('');
   return L.join('\n');
 }
@@ -732,7 +745,7 @@ export function buildStudies(root, ids) {
 </section>`).join('\n');
   out.html = `${head('Visual studies: Phase 3', 'Phase 3 directions side by side, one overview card each, generated by design-build/board.mjs --overview-only.', { preview: '../preview/', components: '../../components/', fonts: fontsHref(root, ctx) })}
 <body data-page="studies" data-directions="${esc(dirs.map((d) => d.id).join(','))}">
-${toolbar('Visual studies: pick a direction', { canvas: false, review: false })}
+${toolbar('Visual studies: pick a direction', { canvas: false, review: false, themes: ctx.themes, brands: ctx.brands.filter((b) => b.loaded) })}
 <nav class="zone-nav" aria-label="Directions" data-key><ul>${dirs.map((d) => `<li><a href="#dir-${esc(d.id)}">Direction ${esc(d.id)}</a></li>`).join('')}</ul></nav>
 <main id="main" tabindex="-1" class="studies">
 <p class="load-note" id="studies-note">Each direction is shown in light and dark with its own tokens, read from <code>directions/&lt;ID&gt;.resolved.json</code> over http. Serve the folder with <code>node design-build/board.mjs --serve --watch</code>.</p>
@@ -794,7 +807,8 @@ export function liveRebuild(root) {
       else outputs.push(...s.resolved, ['design-build/studies/index.html', s.html]);
     }
   }
-  const tokens = new Map([...t.ctx.loaded.tokens].map(([k, v]) => [k, JSON.stringify([v.value, v.modes])]));
+  // resolved values too, so a role that aliases a changed ramp step counts as changed
+  const tokens = new Map([...t.ctx.loaded.tokens].map(([k, v]) => { const f = t.ctx.flat.get(k); return [k, JSON.stringify([v.value, v.modes, f ? [f.css, f.color, f.px] : null])]; }));
   return { outputs, html: b.html, tokens, problems };
 }
 
