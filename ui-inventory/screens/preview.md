@@ -1,0 +1,29 @@
+# Design system preview
+
+<!-- ui-inventory:generated — from design-build/inventory.json by `node design-system/design-build/ui-inventory.mjs`; edit the JSON, not this block -->
+| | |
+|---|---|
+| Screen | Design system preview (`preview`) |
+| Route | `design-build/preview/index.html` |
+| Purpose | The living style guide: tokens, type, color, motion and the shipped components in every variant and state, for review (design.md §16 Phase 5). |
+| Source | `design-build/preview/index.html` |
+
+| Component | Variants used | States used | Status |
+|---|---|---|---|
+| [Button](../components/button.md) | `primary`, `secondary`, `ghost`, `danger` | `default`, `hover`, `focus`, `active`, `disabled`, `loading` | existing |
+| [Input](../components/input.md) | `default`, `error` | `default`, `focus`, `error` | existing |
+| [Card](../components/card.md) | `flat`, `raised` | `default`, `hover`, `focus` | existing |
+| [Badge](../components/badge.md) | `neutral`, `success`, `warning`, `error`, `info` | `default` | existing |
+<!-- /ui-inventory:generated -->
+
+## Layout
+- **Order, top to bottom:**
+  1. A header with the theme toggle.
+  2. Sections for color pairings, type, spacing, radius and shadow.
+  3. Motion, with the "Play motion" demo.
+  4. Components: Buttons in all four variants plus disabled, loading and toggle; Inputs in default, required, disabled and error; flat, raised and interactive Cards; Badges in all five variants.
+- **Reflow:** the sections stack on mobile. The component rows wrap on tablet and desktop.
+
+## Notes
+- **Purpose:** this is a review screen, not a product screen. It shows every variant and state at once, so the reviewer and `design-build/render.mjs` (axe, the reflow check, screenshots) and `design-build/motion.mjs` can check them.
+- **Markup:** it uses the shipped `components/components.css` through the HTML API (`data-component`), the same CSS the React wrappers render.

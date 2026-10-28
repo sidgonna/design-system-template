@@ -21,6 +21,7 @@ import { inSection, yamlBlock, yamlBlockKeys, table, placeholders, unwrap, analy
 import { parseColor, parseDtcgColor, toHex, deltaE, srgbToOklch, suggestPassingColor } from './lib/color.mjs';
 import { varName, toPx, collectAliases } from './lib/tokens.mjs';
 import { generate } from './tokens-css.mjs';
+import { STATES, DOC_STATES, COMPONENT_HEADINGS, UI_DIR, expected as uiExpected, blockOf, docPath, screenPath, screensOf, resolveSource } from './lib/ui-inventory.mjs';
 import { DS_ROOT, findProject, fixHint, appCodeTargets, projectConfig, APP_EXCLUDE } from './lib/project.mjs';
 
 const RULES = {
@@ -30,6 +31,7 @@ const RULES = {
   contrast: '§4 pairing below the §11 contrast minimum in a mode',
   'avoid-default': 'unjustified AI-look default from core.md §2 avoid_defaults',
   'unknown-component': 'component, variant or prop not in design-build/inventory.json',
+  'ui-inventory': 'a screen or component without a complete ui-inventory doc, a doc out of sync with inventory.json, or a doc token that does not exist',
   'ownership-overlap': 'a § owned by two files, or defined outside its owner',
   completion: 'filled placeholders below the Phase 4 minimum (phase >= 4 only)',
   'tokens-format': 'tokens_file is not valid DTCG, or a themed color lacks a mode',
@@ -593,6 +595,79 @@ export function lint(opts = {}) {
       }
     }
   }
+  // ---- ui-inventory (per-screen component use + one doc per component; design.md §0.5, §16 Phase 2/6) ----
+  if (inv) {
+    const UI = (m, fix, file = ctx.inventoryRel, line = 1, extra = {}) => add('ui-inventory', 'error', file, line, m, fix, extra);
+    const byName = (n) => comps.get(normName(n || ''));
+    const regen = 'run node design-system/design-build/ui-inventory.mjs';
+    const readRel = (rel) => { const f = path.join(root, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null; };
+    if (inv.screens !== undefined && (typeof inv.screens !== 'object' || Array.isArray(inv.screens))) UI('inventory.json "screens" must be an object keyed by screen id', 'write "screens": { "<id>": { "name", "route", "purpose", "source", "components": [...] } } (ui-inventory/templates/screen.md)');
+    // screens
+    for (const [id, s] of screensOf(inv)) {
+      for (const k of ['name', 'route', 'purpose']) if (!s[k] || typeof s[k] !== 'string') UI(`screen "${id}" has no ${k}`, `add "${k}" to screens.${id} in inventory.json`);
+      if (!Array.isArray(s.components) || !s.components.length) { UI(`screen "${id}" lists no components`, `list every inventory component the screen renders with its variants and states (screens.${id}.components)`); continue; }
+      const listed = new Set();
+      for (const u of s.components) {
+        const c = byName(u.component);
+        if (!c) { UI(`screen "${id}" uses "${u.component}", which is not in ${ctx.inventoryRel}`, `reuse ${didYouMean(u.component || '', (inv.components || []).map((x) => x.name)).join(' or ') || 'an existing component'}; a new one needs the user's agreement, a doc and a reference search first (§0.5)`, ctx.inventoryRel, 1, { value: u.component }); continue; }
+        if (u.component !== c.name) UI(`screen "${id}" names "${u.component}"; use the inventory name "${c.name}"`, `write "component": "${c.name}"`);
+        listed.add(c.name);
+        for (const v of u.variants || []) if (!(c.variants || []).includes(v)) UI(`screen "${id}" uses ${c.name} variant "${v}", which inventory.json doesn't list`, `use one of: ${(c.variants || []).join(', ') || '(none)'}`, ctx.inventoryRel, 1, { value: v });
+        for (const st of u.states || []) if (!STATES.includes(st)) UI(`screen "${id}" gives ${c.name} the state "${st}", which is not a §M1.2 state`, `use: ${STATES.join(', ')}`, ctx.inventoryRel, 1, { value: st });
+      }
+      // the screen's source files must render exactly the listed components
+      for (const rel of s.source || []) {
+        const abs = resolveSource(where.project, root, rel);
+        if (!abs) { UI(`screen "${id}" source "${rel}" does not exist`, 'give the path relative to the project root (or the design-system folder)'); continue; }
+        const text = fs.readFileSync(abs, 'utf8');
+        const found = new Set();
+        for (const m of text.matchAll(/\bdata-component\s*=\s*["']([^"']+)["']/g)) { const c = byName(m[1]); if (c) found.add(c.name); }
+        for (const m of text.matchAll(/<([A-Z]\w*)\b/g)) { const c = byName(m[1]); if (c && !ignTags.has(m[1])) found.add(c.name); }
+        const fr = path.relative(where.project, abs).split(path.sep).join('/');
+        for (const n of found) if (!listed.has(n)) UI(`${fr} renders ${n}, but screen "${id}" doesn't list it`, `add { "component": "${n}", "variants": [...], "states": [...] } to screens.${id}.components`, ctx.inventoryRel, 1, { value: n });
+        if ((s.source || []).length === 1) for (const n of listed) if (!found.has(n)) UI(`screen "${id}" lists ${n}, but ${fr} doesn't render it`, `remove it from screens.${id}.components, or add the source file that renders it to screens.${id}.source`, ctx.inventoryRel, 1, { value: n });
+      }
+    }
+    // docs: one per existing component and per component on a screen; generated blocks in sync
+    const exp = uiExpected(root, inv);
+    if (readRel(exp.index.rel) !== exp.index.text) UI(`${exp.index.rel} is missing or out of date`, regen, exp.index.rel);
+    for (const b of exp.blocks) {
+      const text = readRel(b.rel);
+      if (text === null) { UI(`${b.kind} "${b.name}" has no doc (${b.rel})`, `${regen} to create it from ${UI_DIR}/templates/${b.kind}.md, then fill it in${b.kind === 'component' ? ' after the per-component reference search (§16 Phase 2)' : ''}`, b.rel); continue; }
+      if (blockOf(text) !== b.block) UI(`${b.rel}: the generated block is missing or out of date with inventory.json`, regen, b.rel);
+      if (b.kind !== 'component') continue;
+      const c = byName(b.name);
+      const secs = new Map(); let cur = null;
+      text.split('\n').forEach((l, i) => { const h = l.match(/^##\s+(.+?)\s*$/); if (h) { cur = h[1].replace(/’/g, "'"); secs.set(cur, { line: i + 1, body: [] }); } else if (cur) secs.get(cur).body.push(l); });
+      const body = (h) => (secs.get(h)?.body || []).join('\n');
+      for (const h of COMPONENT_HEADINGS) {
+        if (!secs.has(h)) { UI(`${b.rel} has no "## ${h}" section`, `add it (see ${UI_DIR}/templates/component.md)`, b.rel); continue; }
+        const t = body(h).replace(/<!--[\s\S]*?-->/g, '').trim();
+        if (t.length < 20 || /\{\{/.test(t)) UI(`${b.rel} "## ${h}" is empty or still a template placeholder`, 'fill it in', b.rel, secs.get(h).line);
+      }
+      if (secs.has('Variants')) for (const v of c?.variants || []) if (!new RegExp(`\\b${v}\\b`).test(body('Variants'))) UI(`${b.rel} "## Variants" doesn't describe the variant "${v}"`, `describe ${v} (inventory.json lists it)`, b.rel, secs.get('Variants').line, { value: v });
+      if (secs.has('States')) for (const st of DOC_STATES) if (!new RegExp(`\\b${st}\\b`, 'i').test(body('States'))) UI(`${b.rel} "## States" doesn't cover "${st}"`, `say what changes in ${st}, or why it doesn't apply`, b.rel, secs.get('States').line, { value: st });
+      if (secs.has('References') && !/https?:\/\//.test(body('References'))) UI(`${b.rel} "## References" has no URL`, 'link the §16.2 seed pages you searched for this component and say how ours differs', b.rel, secs.get('References').line);
+      if (secs.has('Usage') && !/```/.test(body('Usage'))) UI(`${b.rel} "## Usage" has no code snippet`, 'add the import path and a snippet', b.rel, secs.get('Usage').line);
+    }
+    // docs reference only tokens that exist, and no raw colors
+    const uiRoot = path.join(root, UI_DIR);
+    const docs = fs.existsSync(uiRoot) ? walkFiles(uiRoot, ['.md'], ['templates']) : [];
+    for (const abs of docs) {
+      const f = rel(ctx, abs);
+      fs.readFileSync(abs, 'utf8').split('\n').forEach((ln, i) => {
+        for (const m of ln.matchAll(REF_RE)) {
+          const p = m[1];
+          if (LITERAL_REFS.has(p) || refExists(ctx, p) || /^[a-z_]+$/.test(p)) continue;
+          const dym = didYouMean(p, ctx.flat.keys());
+          UI(`{${p}} is not a token in ${ctx.tokensRel}`, dym.length ? `did you mean ${dym.map(ref).join(', ')}?` : 'reference an existing token (design-build/preview/tokens.css lists them)', f, i + 1, { value: `{${p}}` });
+        }
+        for (const m of ln.matchAll(/var\(\s*(--[\w-]+)/g)) if (!varNames.has(m[1])) { const dym = didYouMean(m[1], [...varNames.keys()]); UI(`var(${m[1]}) is not a token variable`, dym.length ? `did you mean ${dym.map((d) => `var(${d})`).join(', ')}?` : 'use a variable from design-build/preview/tokens.css', f, i + 1, { value: `var(${m[1]})` }); }
+        for (const h of findRaw(ln)) if (h.kind === 'hex' || h.kind === 'color-fn') UI(`raw color "${h.value}" in a component doc`, 'name the token instead ({color.…})', f, i + 1, { value: h.value });
+      });
+    }
+  }
+
   for (const j of justifiedSkip) add('avoid-default', 'info', 'design/core.md', j.line, `${j.id} is allowed: "${j.justified}"`, 'none (justified in §2)');
 
   // ---- tokens-import (Phase 6: the app must load the generated tokens) ----

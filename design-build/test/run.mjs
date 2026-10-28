@@ -63,7 +63,7 @@ for (const f of fs.readdirSync(path.join(FIX, 'bad'))) {
 }
 
 // ---------- 3. mutations ----------
-const COPY = ['design.md', 'design', 'tokens', 'design-build', 'KICKSTART.md', 'README.md'];
+const COPY = ['design.md', 'design', 'tokens', 'design-build', 'components', 'ui-inventory', 'KICKSTART.md', 'README.md'];
 const SKIP = new Set(['node_modules', 'screenshots', '.terrazzo', 'fixtures']);
 function copyDir(src, dst) {
   const st = fs.statSync(src);
@@ -110,6 +110,98 @@ expectRule('README kickstart block drifts', 'kickstart-sync', ({ edit }) => edit
 expectRule('a seed group over the cap', 'seed-cap', ({ edit }) => edit('design.md', (s) => s.replace(/(\n  components:\n)/, '$1' + Array.from({ length: 7 }, (_, i) => `    - { name: "Extra ${i}", url: "https://example.com/${i}", use_for: "test" }\n`).join(''))));
 expectRule('phase 4 with the template still unfilled', 'completion', () => {}, { phase: 4 });
 expectRule('§M1.1 names a component not in inventory.json', 'unknown-component', ({ edit }) => edit('design-build/inventory.json', (s) => { const j = JSON.parse(s); j.components = j.components.filter((c) => c.name !== 'Toast'); return JSON.stringify(j, null, 2); }));
+
+// ui-inventory: docs and screens stay in step with inventory.json and the tokens
+const editInv = (fn) => (s) => { const j = JSON.parse(s); fn(j); return JSON.stringify(j, null, 2); };
+expectRule('a component doc is deleted', 'ui-inventory', ({ dir }) => fs.rmSync(path.join(dir, 'ui-inventory/components/badge.md')));
+expectRule('a component doc loses a required section', 'ui-inventory', ({ edit }) => edit('ui-inventory/components/card.md', (s) => s.replace(/\n## Motion\n/, '\n## Movement\n')));
+expectRule('a component doc names a token that does not exist', 'ui-inventory', ({ edit }) => edit('ui-inventory/components/button.md', (s) => s + '\nThe focus ring uses `{color.focus.halo}`.\n'));
+expectRule('a component doc hard-codes a color', 'ui-inventory', ({ edit }) => edit('ui-inventory/components/input.md', (s) => s + '\nThe error border is #c0392b.\n'));
+expectRule('a component doc names an unknown CSS variable', 'ui-inventory', ({ edit }) => edit('ui-inventory/components/badge.md', (s) => s + '\nPadding is `var(--space-badge-x)`.\n'));
+expectRule('a variant is added to inventory.json but not to its doc', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.components.find((c) => c.name === 'Badge').variants.push('brand'))));
+expectRule('a screen lists a component that is not in inventory.json', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.screens.preview.components.push({ component: 'Avatar', variants: ['default'], states: ['default'] }))));
+expectRule('a screen lists a state outside §M1.2', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.screens.preview.components.find((c) => c.component === 'Button').states.push('pressed-ish'))));
+expectRule('a screen lists a variant the component does not have', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.screens.preview.components.find((c) => c.component === 'Card').variants.push('glass'))));
+expectRule('a screen source renders a component the screen does not list', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => { j.screens.preview.components = j.screens.preview.components.filter((c) => c.component !== 'Badge'); })));
+expectRule('a screen has no route or purpose', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => { delete j.screens.preview.purpose; })));
+expectRule('a generated block is edited by hand', 'ui-inventory', ({ edit }) => edit('ui-inventory/components/button.md', (s) => s.replace(/(<!-- ui-inventory:generated[^\n]*\n)/, '$1Hand edit.\n')));
+expectRule('ui-inventory/index.md is stale', 'ui-inventory', ({ edit }) => edit('ui-inventory/index.md', (s) => s + '\nstale\n'));
+test('ui-inventory.mjs: --check passes on the template; a new screen gets its page and missing docs from the templates, the lint asks for them to be filled, and an app-only component needs none', () => {
+  const ui = (dir, ...a) => spawnSync(process.execPath, [path.join(dir, 'design-build/ui-inventory.mjs'), ...a], { encoding: 'utf8' });
+  let r = ui(ROOT, '--check');
+  assert(r.status === 0, `template --check: exit ${r.status}\n${r.stdout}${r.stderr}`);
+  const dir = sandbox(({ dir: d, edit }) => {
+    edit('design-build/inventory.json', editInv((j) => {
+      j.components.find((c) => c.name === 'Toast').status = 'existing';
+      j.components.push({ name: 'App', aliases: [], status: 'existing', import: 'src/App.tsx', props: [], variants: [] }); // app-only: no doc needed
+      j.screens.settings = { name: 'Settings', route: '/settings', purpose: 'Change account details.', source: [], components: [{ component: 'Button', variants: ['primary'], states: ['default', 'loading'] }, { component: 'Toast', variants: [], states: ['default'] }] };
+    }));
+  });
+  try {
+    r = ui(dir, '--check');
+    assert(r.status === 1, `--check should fail before generating, got ${r.status}\n${r.stdout}${r.stderr}`);
+    r = ui(dir);
+    assert(r.status === 0, `generate: exit ${r.status}\n${r.stdout}${r.stderr}`);
+    assert(fs.existsSync(path.join(dir, 'ui-inventory/screens/settings.md')), 'screen page not created');
+    assert(fs.existsSync(path.join(dir, 'ui-inventory/components/toast.md')), 'missing component doc not created');
+    assert(/\/settings/.test(fs.readFileSync(path.join(dir, 'ui-inventory/index.md'), 'utf8')), 'index.md does not list the new screen');
+    const e = errorsOf(lint({ root: dir })).filter((f) => f.rule === 'ui-inventory');
+    assert(e.some((f) => /toast\.md/.test(f.file)), `an unfilled template doc should fail:\n${show(e)}`);
+    assert(!e.some((f) => /index\.md|button\.md|app\.md/.test(f.file)), `generated files should be fresh and the app-only <App> needs no doc:\n${show(e)}`);
+    assert(!fs.existsSync(path.join(dir, 'ui-inventory/components/app.md')), 'a doc was created for the app-only <App>');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+// shipped React wrappers, rendered to HTML (server-side; no browser needed)
+const SSR = await (async () => {
+  try {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'design-ssr-'));
+    copyDir(path.join(ROOT, 'components'), path.join(dir, 'components'));
+    fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
+    const { createElement: h } = await import(createRequire(path.join(BUILD, 'package.json')).resolve('react'));
+    const { renderToStaticMarkup } = await import(createRequire(path.join(BUILD, 'package.json')).resolve('react-dom/server'));
+    const lib = {}; for (const n of ['Button', 'Input', 'Card', 'Badge']) Object.assign(lib, await import(path.join(dir, `components/react/${n}.js`))); // index.js also imports the CSS, which needs a bundler
+    return { h, html: renderToStaticMarkup, lib, dir };
+  } catch (e) { return { err: e }; }
+})();
+if (SSR.lib) {
+  const { h, html, lib } = SSR;
+  test('React: <Button> renders the data-component API; loading keeps focus (aria-busy, no disabled) and shows the spinner', () => {
+    const a = html(h(lib.Button, { variant: 'secondary' }, 'Save'));
+    assert(/<button type="button" data-component="button" data-variant="secondary"><span data-part="label">Save<\/span><\/button>/.test(a), a);
+    const b = html(h(lib.Button, { loading: true }, 'Saving'));
+    assert(/aria-busy="true"/.test(b) && /aria-disabled="true"/.test(b) && !/ disabled=""/.test(b) && /data-part="spinner" aria-hidden="true"/.test(b), b);
+  });
+  test('React: <Input> links label, hint and error (for/id, aria-describedby, aria-invalid)', () => {
+    const a = html(h(lib.Input, { id: 'email', label: 'Email', hint: 'Work address', error: 'Enter a valid email', required: true }));
+    assert(/data-component="input" data-variant="error"/.test(a), a);
+    assert(/<label for="email">Email<span data-part="required"> \(required\)<\/span><\/label>/.test(a), a);
+    assert(/id="email"[^>]*required=""[^>]*aria-invalid="true" aria-describedby="email-hint email-error"/.test(a), a);
+    assert(/<p data-part="error" id="email-error">Enter a valid email<\/p>/.test(a), a);
+    const b = html(h(lib.Input, { label: 'Name' }));
+    assert(/data-variant="default"/.test(b) && !/aria-invalid/.test(b) && /<label for="(ds-input-[\w-]+)">Name<\/label><input[^>]*id="\1"/.test(b), b);
+  });
+  test('React: <Card> and <Badge> render their variants; interactive cards are marked', () => {
+    const c = html(h(lib.Card, { variant: 'raised', interactive: true, as: 'section' }, 'x'));
+    assert(/^<section data-component="card" data-variant="raised" data-interactive="">x<\/section>$/.test(c), c);
+    assert(html(h(lib.Card, null, 'y')) === '<article data-component="card" data-variant="flat">y</article>', 'default Card');
+    assert(html(h(lib.Badge, { variant: 'success' }, 'Live')) === '<span data-component="badge" data-variant="success">Live</span>', 'Badge');
+  });
+  test('components: every variant in inventory.json has CSS in components.css, and the type declarations name them (Input takes its variant from the error prop)', () => {
+    const inv = JSON.parse(fs.readFileSync(path.join(BUILD, 'inventory.json'), 'utf8'));
+    const css = fs.readFileSync(path.join(ROOT, 'components/components.css'), 'utf8');
+    const dts = fs.readFileSync(path.join(ROOT, 'components/react/index.d.ts'), 'utf8');
+    for (const c of inv.components.filter((x) => x.status === 'existing')) {
+      const k = c.name.toLowerCase();
+      for (const v of c.variants) {
+        const base = { button: 'primary', input: 'default', card: 'flat', badge: 'neutral' }[k]; // the default variant is the base rule
+        if (v !== base) assert(css.includes(`[data-component="${k}"][data-variant="${v}"]`), `components.css has no rule for ${k}/${v}`);
+        if (k !== 'input') assert(dts.includes(`'${v}'`), `index.d.ts does not name ${c.name} variant '${v}'`);
+      }
+    }
+    assert(!/#[0-9a-f]{3,8}\b|\d+px|\d+ms/i.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), 'components.css has a literal color, px or ms value outside comments');
+  });
+} else results.push(`  skip React wrapper tests (react not installed in design-build: ${SSR.err?.message?.split('\n')[0]})`);
 
 test('mutation: a justified avoid_defaults entry turns its error into info', () => {
   const dir = sandbox(({ dir, edit }) => {
@@ -306,7 +398,31 @@ if (hasPlaywright || args.has('--render')) {
     const r = spawnSync(node, [path.join(BUILD, 'render.mjs'), '--url', 'http://127.0.0.1:59999/', '--widths', '390', '--themes', 'light', '--out', os.tmpdir(), '--reports', fs.mkdtempSync(path.join(os.tmpdir(), 'design-render-'))], { encoding: 'utf8' });
     assert(r.status !== 0 && /dev server/.test(r.stdout + r.stderr), `exit ${r.status}\n${r.stdout}${r.stderr}`);
   });
+  test('motion: on the preview every component motion plays and reduced motion stops all of it', () => {
+    const r = spawnSync(node, [path.join(BUILD, 'motion.mjs'), '--json'], { encoding: 'utf8' });
+    assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
+    const j = JSON.parse(r.stdout);
+    const played = new Set(j.motion.filter((m) => m.ok && !m.skipped).map((m) => m.name));
+    for (const id of ['button-hover', 'button-press', 'button-spinner', 'input-focus', 'input-shake', 'card-enter', 'card-hover', 'badge-pop', 'play-motion']) assert(played.has(id), `${id} did not play: ${JSON.stringify(j.motion)}`);
+    assert(j.reduced.length > 0 && j.reduced.every((m) => m.ok), `reduced: ${JSON.stringify(j.reduced)}`);
+    assert(j.consoleErrors.length === 0, `console errors: ${j.consoleErrors.join('; ')}`);
+  });
+  test('motion: removing the reduced-motion block from components.css fails the reduced-motion check', () => {
+    const dir = sandbox(({ edit }) => edit('components/components.css', (s) => { const t = s.replace(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}\n/, ''); if (t === s) throw new Error('reduced-motion block not found'); return t; }));
+    try {
+      fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'design-build/node_modules'), 'dir');
+      const r = spawnSync(node, [path.join(dir, 'design-build/motion.mjs'), '--json'], { encoding: 'utf8' });
+      assert(r.status === 1, `expected exit 1, got ${r.status}\n${r.stdout}${r.stderr}`);
+      const j = JSON.parse(r.stdout);
+      assert(j.reduced.some((m) => !m.ok), `no reduced-motion failure: ${JSON.stringify(j.reduced)}`);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+  test('components/index.js: the vanilla helpers build accessible markup in a browser and reject unknown variants', () => {
+    const r = spawnSync(node, [path.join(HERE, 'helpers-browser.mjs')], { encoding: 'utf8', cwd: BUILD });
+    assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
+  });
 } else results.push('  skip render fixture (Playwright not installed: npm --prefix design-build ci && npx --prefix design-build playwright install chromium)');
 
+if (SSR.dir) fs.rmSync(SSR.dir, { recursive: true, force: true });
 console.log(`design checks self-test\n${results.join('\n')}\n\n${failed ? 'FAIL' : 'PASS'} — ${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
