@@ -6,8 +6,10 @@
 //   3. Mutation tests: copy the repo to a temp dir, break one thing, and check the matching rule fires
 //      (contrast, unresolved doc token, raw doc value, ownership, tokens-sync/format/css-stale, seed cap,
 //      kickstart sync, completion, justified avoid_defaults, --baseline, CLI exit codes and --json).
+//   3b. App-root tests: the template copied into <tmp app>/design-system/ (no .git): lint auto-detects and fails app
+//      code, project.json, --baseline, Phase 6 tokens-import, nested .git, the git pre-commit hook and the agent hook.
 //   4. If Playwright is installed (or --render is passed): render.mjs fails fixtures/bad/layout.html for each
-//      expected reason. Skipped with a notice otherwise (CI always installs it).
+//      expected reason, and fails blank pages, script errors and an unreachable --url. Skipped with a notice otherwise (CI always installs it).
 // Exit 0 when all pass, 1 otherwise.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -177,6 +179,103 @@ test('agent hook: after-edit.mjs is silent on a clean edit, exit 2 (claude) / ad
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+// ---------- 3b. installed in an app: <app>/design-system/ ----------
+const git = (cwd, ...a) => spawnSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd, encoding: 'utf8' });
+function appSandbox({ files = {}, gitInit = true } = {}) {
+  const app = fs.mkdtempSync(path.join(os.tmpdir(), 'design-app-'));
+  for (const c of COPY) if (fs.existsSync(path.join(ROOT, c))) copyDir(path.join(ROOT, c), path.join(app, 'design-system', c));
+  fs.rmSync(path.join(app, 'design-system/design-build/lint-baseline.json'), { force: true });
+  const all = { 'package.json': '{ "name": "app", "private": true }\n', 'src/App.css': '.app { color: var(--color-text-primary); padding: var(--space-4, 1rem); }\n', 'src/App.tsx': "import './App.css';\nexport default function App() { return <main className=\"app\">Hi</main>; }\n", ...files };
+  for (const [f, body] of Object.entries(all)) { fs.mkdirSync(path.dirname(path.join(app, f)), { recursive: true }); fs.writeFileSync(path.join(app, f), body); }
+  if (gitInit) git(app, 'init', '-q');
+  return app;
+}
+const lintCli = (cwd, ...a) => spawnSync(node, ['design-system/design-build/lint.mjs', ...a], { cwd, encoding: 'utf8' });
+const withApp = (opts, fn) => { const app = appSandbox(opts); try { fn(app); } finally { fs.rmSync(app, { recursive: true, force: true }); } };
+
+test('app root: lint run from the app finds the project, auto-detects src/ and passes on clean app code', () => withApp({}, (app) => {
+  const r = lintCli(app);
+  assert(r.status === 0, `exit ${r.status}\n${r.stdout}${r.stderr}`);
+  assert(/app code: .*src/.test(r.stdout) && r.stdout.includes(`project root: ${fs.realpathSync(app)}`), `summary line wrong:\n${r.stdout}`);
+  assert(/\(2 app\)/.test(r.stdout), `expected 2 app files:\n${r.stdout}`);
+}));
+test('app root: a hard-coded color in src/ fails the lint with the app path and a token fix', () => withApp({ files: { 'src/Button.css': '.btn { color: #ff0000; }\n' } }, (app) => {
+  const r = lintCli(app, '--json');
+  assert(r.status === 1, `expected exit 1, got ${r.status}\n${r.stdout}`);
+  const e = JSON.parse(r.stdout).errors.filter((f) => f.file === 'src/Button.css');
+  assert(e.length === 1 && e[0].rule === 'raw-value' && /var\(--/.test(e[0].fix), `want one raw-value on src/Button.css with a var(--…) fix, got:\n${r.stdout}`);
+}));
+test('app root: node_modules, dist and the design-system folder are not linted as app code; other dirs only via project.json', () => withApp({ files: { 'dist/x.css': '.a { color: #ff0000; }\n', 'src/node_modules/y.css': '.a { color: #ff0000; }\n', 'web/z.css': '.a { color: #ff0000; }\n' } }, (app) => {
+  let r = lintCli(app);
+  assert(r.status === 0, `dist/, node_modules or web/ was linted:\n${r.stdout}`);
+  fs.writeFileSync(path.join(app, 'design-system/design-build/project.json'), JSON.stringify({ code_dirs: ['src', 'web'], exclude: [] }));
+  r = lintCli(app, '--json');
+  assert(r.status === 1 && JSON.parse(r.stdout).errors.some((f) => f.file === 'web/z.css'), `project.json code_dirs not used:\n${r.stdout}`);
+}));
+test('app root: hints print commands runnable from the app root (design-system/ prefix)', () => withApp({}, (app) => {
+  fs.appendFileSync(path.join(app, 'design-system/design-build/preview/tokens.css'), '/* stale */\n');
+  const r = lintCli(app, '--json');
+  const e = JSON.parse(r.stdout).errors.find((f) => f.rule === 'tokens-css-stale');
+  assert(e && e.fix.includes('node design-system/design-build/tokens-css.mjs'), `stale hint: ${JSON.stringify(e)}`);
+}));
+test('app root: --baseline freezes app counts; a new hard-coded color then fails', () => withApp({ files: { 'src/Old.css': '.a { color: #ff0000; }\n' } }, (app) => {
+  let r = lintCli(app, '--baseline');
+  assert(r.status === 0 && fs.existsSync(path.join(app, 'design-system/design-build/lint-baseline.json')), `baseline: ${r.status}\n${r.stdout}${r.stderr}`);
+  assert(lintCli(app).status === 0, 'same counts should pass');
+  fs.appendFileSync(path.join(app, 'src/Old.css'), '.b { background: #00ff00; }\n');
+  assert(lintCli(app).status === 1, 'a rising count should fail');
+}));
+test('app root: Phase 6 requires the app to import the generated tokens', () => withApp({}, (app) => {
+  let r = lintCli(app, '--phase', '6', '--json');
+  const e = JSON.parse(r.stdout).errors.find((f) => f.rule === 'tokens-import');
+  assert(e && /import '\.\.\/design-system\/design-build\/preview\/tokens\.css'/.test(e.fix), `tokens-import missing or bad hint: ${JSON.stringify(e)}`);
+  fs.writeFileSync(path.join(app, 'src/main.tsx'), "import '../design-system/design-build/preview/tokens.css';\nimport App from './App';\n");
+  r = lintCli(app, '--phase', '6', '--json');
+  assert(!JSON.parse(r.stdout).errors.some((f) => f.rule === 'tokens-import'), 'tokens-import still fires after the import');
+}));
+test('app root: a nested design-system/.git is detected and explained', () => withApp({}, (app) => {
+  git(path.join(app, 'design-system'), 'init', '-q');
+  const r = lintCli(app);
+  assert(/has its own \.git/.test(r.stdout + r.stderr) && /rm -rf design-system\/\.git/.test(r.stdout + r.stderr), `no nested .git warning:\n${r.stdout}${r.stderr}`);
+  const r2 = lintCli(app, '--root', '.', '--json');
+  assert(JSON.parse(r2.stdout).summary.app_code_files === 2, `--root override did not find the app:\n${r2.stdout}`);
+}));
+test('pre-commit hook: installs from the app root, blocks a hard-coded color, passes a clean commit, fails loudly without the scripts', () => withApp({}, (app) => {
+  let r = spawnSync(node, ['design-system/design-build/install-hooks.mjs'], { cwd: app, encoding: 'utf8' });
+  assert(r.status === 0 && fs.existsSync(path.join(app, '.git/hooks/pre-commit')), `install: ${r.status}\n${r.stdout}${r.stderr}`);
+  git(app, 'add', '-A');
+  r = git(app, 'commit', '-qm', 'clean');
+  assert(r.status === 0, `clean commit blocked:\n${r.stdout}${r.stderr}`);
+  fs.writeFileSync(path.join(app, 'src/Bad.css'), '.bad { color: #ff0000; }\n');
+  git(app, 'add', 'src/Bad.css');
+  r = git(app, 'commit', '-qm', 'bad');
+  assert(r.status !== 0 && /src\/Bad\.css:1/.test(r.stdout + r.stderr), `bad commit not blocked (exit ${r.status}):\n${r.stdout}${r.stderr}`);
+  git(app, 'reset', '-q', 'src/Bad.css'); fs.rmSync(path.join(app, 'src/Bad.css'));
+  fs.rmSync(path.join(app, 'design-system/design-build/hooks/pre-commit.mjs'));
+  fs.writeFileSync(path.join(app, 'src/Ok.css'), '.ok { color: var(--color-text-primary); }\n');
+  git(app, 'add', 'src/Ok.css');
+  r = git(app, 'commit', '-qm', 'no scripts');
+  assert(r.status !== 0 && /pre-commit/.test(r.stdout + r.stderr), `missing hook script did not fail loudly (exit ${r.status}):\n${r.stdout}${r.stderr}`);
+}));
+test('pre-commit hook: installer leaves a foreign hook alone and says what to add', () => withApp({}, (app) => {
+  fs.mkdirSync(path.join(app, '.git/hooks'), { recursive: true });
+  fs.writeFileSync(path.join(app, '.git/hooks/pre-commit'), '#!/bin/sh\necho mine\n', { mode: 0o755 });
+  const r = spawnSync(node, ['design-system/design-build/install-hooks.mjs'], { cwd: app, encoding: 'utf8' });
+  assert(r.status === 1 && /hooks\/pre-commit\.mjs/.test(r.stdout + r.stderr), `got ${r.status}\n${r.stdout}${r.stderr}`);
+  assert(fs.readFileSync(path.join(app, '.git/hooks/pre-commit'), 'utf8').includes('echo mine'), 'foreign hook overwritten');
+}));
+test('agent hook: after-edit.mjs run from the app root flags a hard-coded color in app code', () => withApp({}, (app) => {
+  fs.writeFileSync(path.join(app, 'src/Edit.css'), '.e { color: #ff0000; }\n');
+  const r = spawnSync(node, ['design-system/design-build/hooks/after-edit.mjs', '--format', 'claude'], { cwd: app, input: JSON.stringify({ tool_input: { file_path: path.join(app, 'src/Edit.css') } }), encoding: 'utf8' });
+  assert(r.status === 2 && /src\/Edit\.css:1 raw-value/.test(r.stderr), `exit ${r.status}\n${r.stderr}${r.stdout}`);
+}));
+const tokensMjs = await import(path.join(BUILD, 'preview/tokens.mjs'));
+test('tokens-css.mjs writes tokens.mjs and it resolves CSS variables', () => {
+  const mod = tokensMjs;
+  assert(mod.cssVar('color.brand.primary') === 'var(--color-brand-primary)', 'cssVar wrong');
+  assert(mod.tokens['color.brand.primary'] && mod.modes.includes('dark'), 'tokens/modes missing');
+});
+
 // ---------- 4. render ----------
 let hasPlaywright = false;
 try { createRequire(path.join(BUILD, 'package.json')).resolve('@playwright/test'); hasPlaywright = true; } catch {}
@@ -192,6 +291,20 @@ if (hasPlaywright || args.has('--render')) {
       for (const c of ['overflow', 'overlap', 'tap-target', 'focus-visible', 'axe:image-alt', 'axe:color-contrast']) assert(checks.has(c), `missing ${c}; got ${[...checks].join(', ')}`);
       assert(fs.existsSync(path.join(tmp, 'fixtures-bad-layout-390-light.png')) || fs.readdirSync(tmp).some((f) => f.endsWith('.png')), 'no screenshot written');
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  });
+  const renderOne = (file) => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'design-render-'));
+    try {
+      const r = spawnSync(node, [path.join(BUILD, 'render.mjs'), path.join(FIX, file), '--widths', '390', '--themes', 'light', '--out', tmp, '--reports', tmp, '--json'], { encoding: 'utf8' });
+      assert(r.status === 1, `expected exit 1, got ${r.status}\n${r.stdout}${r.stderr}`);
+      return new Set(JSON.parse(r.stdout).failures.map((f) => f.check));
+    } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  };
+  test('render: a blank page (app never mounted) fails blank-page', () => { const c = renderOne('bad/blank.html'); assert(c.has('blank-page'), [...c].join(', ')); });
+  test('render: a script that throws fails page-error', () => { const c = renderOne('bad/script-error.html'); assert(c.has('page-error') && c.has('blank-page'), [...c].join(', ')); });
+  test('render: --url with nothing listening is a harness error that says to start the dev server', () => {
+    const r = spawnSync(node, [path.join(BUILD, 'render.mjs'), '--url', 'http://127.0.0.1:59999/', '--widths', '390', '--themes', 'light', '--out', os.tmpdir(), '--reports', fs.mkdtempSync(path.join(os.tmpdir(), 'design-render-'))], { encoding: 'utf8' });
+    assert(r.status !== 0 && /dev server/.test(r.stdout + r.stderr), `exit ${r.status}\n${r.stdout}${r.stderr}`);
   });
 } else results.push('  skip render fixture (Playwright not installed: npm --prefix design-build ci && npx --prefix design-build playwright install chromium)');
 
