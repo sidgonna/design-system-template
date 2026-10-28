@@ -12,7 +12,9 @@ This writes `.git/hooks/pre-commit` (or into `core.hooksPath` if you set one). T
 
 1. regenerates `preview/tokens.css`, `tokens.js` and `tokens.mjs` when `tokens/tokens.json` is staged, and stages them.
 2. runs `lint.mjs` on the design files **and the app code** (`src/`, `app/`, `pages/`, `components/`, `styles/`, top-level `*.html`/`*.css`, `public/*.html`, or `code_dirs` in `design-build/project.json`). A hard-coded color in app code blocks the commit. If the user approved a baseline (`lint.mjs --baseline`), the commit is blocked only when a rule's count goes up.
-3. runs `render.mjs` + axe when something visual is staged: the design preview when design files changed, and the app's dev server (`app_url` in `project.json`) when app code changed and the server is running. If the server is not running it warns and skips; Phase 6 still needs a render on the dev URL (design.md §16).
+3. runs `render.mjs` + axe when something visual is staged: the design preview when design files changed, and the app's dev server (`app_url` in `project.json`) when app code changed and the server is running. If the server is not running it warns and skips; Phase 6 still needs a render on the dev URL (design.md §16). Axe has no baseline: an existing app with serious accessibility issues (the stock Vite page has one contrast failure) blocks app-code commits while its dev server runs, until Phase 6 fixes them.
+
+When lint fails, the hook repeats the errors on the lines the commit adds, so a new problem is not buried under baselined ones.
 
 If `design-system/` is deleted or moved, the hook fails loudly instead of passing silently. If a `pre-commit` hook already exists (husky, lefthook, your own), the installer leaves it alone and prints the one line to add to it.
 

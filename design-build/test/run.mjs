@@ -249,7 +249,7 @@ test('pre-commit hook: installs from the app root, blocks a hard-coded color, pa
   fs.writeFileSync(path.join(app, 'src/Bad.css'), '.bad { color: #ff0000; }\n');
   git(app, 'add', 'src/Bad.css');
   r = git(app, 'commit', '-qm', 'bad');
-  assert(r.status !== 0 && /src\/Bad\.css:1/.test(r.stdout + r.stderr), `bad commit not blocked (exit ${r.status}):\n${r.stdout}${r.stderr}`);
+  assert(r.status !== 0 && /errors on lines this commit adds[^]*src\/Bad\.css:1 +raw-value/.test(r.stdout + r.stderr), `bad commit not blocked (exit ${r.status}):\n${r.stdout}${r.stderr}`);
   git(app, 'reset', '-q', 'src/Bad.css'); fs.rmSync(path.join(app, 'src/Bad.css'));
   fs.rmSync(path.join(app, 'design-system/design-build/hooks/pre-commit.mjs'));
   fs.writeFileSync(path.join(app, 'src/Ok.css'), '.ok { color: var(--color-text-primary); }\n');
