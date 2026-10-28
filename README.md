@@ -49,9 +49,14 @@ Before any open web search in §16 Phase 2, read the seeds for each area. §16.2
 - Type: Google Fonts https://fonts.google.com/ · Noto (Indic) https://fonts.google.com/noto · Fontshare https://www.fontshare.com/ · Practical Typography https://practicaltypography.com/
 - Icons: Lucide https://lucide.dev/ · Phosphor https://phosphoricons.com/ · Iconify https://icon-sets.iconify.design/
 - Motion: Material 3 Motion https://m3.material.io/styles/motion/overview · Carbon Motion https://carbondesignsystem.com/elements/motion/overview/ · Easings https://easings.net/
+- Palette libraries: Tailwind colors https://tailwindcss.com/docs/colors · Open Color https://yeun.github.io/open-color/ · Adobe Color Explore https://color.adobe.com/explore · Color Hunt https://colorhunt.co/
+- Pick colors → full palette (for people): Coolors https://coolors.co/generate · Adobe Color wheel https://color.adobe.com/create/color-wheel · Huemint https://huemint.com/ · Realtime Colors https://www.realtimecolors.com/ · UI Colors https://uicolors.app/
+- Pick colors → full palette (for agents): The Color API https://www.thecolorapi.com/docs · Leonardo https://github.com/adobe/leonardo · Material Color Utilities https://github.com/material-foundation/material-color-utilities · chroma.js https://gka.github.io/chroma.js/ · Culori https://culorijs.org/
+- Motion libraries: Motion https://motion.dev/ · GSAP https://gsap.com/ · Anime.js https://animejs.com/ · Lottie https://airbnb.io/lottie/ · AutoAnimate https://auto-animate.formkit.com/
 - Data viz: Carbon Data Viz https://carbondesignsystem.com/data-visualization/getting-started/ · ColorBrewer https://colorbrewer2.org/
 - Competitors and inspiration: Brandfetch https://brandfetch.com/ · Brand New https://www.underconsideration.com/brandnew/ · Wayback Machine https://web.archive.org/
 - Ad and social formats: Meta Ads Guide https://www.facebook.com/business/ads-guide
+Generate palettes with the agent tools, check contrast, and show the results visually. Link the human tools so the user can tweak.
 Rules: seeds count toward the §16.0 source cap and get logged in design-build/research/notes.md. Learn patterns from mature systems, but never copy their values. Use open search only for competitors, the category, local market and culture, and the brand's own assets. Skip sites that need a login or block access, note it, and keep moving.
 
 RULES FOR THIS WHOLE SESSION

@@ -160,6 +160,8 @@ seed_rules:
   - Seeds count toward the §16.0 source cap. Record each one in research/notes.md like any other source.
   - Prefer specs and official systems over blog posts, listicles and AI-generated summaries.
   - Treat mature design systems as patterns to learn from, never as values to copy. Our values come from §1 and the user's picks.
+  - Color: generate candidate palettes with the palette_generators_for_agents tools (seed colors from §1 and the user), check every pairing for contrast, then show them in the Phase 3 studies. Link the matching human generator so the user can tweak a palette themselves.
+  - Motion: build Phase 3 motion studies with a motion_libraries option that fits the project's stack, and use plain CSS when there's no stack yet.
   - Sites that need a login or block automated access (e.g. Mobbin, Behance): skip them, note that in research/notes.md, and don't stall.
   - Teams can add their own seeds here. Keep each group to 6 or fewer, so the list stays a starting point and not a library.
 ```
@@ -213,6 +215,33 @@ seeds:
     - { name: "MDN prefers-reduced-motion", url: "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion", use_for: "reduced-motion fallback (§11)" }
     - { name: "LottieFiles", url: "https://lottiefiles.com/", use_for: "motion spec files and examples" }
     - { name: "Rive", url: "https://rive.app/", use_for: "interactive and state-machine motion" }
+  color_palette_libraries:
+    - { name: "Tailwind CSS colors", url: "https://tailwindcss.com/docs/colors", use_for: "well-tuned 11-step scales to benchmark against" }
+    - { name: "Open Color", url: "https://yeun.github.io/open-color/", use_for: "open-source UI color scales" }
+    - { name: "Adobe Color Explore", url: "https://color.adobe.com/explore", use_for: "curated palettes by mood and keyword" }
+    - { name: "Color Hunt", url: "https://colorhunt.co/", use_for: "hand-picked 4-color palettes by theme" }
+    - { name: "Coolors palettes", url: "https://coolors.co/palettes/trending", use_for: "large trending palette library (may block bots; human browsing)" }
+  palette_generators_for_humans:   # pick a few colors, get a full palette
+    - { name: "Coolors generator", url: "https://coolors.co/generate", use_for: "lock 1–3 colors, generate the rest" }
+    - { name: "Adobe Color wheel", url: "https://color.adobe.com/create/color-wheel", use_for: "harmony rules from a base color, with a contrast checker" }
+    - { name: "Huemint", url: "https://huemint.com/", use_for: "AI palettes for brand, website and gradients from locked colors" }
+    - { name: "Realtime Colors", url: "https://www.realtimecolors.com/", use_for: "preview text, background, primary, secondary and accent on a live site" }
+    - { name: "UI Colors", url: "https://uicolors.app/", use_for: "one hex in, full Tailwind-style 50–950 scale out" }
+    - { name: "Khroma", url: "https://www.khroma.co/", use_for: "trains on colors you pick, suggests combos" }
+  palette_generators_for_agents:   # programmatic: use these to build §13 color tokens
+    - { name: "The Color API", url: "https://www.thecolorapi.com/docs", use_for: "free REST: /scheme?hex=…&mode=analogic|complement|triad|monochrome&count=N", verified: "GET returns JSON palette" }
+    - { name: "Adobe Leonardo (npm @adobe/leonardo-contrast-colors)", url: "https://github.com/adobe/leonardo", use_for: "generate scales that hit target contrast ratios, light and dark themes" }
+    - { name: "Material Color Utilities (npm @material/material-color-utilities)", url: "https://github.com/material-foundation/material-color-utilities", use_for: "one seed color → full Material 3 tonal palettes and color roles" }
+    - { name: "chroma.js (npm chroma-js)", url: "https://gka.github.io/chroma.js/", use_for: "scales, interpolation, contrast, color-blind-safe checks" }
+    - { name: "Culori (npm culori)", url: "https://culorijs.org/", use_for: "OKLCH/OKLab math for perceptually even scales" }
+    - { name: "ColorAide (Python, pip coloraide)", url: "https://facelessuser.github.io/coloraide/", use_for: "same color math for Python harnesses" }
+  motion_libraries:
+    - { name: "Motion (formerly Framer Motion)", url: "https://motion.dev/", use_for: "React/JS UI animation, springs, layout transitions" }
+    - { name: "GSAP", url: "https://gsap.com/", use_for: "timeline animation for web, scroll and marketing pages" }
+    - { name: "Anime.js", url: "https://animejs.com/", use_for: "lightweight JS animation" }
+    - { name: "Lottie (Airbnb)", url: "https://airbnb.io/lottie/", use_for: "playing After Effects animations in web and apps" }
+    - { name: "AutoAnimate", url: "https://auto-animate.formkit.com/", use_for: "zero-config list and layout transitions" }
+    - { name: "Animate.css", url: "https://animate.style/", use_for: "ready-made CSS keyframe animations for quick studies" }
   data_visualization:
     - { name: "Carbon Data Visualization", url: "https://carbondesignsystem.com/data-visualization/getting-started/", use_for: "chart rules and color use" }
     - { name: "Datawrapper Academy", url: "https://academy.datawrapper.de/", use_for: "chart choice and labeling" }
