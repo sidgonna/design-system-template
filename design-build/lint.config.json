@@ -1,11 +1,11 @@
 {
-  "$comment": "Configuration for lint.mjs. PROTECTED (design.md §0.5): an agent must not edit this file, add allowlist entries or loosen thresholds without the user's explicit approval. Paths are relative to the repo root.",
+  "$comment": "Configuration for lint.mjs. PROTECTED (design.md §0.5): an agent must not edit this file, add allowlist entries or loosen thresholds without the user's explicit approval. Paths are relative to the design-system folder. code_dirs here are the design system's own pages; the APP's code folders are set in design-build/project.json (not protected).",
   "index": "design.md",
   "design_files": ["design.md", "design/core.md", "design/digital-product.md", "design/marketing-content.md", "design/motion-video.md", "design/print.md"],
   "token_sections": [{ "file": "design/core.md", "section": "§13" }],
   "code_dirs": ["design-build/preview", "design-build/studies"],
   "code_extensions": [".html", ".htm", ".css", ".scss", ".sass", ".less", ".js", ".jsx", ".ts", ".tsx", ".vue", ".svelte", ".astro"],
-  "generated_files": ["design-build/preview/tokens.css", "design-build/preview/tokens.js"],
+  "generated_files": ["design-build/preview/tokens.css", "design-build/preview/tokens.js", "design-build/preview/tokens.mjs"],
   "exclude_dirs": ["node_modules", ".git", "screenshots", "fixtures", ".terrazzo", "dist", "build", ".next"],
   "kickstart_sync": { "source": "KICKSTART.md", "copy": "README.md" },
   "allow": [
