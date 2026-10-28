@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design system preview</title>
+<meta name="description" content="Live preview of the tokens and components in this design system. It is built from tokens/tokens.json.">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="preview.css">
+<script src="tokens.js"></script>
+<script>
+  // Apply a saved or requested theme before first paint (?theme=light|dark, or the toggle's saved choice).
+  (function () {
+    var q = new URLSearchParams(location.search).get('theme');
+    var saved = null; try { saved = localStorage.getItem('preview-theme'); } catch (e) {}
+    var t = q || saved;
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<script src="preview.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <div>
+      <h1 data-key>Design system preview</h1>
+      <p class="brand-line">The STARTER tokens from <code>tokens/tokens.json</code>. Replace them in §16 Phase 4.</p>
+    </div>
+    <div class="theme-toggle" role="group" aria-label="Color theme" data-key>
+      <button type="button" data-component="button" data-variant="secondary" data-theme-choice="light" aria-pressed="false">Light</button>
+      <button type="button" data-component="button" data-variant="secondary" data-theme-choice="dark" aria-pressed="false">Dark</button>
+      <button type="button" data-component="button" data-variant="secondary" data-theme-choice="system" aria-pressed="true">System</button>
+    </div>
+  </div>
+</header>
+
+<nav class="toc wrap" aria-label="Sections" data-component="navigation" data-key>
+  <ul>
+    <li><a href="#color">Color</a></li>
+    <li><a href="#contrast">Contrast</a></li>
+    <li><a href="#type">Type</a></li>
+    <li><a href="#space">Space and shape</a></li>
+    <li><a href="#icons">Icons</a></li>
+    <li><a href="#motion">Motion</a></li>
+    <li><a href="#components">Components</a></li>
+    <li><a href="#data">Data</a></li>
+  </ul>
+</nav>
+
+<main id="main" class="wrap" tabindex="-1">
+  <section id="color" aria-labelledby="color-h">
+    <h2 id="color-h">Color</h2>
+    <p class="feel">Each role is shown the way it is meant to be used. Surfaces are backgrounds, text colors are type on a surface, and focus is a ring (core §4).</p>
+    <div class="grid" id="swatches"></div>
+  </section>
+
+  <section id="contrast" aria-labelledby="contrast-h">
+    <h2 id="contrast-h">Contrast pairings</h2>
+    <p class="feel">These are the pairings declared in core §4. <code>lint.mjs</code> checks them in light and dark mode. Normal text needs 4.5:1. Large text and UI parts need 3:1.</p>
+    <div class="table-scroll" role="region" aria-label="Contrast pairings table" tabindex="0">
+      <table data-component="table">
+        <caption class="feel">The ratios are computed from the tokens.</caption>
+        <thead><tr><th scope="col">Sample</th><th scope="col">Foreground</th><th scope="col">Background</th><th scope="col">Needs</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead>
+        <tbody id="pairings"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="type" aria-labelledby="type-h">
+    <h2 id="type-h">Type</h2>
+    <div id="type-scale"></div>
+    <div class="type-row"><span class="label">Telugu · font.family.te</span><p class="sample lang-te" lang="te">తెలుగు నమూనా వాక్యం: అందరికీ స్వాగతం.</p></div>
+    <div class="type-row"><span class="label">Hindi · font.family.hi</span><p class="sample lang-hi" lang="hi">हिंदी नमूना वाक्य: आप सभी का स्वागत है।</p></div>
+  </section>
+
+  <section id="space" aria-labelledby="space-h">
+    <h2 id="space-h">Space and shape</h2>
+    <div id="space-scale"></div>
+    <h3>Radius and elevation</h3>
+    <div class="grid" id="shapes"></div>
+  </section>
+
+  <section id="icons" aria-labelledby="icons-h">
+    <h2 id="icons-h">Icons</h2>
+    <p class="feel">The icons are drawn on the <code>icon.size.lg</code> grid with an <code>icon.stroke</code> stroke. They are outline icons and inherit the text color.</p>
+    <div class="grid">
+      <div class="icon-cell"><div class="icon-sizes"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L19 7"/></svg><svg class="icon md" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L19 7"/></svg><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L19 7"/></svg></div>Check</div>
+      <div class="icon-cell"><div class="icon-sizes"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><svg class="icon md" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></div>Info</div>
+      <div class="icon-cell"><div class="icon-sizes"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><svg class="icon md" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></div>Close</div>
+      <div class="icon-cell"><div class="icon-sizes"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><svg class="icon md" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>Arrow</div>
+    </div>
+  </section>
+
+  <section id="motion" aria-labelledby="motion-h">
+    <h2 id="motion-h">Motion</h2>
+    <p class="feel">Press play to move the squares at the fast, base and slow durations. They all use the standard easing. With reduced motion they jump instead of moving.</p>
+    <div class="motion-demo">
+      <button type="button" data-component="button" data-variant="primary" id="play-motion" aria-controls="motion-tracks">Play motion</button>
+      <div id="motion-tracks" class="grid-wide">
+        <div class="motion-track"><div class="mover fast"></div></div>
+        <div class="motion-track"><div class="mover"></div></div>
+        <div class="motion-track"><div class="mover slow"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="components" aria-labelledby="components-h">
+    <h2 id="components-h">Components</h2>
+    <p class="feel">These are the starter components from digital-product §M1.1. Each one is listed in <code>design-build/inventory.json</code>.</p>
+    <h3>Button</h3>
+    <div class="row">
+      <button type="button" data-component="button" data-variant="primary">Save changes</button>
+      <button type="button" data-component="button" data-variant="secondary">Preview</button>
+      <button type="button" data-component="button" data-variant="ghost">Cancel</button>
+      <button type="button" data-component="button" data-variant="danger">Delete</button>
+      <button type="button" data-component="button" data-variant="primary" disabled>Disabled</button>
+    </div>
+    <h3>Input</h3>
+    <div class="grid-wide">
+      <div data-component="input">
+        <label for="email">Email address</label>
+        <input id="email" type="email" autocomplete="email" aria-describedby="email-hint">
+        <p class="hint" id="email-hint">We only use this for receipts.</p>
+      </div>
+      <div data-component="input" data-variant="error">
+        <label for="phone">Phone number</label>
+        <input id="phone" type="tel" autocomplete="tel" aria-invalid="true" aria-describedby="phone-hint" value="98765">
+        <p class="hint" id="phone-hint">Enter all 10 digits.</p>
+      </div>
+    </div>
+    <h3>Card</h3>
+    <div class="grid-wide">
+      <article data-component="card" data-variant="flat"><h3>Flat card</h3><p>This card sits on the page with only a hairline border.</p></article>
+      <article data-component="card" data-variant="raised"><h3>Raised card</h3><p>This card uses <code>shadow.2</code> to show that it lifts off the page.</p></article>
+    </div>
+    <h3>Badge</h3>
+    <div class="row">
+      <span data-component="badge" data-variant="neutral">Draft</span>
+      <span data-component="badge" data-variant="success">Paid</span>
+      <span data-component="badge" data-variant="warning">Due soon</span>
+      <span data-component="badge" data-variant="error">Overdue</span>
+      <span data-component="badge" data-variant="info">New</span>
+    </div>
+  </section>
+
+  <section id="data" aria-labelledby="data-h">
+    <h2 id="data-h">Data colors</h2>
+    <p class="feel">These are the eight categorical colors for charts (<code>color.data.1</code> to <code>color.data.8</code>). Label the series too, and never rely on color alone.</p>
+    <div class="chart" id="chart" role="img" aria-label="Sample bar chart using data colors 1 to 8"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>Generated from <code>tokens/tokens.json</code>. Run <code>npm --prefix design-build run render</code> to screenshot and audit this page.</p></div>
+</footer>
+</body>
+</html>
