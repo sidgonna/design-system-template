@@ -1,19 +1,34 @@
 {
-  "$comment": "Components this project has (status: existing, read from the code in KICKSTART Step 2) or has agreed to build (status: planned, matching design/digital-product.md §M1.1). lint.mjs (rule unknown-component) rejects any component, variant or prop not listed here. Reuse, then extend, then create, and add a new entry only with the user's agreement (design.md §0.5). Do not edit `ignore` without the user's approval.",
+  "$comment": "The single source of truth for components and screens. Components this project has (status: existing, read from the code in KICKSTART Step 2) or has agreed to build (status: planned, matching design/digital-product.md §M1.1). lint.mjs (rule unknown-component) rejects any component, variant or prop not listed here. Reuse, then extend, then create, and add a new entry only with the user's agreement (design.md §0.5). import = the module apps import from (React wrappers); html = the framework-agnostic markup API (components/components.css); doc = its ui-inventory doc. Do not edit `ignore` without the user's approval.",
   "library": null,
   "theme_files": [],
   "token_files": ["tokens/tokens.json"],
   "hardcoded_colors": null,
   "components": [
-    { "name": "Button", "aliases": ["btn"], "status": "planned", "import": "design-build/preview/index.html", "props": ["variant", "disabled", "type"], "variants": ["primary", "secondary", "ghost", "danger"] },
-    { "name": "Input", "aliases": ["TextField"], "status": "planned", "import": "design-build/preview/index.html", "props": ["label", "hint", "error", "disabled", "required"], "variants": ["default", "error"] },
-    { "name": "Card", "aliases": [], "status": "planned", "import": "design-build/preview/index.html", "props": ["elevation"], "variants": ["flat", "raised"] },
+    { "name": "Button", "aliases": ["btn"], "status": "existing", "import": "design-system/components/react", "html": "<button data-component=\"button\" data-variant=\"…\">", "doc": "ui-inventory/components/button.md", "props": ["variant", "loading", "disabled", "type"], "variants": ["primary", "secondary", "ghost", "danger"] },
+    { "name": "Input", "aliases": ["TextField"], "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"input\" data-variant=\"default|error\"><label><input>", "doc": "ui-inventory/components/input.md", "props": ["label", "hint", "error", "disabled", "required", "type", "autoComplete", "inputMode"], "variants": ["default", "error"] },
+    { "name": "Card", "aliases": [], "status": "existing", "import": "design-system/components/react", "html": "<article data-component=\"card\" data-variant=\"…\" [data-interactive]>", "doc": "ui-inventory/components/card.md", "props": ["variant", "interactive"], "variants": ["flat", "raised"] },
     { "name": "Modal", "aliases": ["Sheet", "Dialog"], "status": "planned", "import": null, "props": ["open", "title"], "variants": [] },
     { "name": "Navigation", "aliases": ["Nav"], "status": "planned", "import": null, "props": [], "variants": [] },
     { "name": "Table", "aliases": [], "status": "planned", "import": null, "props": [], "variants": [] },
-    { "name": "Badge", "aliases": ["Tag"], "status": "planned", "import": "design-build/preview/index.html", "props": ["variant"], "variants": ["neutral", "success", "warning", "error", "info"] },
+    { "name": "Badge", "aliases": ["Tag"], "status": "existing", "import": "design-system/components/react", "html": "<span data-component=\"badge\" data-variant=\"…\">", "doc": "ui-inventory/components/badge.md", "props": ["variant"], "variants": ["neutral", "success", "warning", "error", "info"] },
     { "name": "Toast", "aliases": [], "status": "planned", "import": null, "props": ["variant"], "variants": ["success", "warning", "error", "info"] }
   ],
+  "screens": {
+    "$comment": "One entry per web-app screen (ui-inventory/screens/<id>.md is generated from it, plus your notes). route = URL path or file; source = the files that render it, relative to the project root or the design-system folder; components = every inventory component on the screen with the variants and states it uses (states from digital-product.md §M1.2). lint rule ui-inventory checks all of it.",
+    "preview": {
+      "name": "Design system preview",
+      "route": "design-build/preview/index.html",
+      "purpose": "The living style guide: tokens, type, color, motion and the shipped components in every variant and state, for review (design.md §16 Phase 5).",
+      "source": ["design-build/preview/index.html"],
+      "components": [
+        { "component": "Button", "variants": ["primary", "secondary", "ghost", "danger"], "states": ["default", "hover", "focus", "active", "disabled", "loading"] },
+        { "component": "Input", "variants": ["default", "error"], "states": ["default", "focus", "error"] },
+        { "component": "Card", "variants": ["flat", "raised"], "states": ["default", "hover", "focus"] },
+        { "component": "Badge", "variants": ["neutral", "success", "warning", "error", "info"], "states": ["default"] }
+      ]
+    }
+  },
   "ignore": {
     "$comment": "Tags and props that are never design-system components: framework built-ins and generic HTML/ARIA attributes.",
     "tags": ["Fragment", "React.Fragment", "Suspense", "StrictMode", "Head", "Html", "Script", "Link", "Image", "Slot", "Transition", "TransitionGroup", "Teleport", "KeepAlive", "Component", "RouterView", "RouterLink", "Outlet"],

@@ -1,0 +1,149 @@
+/*
+ * components/components.css — the shipped component set (design/digital-product.md §M1.1).
+ * Framework-agnostic: style any element with data-component="button|input|card|badge" and data-variant.
+ * Uses only token variables from design-build/preview/tokens.css (import that first). Zero runtime dependencies.
+ * Docs: ui-inventory/components/<name>.md · inventory: design-build/inventory.json · motion: core.md §10.
+ *
+ * Motion (all from motion.* tokens; every movement is switched off under prefers-reduced-motion: reduce):
+ *   button  hover lift + press scale (transform, motion.duration.instant/fast), loading spinner (rotate)
+ *   input   focus ring + border color (color only), error shake on entering the error state
+ *   card    entrance (opacity + translateY, motion.duration.base, ease.enter), interactive hover lift
+ *   badge   pop-in on insert (opacity + scale, motion.duration.fast, ease.enter)
+ */
+
+/* ---------- keyframes ---------- */
+@keyframes ds-spin { to { transform: rotate(1turn); } }
+@keyframes ds-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(calc(var(--space-1) * -1)); }
+  40%, 80% { transform: translateX(var(--space-1)); }
+}
+@keyframes ds-enter {
+  from { opacity: 0; transform: translateY(var(--space-4)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ds-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Button ---------- */
+[data-component="button"] {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-block-size: var(--size-target-min); min-inline-size: var(--size-target-min);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--border-width-thick) solid var(--color-brand-primary);
+  background: var(--color-brand-primary); color: var(--color-text-inverse);
+  font: inherit; font-weight: var(--font-weight-semibold); line-height: var(--font-line-height-tight);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+[data-component="button"][data-variant="secondary"] { background: var(--color-surface-default); color: var(--color-brand-primary); }
+[data-component="button"][data-variant="ghost"] { background: var(--color-surface-default); color: var(--color-brand-primary); border-color: var(--color-surface-default); text-decoration: underline; text-underline-offset: var(--border-width-thick); }
+[data-component="button"][data-variant="danger"] { background: var(--color-semantic-error); color: var(--color-text-inverse); border-color: var(--color-semantic-error); }
+[data-component="button"][aria-pressed="true"] { background: var(--color-brand-primary); color: var(--color-text-inverse); border-color: var(--color-brand-primary); }
+[data-component="button"]:hover:not([disabled], [aria-disabled="true"]) { transform: translateY(calc(var(--border-width-thin) * -1)); box-shadow: var(--shadow-1); }
+[data-component="button"][data-variant="secondary"]:hover:not([disabled], [aria-disabled="true"], [aria-pressed="true"]),
+[data-component="button"][data-variant="ghost"]:hover:not([disabled], [aria-disabled="true"], [aria-pressed="true"]) { background: var(--color-surface-raised); }
+[data-component="button"]:active:not([disabled], [aria-disabled="true"]) { transform: scale(0.97); box-shadow: none; transition-duration: var(--motion-duration-instant); }
+[data-component="button"]:focus-visible { outline: var(--border-width-thick) solid var(--color-focus); outline-offset: var(--border-width-thick); }
+[data-component="button"][disabled],
+[data-component="button"][aria-disabled="true"]:not([aria-busy="true"]) { cursor: not-allowed; background: var(--color-surface-raised); color: var(--color-text-secondary); border-color: var(--color-text-secondary); }
+[data-component="button"][aria-busy="true"] { cursor: progress; }
+[data-component] [data-part="spinner"] {   /* a circle inside the button, not a pill button */
+  inline-size: var(--icon-size-sm); block-size: var(--icon-size-sm); flex: none;
+  border: var(--border-width-thick) solid currentColor; border-block-start-color: transparent; border-radius: var(--radius-full);
+  animation: ds-spin calc(var(--motion-duration-slow) * 2) linear infinite;
+}
+
+/* ---------- Input ---------- */
+[data-component="input"] { display: grid; gap: var(--space-1); max-inline-size: calc(var(--space-12) * 8); }
+[data-component="input"] label { font-weight: var(--font-weight-semibold); }
+[data-component="input"] [data-part="required"] { color: var(--color-text-secondary); font-weight: var(--font-weight-regular); }
+[data-component="input"] input,
+[data-component="input"] textarea {
+  min-block-size: var(--size-target-min); padding: var(--space-2) var(--space-3);
+  font: inherit; color: var(--color-text-primary); background: var(--color-surface-default);
+  border: var(--border-width-thin) solid var(--color-text-secondary); border-radius: var(--radius-sm);
+  inline-size: 100%; box-sizing: border-box;
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+[data-component="input"] input:focus-visible,
+[data-component="input"] textarea:focus-visible { outline: none; border-color: var(--color-focus); box-shadow: 0 0 0 var(--border-width-thick) var(--color-focus); }
+[data-component="input"] input:disabled,
+[data-component="input"] textarea:disabled { cursor: not-allowed; background: var(--color-surface-raised); color: var(--color-text-secondary); }
+[data-component="input"] [data-part="hint"],
+[data-component="input"] .hint { font-size: var(--font-size-caption); color: var(--color-text-secondary); margin: 0; }
+[data-component="input"] [data-part="error"] { font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); color: var(--color-semantic-error); margin: 0; }
+[data-component="input"][data-variant="error"] input,
+[data-component="input"][data-variant="error"] textarea {
+  border: var(--border-width-thick) solid var(--color-semantic-error);
+  animation: ds-shake var(--motion-duration-slow) var(--motion-ease-standard);
+}
+[data-component="input"][data-variant="error"] input:focus-visible,
+[data-component="input"][data-variant="error"] textarea:focus-visible { border-color: var(--color-semantic-error); box-shadow: 0 0 0 var(--border-width-thick) var(--color-focus); }
+[data-component="input"][data-variant="error"] .hint { color: var(--color-semantic-error); }
+
+/* ---------- Card ---------- */
+[data-component="card"] {
+  padding: var(--space-6); border-radius: var(--radius-lg);
+  background: var(--color-surface-default); color: var(--color-text-primary);
+  border: var(--border-width-thin) solid var(--color-surface-raised);
+  animation: ds-enter var(--motion-duration-base) var(--motion-ease-enter) backwards;   /* backwards, not both: a held end state would block the hover lift */
+  transition:
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+[data-component="card"][data-variant="raised"] { box-shadow: var(--shadow-2); }
+[data-component="card"] > :first-child { margin-block-start: 0; }
+[data-component="card"] > :last-child { margin-block-end: 0; }
+[data-component="card"] h2,
+[data-component="card"] h3 { font-size: var(--font-size-h3); }
+[data-component="card"][data-interactive]:hover,
+[data-component="card"][data-interactive]:focus-within {
+  transform: translateY(calc(var(--space-1) * -1)); box-shadow: var(--shadow-3); border-color: var(--color-text-secondary);
+}
+[data-component="card"][data-interactive] a { color: var(--color-brand-primary); }
+
+/* ---------- Badge ---------- */
+[data-component="badge"] {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm);
+  border: var(--border-width-thin) solid currentColor;
+  font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); line-height: var(--font-line-height-tight);
+  background: var(--color-surface-default); color: var(--color-text-primary);
+  animation: ds-pop var(--motion-duration-fast) var(--motion-ease-enter) backwards;
+}
+[data-component="badge"]::before { content: ""; inline-size: var(--space-2); block-size: var(--space-2); border-radius: var(--radius-full); background: currentColor; flex: none; }
+[data-component="badge"][data-variant="success"] { color: var(--color-semantic-success); }
+[data-component="badge"][data-variant="warning"] { color: var(--color-semantic-warning); }
+[data-component="badge"][data-variant="error"] { color: var(--color-semantic-error); }
+[data-component="badge"][data-variant="info"] { color: var(--color-semantic-info); }
+
+/* ---------- helpers ---------- */
+[data-component] [data-part="visually-hidden"] { position: absolute; inline-size: var(--border-width-thin); block-size: var(--border-width-thin); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- reduced motion: nothing moves; color, border and shadow changes stay (instant feedback) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  [data-component],
+  [data-component] [data-part],
+  [data-component="input"] input,
+  [data-component="input"] textarea,
+  [data-component]::before { animation: none !important; }   /* !important: beats the more specific state selectors above */
+  [data-component="button"],
+  [data-component="card"] { transition-property: background-color, color, border-color, box-shadow; }
+  [data-component="button"]:hover:not([disabled], [aria-disabled="true"]),
+  [data-component="button"]:active:not([disabled], [aria-disabled="true"]),
+  [data-component="card"][data-interactive]:hover,
+  [data-component="card"][data-interactive]:focus-within { transform: none; }
+  [data-component] [data-part="spinner"] { border-block-start-color: currentColor; border-inline-end-color: transparent; border-block-end-color: transparent; }
+}

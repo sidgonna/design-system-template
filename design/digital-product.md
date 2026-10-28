@@ -19,17 +19,17 @@ may_narrow: [§9, §10]   # never contradict
 **FEEL:** {{…}}
 
 ### M1.1 Components
-Every row must match a `name` in `design-build/inventory.json`, and every variant must be one it lists (the lint checks both, rule `unknown-component`). Reuse an existing component first, extend it second, and add a new one only with the user's agreement (§0.5).
+Every row must match a `name` in `design-build/inventory.json`, and every variant must be one it lists (the lint checks both, rule `unknown-component`). Button, Input, Card and Badge ship ready to use in `components/` (README → Components: usage); each component has a doc in `ui-inventory/components/`, written before it is built (§0.5). Reuse an existing component first, extend it second, and add a new one only with the user's agreement (§0.5).
 
 | Component | Variants | Tokens used | Notes |
 |---|---|---|---|
-| Button | primary, secondary, ghost, danger | `{color.brand.primary}`, `{radius.md}` | label rules → §6 |
-| Input | {{…}} | | |
-| Card | | `{shadow.1}`, `{radius.lg}` | |
+| Button | primary, secondary, ghost, danger | `{color.brand.primary}`, `{color.text.inverse}`, `{color.semantic.error}`, `{radius.md}`, `{shadow.1}`, `{motion.duration.fast}` | label rules → §6; `loading` keeps focus and label (`aria-busy`); shipped: `components/`, doc `ui-inventory/components/button.md` |
+| Input | default, error | `{color.text.secondary}`, `{color.focus}`, `{color.semantic.error}`, `{radius.sm}`, `{motion.duration.slow}` | visible label, hint and error wired with `aria-describedby`; error shakes once (not under reduced motion); doc `ui-inventory/components/input.md` |
+| Card | flat, raised | `{shadow.2}`, `{shadow.3}`, `{radius.lg}`, `{space.6}`, `{motion.ease.enter}` | one entity per card; `interactive` lifts on hover and focus-within, with one real link inside; doc `ui-inventory/components/card.md` |
 | Modal / Sheet | | | |
 | Navigation | | | |
 | Table | | | |
-| Badge / Tag | | | |
+| Badge / Tag | neutral, success, warning, error, info | `{color.semantic.success}`, `{color.semantic.warning}`, `{color.semantic.error}`, `{color.semantic.info}`, `{radius.sm}` | text carries the meaning, color only reinforces it; pops in on insert; doc `ui-inventory/components/badge.md` |
 | Toast | | | |
 ### M1.2 States
 `default · hover · focus · active · disabled · loading · empty · error · success` — each component lists what changes per state, using tokens only. Focus → §11.

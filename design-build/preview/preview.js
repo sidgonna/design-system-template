@@ -95,5 +95,10 @@
   var play = document.getElementById('play-motion');
   if (play) play.addEventListener('click', function () {
     document.querySelectorAll('.motion-track').forEach(function (t) { t.classList.toggle('moved'); });
+    // Replay the components' CSS animations (card entrance, badge pop-in, input shake). Under reduced motion
+    // components.css sets animation: none, so there is nothing to replay and the page just stays put.
+    document.querySelectorAll('#components [data-component="card"], #components [data-component="badge"], #components [data-variant="error"] input').forEach(function (n) {
+      n.style.animationName = 'none'; void getComputedStyle(n).animationName; n.style.animationName = '';
+    });
   });
 })();

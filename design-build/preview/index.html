@@ -6,6 +6,7 @@
 <title>Design system preview</title>
 <meta name="description" content="Live preview of the tokens and components in this design system. It is built from tokens/tokens.json.">
 <link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../../components/components.css">
 <link rel="stylesheet" href="preview.css">
 <script src="tokens.js"></script>
 <script>
@@ -36,7 +37,7 @@
   </div>
 </header>
 
-<nav class="toc wrap" aria-label="Sections" data-component="navigation" data-key>
+<nav class="toc wrap" aria-label="Sections" data-key>
   <ul>
     <li><a href="#color">Color</a></li>
     <li><a href="#contrast">Contrast</a></li>
@@ -60,7 +61,7 @@
     <h2 id="contrast-h">Contrast pairings</h2>
     <p class="feel">These are the pairings declared in core §4. <code>lint.mjs</code> checks them in light and dark mode. Normal text needs 4.5:1. Large text and UI parts need 3:1.</p>
     <div class="table-scroll" role="region" aria-label="Contrast pairings table" tabindex="0">
-      <table data-component="table">
+      <table>
         <caption class="feel">The ratios are computed from the tokens.</caption>
         <thead><tr><th scope="col">Sample</th><th scope="col">Foreground</th><th scope="col">Background</th><th scope="col">Needs</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead>
         <tbody id="pairings"></tbody>
@@ -95,7 +96,7 @@
 
   <section id="motion" aria-labelledby="motion-h">
     <h2 id="motion-h">Motion</h2>
-    <p class="feel">Press play to move the squares at the fast, base and slow durations. They all use the standard easing. With reduced motion they jump instead of moving.</p>
+    <p class="feel">Press play to move the squares at the fast, base and slow durations (standard easing), and to replay the component motion below: card entrance, badge pop-in, the input error shake and the button spinner. With reduced motion nothing moves: the squares jump and the components change state instantly.</p>
     <div class="motion-demo">
       <button type="button" data-component="button" data-variant="primary" id="play-motion" aria-controls="motion-tracks">Play motion</button>
       <div id="motion-tracks" class="grid-wide">
@@ -108,7 +109,7 @@
 
   <section id="components" aria-labelledby="components-h">
     <h2 id="components-h">Components</h2>
-    <p class="feel">These are the starter components from digital-product §M1.1. Each one is listed in <code>design-build/inventory.json</code>.</p>
+    <p class="feel">These are the shipped components from <code>components/</code> (digital-product §M1.1). Each one is listed in <code>design-build/inventory.json</code> and documented in <code>ui-inventory/components/</code>. Press <strong>Play motion</strong> above to replay their motion too.</p>
     <h3>Button</h3>
     <div class="row">
       <button type="button" data-component="button" data-variant="primary">Save changes</button>
@@ -116,27 +117,30 @@
       <button type="button" data-component="button" data-variant="ghost">Cancel</button>
       <button type="button" data-component="button" data-variant="danger">Delete</button>
       <button type="button" data-component="button" data-variant="primary" disabled>Disabled</button>
+      <button type="button" data-component="button" data-variant="primary" id="demo-loading" aria-busy="true" aria-disabled="true"><span data-part="spinner" aria-hidden="true"></span><span data-part="label">Saving…</span></button>
     </div>
     <h3>Input</h3>
     <div class="grid-wide">
-      <div data-component="input">
-        <label for="email">Email address</label>
-        <input id="email" type="email" autocomplete="email" aria-describedby="email-hint">
-        <p class="hint" id="email-hint">We only use this for receipts.</p>
+      <div data-component="input" data-variant="default">
+        <label for="email">Email address <span data-part="required">(required)</span></label>
+        <input id="email" type="email" autocomplete="email" required aria-describedby="email-hint">
+        <p data-part="hint" id="email-hint">We only use this for receipts.</p>
       </div>
-      <div data-component="input" data-variant="error">
+      <div data-component="input" data-variant="error" id="demo-phone">
         <label for="phone">Phone number</label>
-        <input id="phone" type="tel" autocomplete="tel" aria-invalid="true" aria-describedby="phone-hint" value="98765">
-        <p class="hint" id="phone-hint">Enter all 10 digits.</p>
+        <input id="phone" type="tel" autocomplete="tel" inputmode="numeric" aria-invalid="true" aria-describedby="phone-hint phone-error" value="98765">
+        <p data-part="hint" id="phone-hint">Enter all 10 digits.</p>
+        <p data-part="error" id="phone-error">That number has 5 digits; it needs 10.</p>
       </div>
     </div>
     <h3>Card</h3>
     <div class="grid-wide">
       <article data-component="card" data-variant="flat"><h3>Flat card</h3><p>This card sits on the page with only a hairline border.</p></article>
       <article data-component="card" data-variant="raised"><h3>Raised card</h3><p>This card uses <code>shadow.2</code> to show that it lifts off the page.</p></article>
+      <article data-component="card" data-variant="raised" data-interactive><h3><a href="#components">Interactive card</a></h3><p>Hover it or tab to its link: it lifts to <code>shadow.3</code>.</p></article>
     </div>
     <h3>Badge</h3>
-    <div class="row">
+    <div class="row" id="demo-badges">
       <span data-component="badge" data-variant="neutral">Draft</span>
       <span data-component="badge" data-variant="success">Paid</span>
       <span data-component="badge" data-variant="warning">Due soon</span>

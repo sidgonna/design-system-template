@@ -1,9 +1,11 @@
 {
   "name": "design-build-checks",
   "private": true,
-  "description": "Quality checks for this design system: render + axe harness and the DTCG tokens check. lint.mjs needs none of these dependencies.",
+  "description": "Quality checks for this design system: render + axe harness, the motion check, the DTCG tokens check, and react/react-dom for the component wrapper self-tests. lint.mjs and the components need none of these dependencies.",
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "lint": "node lint.mjs",
     "lint:json": "node lint.mjs --json",
@@ -16,6 +18,8 @@
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.1",
-    "@terrazzo/cli": "2.10.0"
+    "@terrazzo/cli": "2.10.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   }
 }
