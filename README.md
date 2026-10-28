@@ -53,6 +53,7 @@ Before any open web search in §16 Phase 2, read the seeds for each area. §16.2
 - Pick colors → full palette (for people): Coolors https://coolors.co/generate · Adobe Color wheel https://color.adobe.com/create/color-wheel · Huemint https://huemint.com/ · Realtime Colors https://www.realtimecolors.com/ · UI Colors https://uicolors.app/
 - Pick colors → full palette (for agents): The Color API https://www.thecolorapi.com/docs · Leonardo https://github.com/adobe/leonardo · Material Color Utilities https://github.com/material-foundation/material-color-utilities · chroma.js https://gka.github.io/chroma.js/ · Culori https://culorijs.org/
 - Motion libraries: Motion https://motion.dev/ · GSAP https://gsap.com/ · Anime.js https://animejs.com/ · Lottie https://airbnb.io/lottie/ · AutoAnimate https://auto-animate.formkit.com/
+- Agent-ready references: DESIGN.md https://designmd.ai/ · 21st.dev (MCP) https://21st.dev/ · Refero Styles https://styles.refero.design/ · Minimal Gallery https://minimal.gallery/ · AppShot https://appshot.gallery/ · Motion Primitives https://motion-primitives.com/
 - Data viz: Carbon Data Viz https://carbondesignsystem.com/data-visualization/getting-started/ · ColorBrewer https://colorbrewer2.org/
 - Competitors and inspiration: Brandfetch https://brandfetch.com/ · Brand New https://www.underconsideration.com/brandnew/ · Wayback Machine https://web.archive.org/
 - Ad and social formats: Meta Ads Guide https://www.facebook.com/business/ads-guide

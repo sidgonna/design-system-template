@@ -242,6 +242,13 @@ seeds:
     - { name: "Lottie (Airbnb)", url: "https://airbnb.io/lottie/", use_for: "playing After Effects animations in web and apps" }
     - { name: "AutoAnimate", url: "https://auto-animate.formkit.com/", use_for: "zero-config list and layout transitions" }
     - { name: "Animate.css", url: "https://animate.style/", use_for: "ready-made CSS keyframe animations for quick studies" }
+  agent_ready_references:   # built for AI-assisted design work; added 2026-10-28 from @iamtanzil_'s list (x.com/iamtanzil_/status/2108066324907962575)
+    - { name: "DESIGN.md (designmd.ai)", url: "https://designmd.ai/", use_for: "community design systems written as DESIGN.md files; compare structure and depth with ours" }
+    - { name: "21st.dev", url: "https://21st.dev/", use_for: "component registry agents can pull from via MCP; patterns for §M1 components" }
+    - { name: "Refero Styles", url: "https://styles.refero.design/", use_for: "2,000+ real product styles with their typography and color, for §2, §4 and §5 references" }
+    - { name: "Minimal Gallery", url: "https://minimal.gallery/", use_for: "curated high-craft sites for the competitor wall and moodboard" }
+    - { name: "AppShot Gallery", url: "https://appshot.gallery/", use_for: "real mobile app screens, no login (an alternative to Mobbin)" }
+    - { name: "Motion Primitives", url: "https://motion-primitives.com/", use_for: "ready animation and interaction components for Phase 3 motion studies" }
   data_visualization:
     - { name: "Carbon Data Visualization", url: "https://carbondesignsystem.com/data-visualization/getting-started/", use_for: "chart rules and color use" }
     - { name: "Datawrapper Academy", url: "https://academy.datawrapper.de/", use_for: "chart choice and labeling" }
