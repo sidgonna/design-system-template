@@ -1,6 +1,6 @@
 # Where AI coding agents stumble on design-system work
 
-> **Status: mostly implemented (28 Oct 2026).** These are known ways AI coding agents (Claude Code, Cursor, Codex, v0, Lovable and similar) go wrong on design-system and UI work, based on reports from Oct 2025 to Oct 2026. Each one has fix options for this template. 21 of the 24 options are implemented in their owning files, 1 is partial (8b) and 2 are not yet (6c, 7c). The table below says where each one lives. Since the 28 Oct 2026 readiness review, the checks also run from an app root with the template in `design-system/`, lint the app's own code, and §16 Phase 6 applies the system to the app; that path has been dry-run on a fresh Vite + React app, not yet on a large existing codebase.
+> **Status: mostly implemented (28 Oct 2026).** These are known ways AI coding agents (Claude Code, Cursor, Codex, v0, Lovable and similar) go wrong on design-system and UI work, based on reports from Oct 2025 to Oct 2026. Each one has fix options for this template. 24 of the 27 options are implemented in their owning files, 1 is partial (8b) and 2 are not yet (6c, 7c). The table below says where each one lives. Since the 28 Oct 2026 readiness review, the checks also run from an app root with the template in `design-system/`, lint the app's own code, and §16 Phase 6 applies the system to the app; that path has been dry-run on a fresh Vite + React app, not yet on a large existing codebase. The template also ships a working component set (Button, Input, Card, Badge) with motion that is proven to play and to stop under reduced motion, plus a per-screen UI inventory with one doc per component (3d, 4d, 6d).
 > The rules themselves live in [`design.md`](design.md), [`design/core.md`](design/core.md), the modules and [`KICKSTART.md`](KICKSTART.md). Where this file disagrees with them, **those files win**. The "Not yet" and "Partially" items are still proposals.
 
 **Implementation status**
@@ -16,15 +16,18 @@
 | 3a | Implemented | `KICKSTART.md` Step 2 writes `design-build/inventory.json` (the README block is identical, checked by lint `kickstart-sync`); `state.yaml` → `inventory`. Not yet tried on a real React repo. |
 | 3b | Implemented | `design.md` §0.5 (reuse, then extend, then create). |
 | 3c | Implemented | `design.md` Phase 1 intake Q4. |
+| 3d | Implemented | `components/`: Button, Input, Card and Badge (`components.css` on token variables, `index.js` helpers, typed React wrappers), listed in `inventory.json` as `existing` with their import path. |
 | 4a | Implemented | `design-build/render.mjs`: axe `wcag2a/aa`, `wcag21a/aa`, `wcag22aa` in light and dark at every width. Serious or critical fails. Output in `a11y-report.json`. |
 | 4b | Implemented | lint rule `contrast`: every §4 pairing in light and dark, using its own OKLCH → sRGB math. |
 | 4c | Implemented | `design/core.md` §11 `structure` key, plus the rule → check table. A missing skip link or label fails through axe; landmarks and heading order are best-practice warnings. |
+| 4d | Implemented | `design-build/motion.mjs`: samples each component animation mid-flight, then emulates `prefers-reduced-motion: reduce` and fails if anything still moves; §16 Phase 6 step 5 runs it on the app. |
 | 5a | Implemented | `design-build/render.mjs`: `screenshots/<page>-<w>-<theme>.png`; checks overflow, off-viewport, overlap, tap targets (24px floor with the 2.5.8 spacing exception) and focus visibility. Also fails on page errors, scripts or stylesheets that fail to load, and blank pages; `--url` renders the app's dev server (§16 Phase 6). Output in `render-report.json`. |
 | 5b | Implemented | `design.md` Phase 3 (screenshots required) and §15 render item. |
 | 5c | Implemented | `design/digital-product.md` §M1.3, plus `{viewport.*}` tokens, which `render.mjs` reads as its default widths. |
 | 6a | Implemented | `design.md` §0.5 (look it up in `inventory.json` before use). |
 | 6b | Implemented | lint rule `unknown-component`: `data-component`/`data-variant` in HTML, JSX imports and tags, §M1.1 rows. |
-| 6c | Not yet | No `tsc --noEmit` step. |
+| 6c | Not yet | No `tsc --noEmit` step in the checks. The shipped wrappers have types (`components/react/index.d.ts`), so an app's own `tsc -b` build catches invalid props. |
+| 6d | Implemented | `ui-inventory/`: one doc per component and one entry per screen (facts in `inventory.json` → `screens`); the §0.5 doc-and-reference-search-before-build rule; §16 Phase 2c and Phase 6 step 0/4; lint rule `ui-inventory`. |
 | 7a | Implemented | `design-build/state.yaml` → `decisions`, `locked_sections`; the §0.5 re-read rule; Phase 3 and 5 record picks there. |
 | 7b | Implemented | §0.5 "after any edit, run lint", backed by the git pre-commit hook (`design-build/install-hooks.mjs` → `hooks/pre-commit.mjs`; lints app code and design files, renders on visual changes, fails loudly if the scripts are missing), CI (the template's `.github/workflows/design-checks.yml`; `design-build/ci/app-design-checks.example.yml` for apps) and the optional agent hooks in `design-build/hooks/`. |
 | 7c | Not yet | No separate hard-rules card. §0.5 `agent_rules` is the nearest equivalent. |
@@ -137,6 +140,7 @@ The agent builds a new button or card instead of using the one in the repo, or u
 | 3a | **Component inventory in KICKSTART Step 2.** For coding projects, the agent writes `design-build/inventory.json` with:<br>• the UI library (shadcn, MUI or in-house)<br>• each existing component: name, aliases, import path, variants<br>• theme and token files<br>• counts of hard-coded colours<br>It also records the inventory path in `state.yaml` (`inventory: design-build/inventory.json`). | Kickstart prompt, `state.yaml` | H: the agent can't reuse what it hasn't listed. | S: one step and one file. |
 | 3b | **Reuse rule in §0.5 `agent_rules`.** "Reuse an existing component, then extend it with a variant, and create a new one only for a genuinely new pattern. If nothing fits, stop and ask, saying what you searched for. Log any new component in §14.4." Also add a "Code source / import" column to the §M1.1 table. | §0.5 agent rules, §M1.1 module | H: pairs with 3a. | S: wording. |
 | 3c | **Intake question 4 extension.** Add: "Is there a component library or design system in code we must keep (shadcn, MUI, in-house)? Where does it live?" | §16 Phase 1 intake | M: catches libraries the scan misses. | S: one line. |
+| 3d | **Ship a small component set** on the tokens (Button, Input, Card, Badge), so there is something real to reuse from day one instead of a static preview. | `components/`, `inventory.json` | M: gives the reuse rule a default to point at. | M: CSS, helpers, wrappers, tests. |
 
 **Pick: 3a with 3b.** They're cheap together: 3a lists what exists, and 3b makes reusing it the rule. Neither does much alone.
 
@@ -169,6 +173,7 @@ Contrast is the most common failure. Missing skip links, landmarks, input labels
 | 4a | **axe-core gate** using `@axe-core/playwright` inside the render harness (5a). It runs on `studies/index.html`, `preview/index.html` and any built page, in light and dark. It fails on any serious or critical issue and writes `design-build/a11y-report.json`. | Phase 3 and Phase 5 gates, §15 | H: catches contrast, labels and landmarks on what users actually see. | M: needs 5a first. |
 | 4b | **Contrast in both themes** in `lint.mjs`. Compute WCAG ratios for every §4 pairing using the light *and* dark values in §13, not only the light ones. | Phase 4 gate | M: covers dark mode cheaply. | S: once 1a exists. |
 | 4c | **Structural rules in the §11 YAML**: `skip_link: required`, `landmarks: header/nav/main/footer`, `form_labels: visible and linked`, `headings: one H1, no skipped levels` (§M1.7 already says one H1), and `links_vs_buttons: links navigate, buttons act`. Plus one §11 note: "Writing 'be accessible' in a prompt is not a check." | `core.md` §11 | M: gives axe and reviewers named targets. | S: wording. |
+| 4d | **Motion proof.** A script that checks animations really play and really stop under `prefers-reduced-motion` (about 1 in 3 AI-built frontends ignore it). | Phase 6 step 5, CI self-test | M: reduced motion is easy to claim and rarely tested. | M: Playwright. |
 
 **Pick: 4a.** The evidence shows that rules in prose don't work and checks on the rendered page do. It needs the render harness (5a), so build that first.
 
@@ -222,6 +227,7 @@ The agent uses props that don't exist or components that were renamed. Docs past
 | 6a | **Look-up-before-use rule** in §0.5: "Before using a component or prop, confirm it in `design-build/inventory.json`, the library's source or types, or its official MCP or registry. Never guess a prop. If you can't confirm it, stop and ask." | §0.5 agent rules | M: cheap and pairs with 3a. | S: wording. |
 | 6b | **Component-existence check** in `lint.mjs`. Every component named in §M1.1 and in the preview or mockup code must appear in `inventory.json` or be logged as new in §14.4. Unknown imports fail. | Phase 4 gate | M: a backstop for 6a. | M: needs simple parsing of imports and JSX. |
 | 6c | **TypeScript check when present.** If the project has `tsconfig.json`, Phase 5 runs `tsc --noEmit` on generated UI. Invalid props fail the type check. | Phase 5 gate | M: free in TypeScript projects, useless elsewhere. | S |
+| 6d | **Per-screen UI inventory and component docs.** Each screen lists its components, variants and states; each component has a doc (states, tokens, motion, a11y, references), written after a per-component reference search and before building. The lint fails when a doc is missing, stale or names a token that doesn't exist. | `ui-inventory/`, §0.5, §16 Phase 2c and 6 | M: docs that a check keeps current don't go stale. | M: generator + lint rule. |
 
 **Pick: 6a.** It's nearly free once the inventory (3a) exists. Add 6b later inside the lint.
 

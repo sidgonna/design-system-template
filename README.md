@@ -47,6 +47,7 @@ Scan everything in the project outside the design system folder and decide the p
 A project can be several types at once. Set the `parts.*.enabled` flags in design.md from what you find, and note the evidence (file paths) for each.
 If the project is empty, or has nothing that shows its type, say so plainly, leave every module flag undecided, and rely on the intake answers to set them.
 For a coding project, also write `design-build/inventory.json`, the list of UI that already exists, so it is reused instead of rebuilt. Use the shape already in that file: the UI library in use (for example shadcn/ui, MUI, Radix or in-house), the theme and token files, a rough count of hard-coded colors and, for each existing component, its name, aliases, import path, props and variants with `status: existing`. Read the components from the code, never guess them. Keep the starter `planned` entries that match §M1.1; remove any the project won't use, from both files. Set `inventory` in `design-build/state.yaml` to that path. If there is no UI code, leave the components list empty.
+For a coding project, also list the app's screens in `design-build/inventory.json` → `screens` (one entry per route: name, route, purpose, source files, and the components with the variants and states each uses), then run `node design-system/design-build/ui-inventory.mjs`, which writes `ui-inventory/screens/<id>.md` and a doc stub per component. Fill each component doc only after searching the §16.2 component seeds for that component on its own (§16 Phase 2c); 21st.dev and other registries are for patterns, never pasted code. The lint (rule `ui-inventory`) fails until every component on a listed screen has a complete doc.
 For a coding project, also propose `design-build/project.json`: the app's code folders the lint will check (run `node design-system/design-build/lint.mjs` and read its "app code:" line; it auto-detects src/, app/, pages/, components/, styles/, top-level *.html/*.css and public/*.html), anything to exclude, and the dev-server URL (`app_url`, e.g. http://localhost:5173/). Write it only after I approve it. If the existing code already has hard-coded colors or sizes, tell me the lint counts and ask whether to freeze them as a ceiling with `node design-system/design-build/lint.mjs --baseline`; never run it without my yes. If `.git/hooks/pre-commit` does not mention design-system, tell me to run `node design-system/design-build/install-hooks.mjs`.
 
 STEP 3 — Tell me what you found (5 lines max)
@@ -66,7 +67,7 @@ SEED SOURCES — research starts deep, not wide
 Before any open web search in §16 Phase 2, read the seeds for each area. §16.2 in design.md is the full, owning list; this is the short version. If they differ, §16.2 wins.
 - Tokens: W3C Design Tokens Format https://tr.designtokens.org/format/ · Style Dictionary https://styledictionary.com/
 - Reference systems: Material 3 https://m3.material.io/ · Apple HIG https://developer.apple.com/design/human-interface-guidelines · IBM Carbon https://carbondesignsystem.com/ · GOV.UK https://design-system.service.gov.uk/
-- Components: Component Gallery https://component.gallery/ · Radix https://www.radix-ui.com/primitives · shadcn/ui https://ui.shadcn.com/ · Kokonut UI https://kokonutui.com/
+- Components (search each one separately, §16 Phase 2c): Component Gallery https://component.gallery/ · Radix https://www.radix-ui.com/primitives · shadcn/ui https://ui.shadcn.com/ · React Aria https://react-spectrum.adobe.com/react-aria/ · Kokonut UI https://kokonutui.com/ · 21st.dev https://21st.dev/ (patterns only)
 - Accessibility: WCAG 2.2 https://www.w3.org/TR/WCAG22/ · ARIA Authoring Practices https://www.w3.org/WAI/ARIA/apg/ · WebAIM Contrast https://webaim.org/resources/contrastchecker/
 - Color: Radix Colors https://www.radix-ui.com/colors · Leonardo https://leonardocolor.io/ · OKLCH https://oklch.com/
 - Type: Google Fonts https://fonts.google.com/ · Noto (Indic) https://fonts.google.com/noto · Fontshare https://www.fontshare.com/ · Practical Typography https://practicaltypography.com/
@@ -111,6 +112,49 @@ RULES FOR THIS WHOLE SESSION
 Begin with Step 1 now.
 ```
 
+## Components: usage
+The template ships four working components: **Button, Input, Card and Badge** (digital-product.md §M1.1). They use only token variables and have no runtime dependencies. Their motion runs on motion tokens and turns off under `prefers-reduced-motion`. You can use them three ways:
+
+```tsx
+// React 18+ (src/main.tsx imports the CSS once; any component file imports the wrappers)
+import '../design-system/design-build/preview/tokens.css';   // tokens first
+import '../design-system/components/components.css';          // then the components
+import { Button, Input, Card, Badge } from '../design-system/components/react';   // typed (index.d.ts)
+
+<Card variant="raised" interactive>
+  <h3><a href="/plans/pro">Pro plan</a></h3>
+  <Badge variant="success">Active</Badge>
+  <Input label="Email" type="email" autoComplete="email" error={emailError} />
+  <Button type="submit" loading={saving}>Save changes</Button>
+</Card>
+```
+
+```html
+<!-- Any stack: the same CSS through data attributes -->
+<button type="button" data-component="button" data-variant="secondary">Preview</button>
+<span data-component="badge" data-variant="warning">Expiring</span>
+<script type="module">
+  import { createInput, setButtonLoading, setInputError, replay } from './design-system/components/index.js';
+</script>
+```
+
+| Component | Variants | Main props / attributes |
+|---|---|---|
+| Button | primary, secondary, ghost, danger | `variant`, `loading` (keeps focus: `aria-busy` + `aria-disabled`), `disabled`, `type` |
+| Input | default, error | `label`, `hint`, `error` (sets the variant, `aria-invalid` and `aria-describedby`, and shakes), `required`, `disabled`, `autoComplete`, `inputMode` |
+| Card | flat, raised | `variant`, `interactive` (hover and focus-within lift), `as` |
+| Badge | neutral, success, warning, error, info | `variant` |
+
+Each component has a full doc in [`ui-inventory/components/`](ui-inventory/components/): anatomy, every state, tokens, motion, accessibility, responsive behavior, do and don't, and references. `design-build/inventory.json` lists them with their import path, so agents reuse them instead of inventing new ones (§0.5).
+
+## UI inventory
+[`ui-inventory/`](ui-inventory/README.md) records what each screen of your app is made of and how each component works. `design-build/inventory.json` stays the single source of structured facts:
+
+- **Components:** status, import, props and variants.
+- **`screens`:** each screen's route, purpose, source files, and the components, variants and states it uses.
+
+The markdown holds the prose, and `node design-system/design-build/ui-inventory.mjs` keeps the generated tables in it in sync. The lint (rule `ui-inventory`) fails when a component on a listed screen has no complete doc, when a screen's source renders a component the screen doesn't list, or when a doc names a token that doesn't exist. A new component needs a doc and a per-component reference search first (§0.5, §16 Phase 2c). 21st.dev findings and the "patterns, never code" rule are in [`design-build/references/21st-dev.md`](design-build/references/21st-dev.md).
+
 ## What's inside
 | Path | What it is |
 |---|---|
@@ -122,6 +166,8 @@ Begin with Step 1 now.
 | [`design/print.md`](design/print.md) | §M4: print, packaging and merch |
 | [`KICKSTART.md`](KICKSTART.md) | The same kickstart prompt as above |
 | [`BOTTLENECKS.md`](BOTTLENECKS.md) | Where AI agents stumble, the fix for each, and which fixes are implemented |
+| `components/` | The shipped components: `components.css` (the `data-component` / `data-variant` API), `index.js` (vanilla helpers) and `react/` (typed React wrappers) |
+| `ui-inventory/` | Per-screen component use, one doc per component, and blank templates |
 | `tokens/tokens.json` | A machine copy of the §13 tokens, in W3C Design Tokens (DTCG) format with light and dark modes |
 | `assets/` | Logo, icons, imagery, motion, moodboard, templates and fonts |
 | `design-build/` | Working files during a build (state, inventory, research notes, studies, the preview) and the quality checks (`lint.mjs`, `render.mjs`, hooks) |
@@ -137,11 +183,13 @@ Begin with Step 1 now.
 
 | Command | What it checks | Needs |
 |---|---|---|
-| `node design-system/design-build/lint.mjs` | Static checks on the design docs, `tokens/tokens.json`, the design system's preview and studies, **and your app's code**: `src/`, `app/`, `pages/`, `components/`, `styles/`, top-level `*.html`/`*.css` and `public/*.html` (css, scss, ts, tsx, js, jsx, vue, svelte, html; `node_modules`, `dist`, `build`, `.next` skipped), or the `code_dirs` in `design-build/project.json`:<br>• raw hex, rgb, hsl, oklch, px or ms values outside §13<br>• `{token}` and `var(--token)` references that don't resolve<br>• tokens used in a §4 "Never use for" slot<br>• WCAG contrast for every §4 pairing, in light and dark (4.5:1 normal, 3:1 large and UI)<br>• unjustified core §2 `avoid_defaults`<br>• components or variants missing from `design-build/inventory.json`<br>• DTCG format, generated CSS that is stale, section ownership, KICKSTART/README sync, and Phase 4 completion<br>Each finding gives `file:line`, the value and the fix. A hard-coded color in app code is an error. | Node 18+ only |
+| `node design-system/design-build/lint.mjs` | Static checks on the design docs, `tokens/tokens.json`, the design system's preview and studies, **and your app's code**: `src/`, `app/`, `pages/`, `components/`, `styles/`, top-level `*.html`/`*.css` and `public/*.html` (css, scss, ts, tsx, js, jsx, vue, svelte, html; `node_modules`, `dist`, `build`, `.next` skipped), or the `code_dirs` in `design-build/project.json`:<br>• raw hex, rgb, hsl, oklch, px or ms values outside §13<br>• `{token}` and `var(--token)` references that don't resolve<br>• tokens used in a §4 "Never use for" slot<br>• WCAG contrast for every §4 pairing, in light and dark (4.5:1 normal, 3:1 large and UI)<br>• unjustified core §2 `avoid_defaults`<br>• components or variants missing from `design-build/inventory.json`<br>• screens and component docs in `ui-inventory/`: every component on a listed screen has a complete doc, the docs match inventory.json, and they use only real tokens<br>• DTCG format, generated CSS that is stale, section ownership, KICKSTART/README sync, and Phase 4 completion<br>Each finding gives `file:line`, the value and the fix. A hard-coded color in app code is an error. | Node 18+ only |
 | `node design-system/design-build/render.mjs [page …] [--url <url> …]` | Captures each page (the preview by default) at 390, 768 and 1280 wide in light and dark, into `design-build/screenshots/`. For your app, start its dev server (`npm run dev`) and pass the URL it prints: `--url http://localhost:5173/`. It fails on any of these:<br>• an uncaught page error, a script or stylesheet that fails to load, or a blank page<br>• sideways scroll<br>• key elements off-screen<br>• overlapping controls<br>• tap targets under 24px<br>• no visible focus<br>• serious or critical axe issues (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`)<br>Results go to `render-report.json` and `a11y-report.json`. | `npm --prefix design-system/design-build ci` and `npx --prefix design-system/design-build playwright install chromium` (add `--with-deps` on a fresh Linux machine) |
+| `node design-system/design-build/motion.mjs [page] [--url <url>]` | Proves that motion plays: card entrance, badge pop-in, input error shake and focus ring, button hover, press and spinner, and the preview's Play motion demo. It samples each animation's transform and opacity mid-flight, then checks under `prefers-reduced-motion: reduce` that nothing moves while color feedback stays. It also fails on console errors. `--strip <dir>` saves frame strips. | the same `npm ci` + Playwright |
+| `node design-system/design-build/ui-inventory.mjs [--check]` | Regenerates `ui-inventory/index.md` and the tables in each screen and component doc from `inventory.json`, and creates missing docs from the templates. `--check` only reports. | Node 18+ |
 | `npm --prefix design-system/design-build run tokens:check` | Validates `tokens/tokens.json` against the DTCG 2025.10 format with Terrazzo | the same `npm ci` |
 | `node design-system/design-build/tokens-css.mjs` | Regenerates `preview/tokens.css` (CSS variables, light + dark), `tokens.mjs` (ES module for app code) and `tokens.js` from `tokens/tokens.json`; `--check` fails if they are stale | Node 18+ |
-| `node design-system/design-build/test/run.mjs` | The checks' own self-test: good and bad fixtures, mutation tests for every rule, the CLI flags, running from an app root, the git and agent hooks, and the render fixtures when Playwright is installed | Node 18+ |
+| `node design-system/design-build/test/run.mjs` | The checks' own self-test: good and bad fixtures, mutation tests for every rule, the CLI flags, running from an app root, the git and agent hooks, the UI inventory (missing, stale or unfilled docs, unknown tokens, variants and states), the React wrappers (server-rendered), and, when Playwright is installed, the render fixtures, the component helpers in a browser and the motion check (including a broken reduced-motion block that must fail) | Node 18+ |
 
 Useful flags:
 - `lint.mjs --json` for machine-readable output.

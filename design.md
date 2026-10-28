@@ -35,7 +35,9 @@ In a project, this whole template sits in one folder named `design-system/` at t
 KICKSTART.md               ← paste-in prompt to start a build in any harness
 BOTTLENECKS.md             ← where AI agents stumble, the fixes, and which are implemented (rules live here in design.md and design/)
 design.md                  ← you are here: index, rules of the system, build workflow, checklist
-design-build/              ← working files during a §16 build (state, research, studies, preview) and the checks
+design-build/              ← working files during a §16 build (state, research, studies, preview), inventory.json and the checks
+components/                ← the shipped components: components.css (data-component API), index.js (vanilla helpers), react/ (wrappers)
+ui-inventory/              ← per-screen component use and one doc per component (README.md explains; facts come from inventory.json)
 design/
   core.md                  ← §1–§14, always used
   digital-product.md       ← §M1, apps and websites
@@ -116,7 +118,9 @@ agent_rules:
   - Before delivering, run §15 and report any failed item.
   - Paths in these rules are inside the `design-system/` folder; run commands from the project root as `node design-system/design-build/…` (§16.1).
   - After ANY edit to a design file, tokens or UI code, run `node design-system/design-build/lint.mjs` and fix what it reports before the next edit. It checks the design files and the app's code (src/, app/, pages/, components/, styles/, top-level and public HTML, or `code_dirs` in `design-build/project.json`). Every message gives file:line, the bad value and the fix.
-  - Components - reuse, then extend, then create. Look a component or prop up in `design-build/inventory.json` (and the code it points to) before using it. Never use a component or prop that is not listed. If nothing fits, extend an existing one; create a new one only when the user agrees, then add it to inventory.json. If unsure, ask.
+  - Components - reuse, then extend, then create. Look a component or prop up in `design-build/inventory.json` (and the code it points to) and its doc in `ui-inventory/components/` before using it. Never use a component or prop that is not listed. If nothing fits, extend an existing one; create a new one only when the user agrees, then add it to inventory.json. If unsure, ask.
+  - No new component without a doc and a reference search. Before building or mapping a component, search each §16.2 components seed for it separately (21st.dev, Refero Styles, The Component Gallery, shadcn/ui and Radix, React Aria, Kokonut UI, WAI-ARIA APG), then fill `ui-inventory/components/<name>.md` from `ui-inventory/templates/component.md`. That includes purpose, anatomy, variants, states, tokens, motion, accessibility, responsive, do and don't, references with how ours differs, and usage. Every screen you build or change gets an entry in inventory.json → `screens` listing the components, variants and states it uses. Run `node design-system/design-build/ui-inventory.mjs`; lint rule `ui-inventory` fails otherwise.
+  - Registries such as 21st.dev are for patterns, never code. Do not paste or lightly edit their source (licenses vary, many have none, and their Tailwind and dependencies break the token-only set). Rebuild on tokens and record the URL, the pattern and how ours differs in the component doc (and `design-build/references/21st-dev.md`).
   - Before proposing any change, re-read `design-build/state.yaml` → `decisions` and `locked_sections`. Never reopen a rejected option or touch a locked section unless the user asks.
   - Done means checked. Never call work "done", "finished" or "ready" until `design-build/state.yaml` → `checks` shows lint, render and a11y all `pass` with `commit` equal to the current `git rev-parse --short HEAD`. Commit the work first, then run `node design-system/design-build/lint.mjs --record` and `node design-system/design-build/render.mjs --record` (for an app in Phase 6: `render.mjs --url <dev-server URL> --record`); the state.yaml change they make doesn't need its own commit. Paste the summary lines, not a claim.
   - Never game the checks. Without the user's explicit approval, do not edit `design-build/lint.config.json`, `design-build/lint-baseline.json`, `design-build/inventory.json` ignore lists, `design-build/terrazzo.config.mjs`, the installed git pre-commit hook, `.github/workflows/`, `design-build/ci/`, `design-build/hooks/`, `design-build/install-hooks.mjs` or the check scripts; do not run `lint.mjs --baseline`; do not update or delete screenshots to make a comparison pass; do not add `justified` reasons to `avoid_defaults` that the user did not give; do not use `--no-verify`. Fix the design instead. If a check is wrong, say so and ask.
@@ -166,7 +170,7 @@ design-build/
   lint.mjs              ← static checks (Phase 4 lint block, §15); zero dependencies
   render.mjs            ← screenshots, layout checks and axe on a page or the app's dev-server URL (needs `npm --prefix design-system/design-build ci` and `npx --prefix design-system/design-build playwright install chromium`)
   lint.config.json      ← what the lint treats as token files, code and allowed exceptions (protected, §0.5)
-  test/run.mjs          ← self-test for the lint, with good and bad fixtures
+  test/run.mjs          ← self-test for the checks and components, with good and bad fixtures
   install-hooks.mjs     ← installs the git pre-commit hook: `node design-system/design-build/install-hooks.mjs`
   hooks/                ← pre-commit.mjs (lint + render on commit) and optional editor hooks that run the lint after each edit
   ci/                   ← an optional GitHub Actions workflow for the app
@@ -269,7 +273,7 @@ seeds:
     - { name: "Animate.css", url: "https://animate.style/", use_for: "ready-made CSS keyframe animations for quick studies" }
   agent_ready_references:   # built for AI-assisted design work; added 2026-10-28 from @iamtanzil_'s list (x.com/iamtanzil_/status/2108066324907962575)
     - { name: "DESIGN.md (designmd.ai)", url: "https://designmd.ai/", use_for: "community design systems written as DESIGN.md files; compare structure and depth with ours" }
-    - { name: "21st.dev", url: "https://21st.dev/", use_for: "component registry agents can pull from via MCP; patterns for §M1 components" }
+    - { name: "21st.dev", url: "https://21st.dev/", use_for: "component registry; patterns for §M1 components, never pasted code (§0.5; findings in design-build/references/21st-dev.md; source and MCP need an API key)" }
     - { name: "Refero Styles", url: "https://styles.refero.design/", use_for: "2,000+ real product styles with their typography and color, for §2, §4 and §5 references" }
     - { name: "Minimal Gallery", url: "https://minimal.gallery/", use_for: "curated high-craft sites for the competitor wall and moodboard" }
     - { name: "AppShot Gallery", url: "https://appshot.gallery/", use_for: "real mobile app screens, no login (an alternative to Mobbin)" }
@@ -372,6 +376,8 @@ Ask in **one** message, grouped and numbered, with examples so answers are quick
 
 **2b. Execute** within §16.0 limits, **starting each area from its §16.2 seeds**, then searching the open web only for the gaps. Log each source as one line in `research/notes.md` with its URL and the takeaway. The timer starts at the first fetch. When a cap is hit, stop and go to Phase 3.
 
+**2c. Per-component research** (apps and websites, digital-product.md §M1): for each component in `design-build/inventory.json` that the app will use, search the §16.2 `components` seeds and 21st.dev / Refero Styles **one component at a time** (not one search for "UI components"). Record the result in `ui-inventory/components/<name>.md` → References: one line per seed with the URL, the pattern taken and how ours will differ. Seeds with nothing relevant get a line saying so. This is part of the research cap, at up to 3 sources per component.
+
 ### Phase 3 · Visual studies (show, don't tell)
 Build `studies/index.html`, a single self-contained page. **Screenshots are required:** run `node design-system/design-build/render.mjs design-system/design-build/studies/index.html` and show the user the PNGs it writes to `design-build/screenshots/` (390, 768 and 1280 wide, light and dark). A study the user has not seen as an image or live page doesn't count. Offer **2–3 directions** per aspect, labeled A, B and C:
 - **Competitor wall:** screenshots or logo and color strips of the competitors, with a one-line gap note.
@@ -406,6 +412,7 @@ lint:
   role_slot_misuse: 0               # role-slot: no token used in its §4 "Never use for" slot
   ai_default_fingerprints: 0        # avoid-default: no unjustified core.md §2 avoid_defaults
   unknown_components: 0             # unknown-component: every component is in design-build/inventory.json
+  ui_inventory: 0                   # ui-inventory: every screen's components have a complete doc and an inventory entry; docs use real tokens
   checklist_15: "all items pass or are listed as TBD"   # checklist-15: automatable items run; the rest are listed for review
 ```
 Also run `npm --prefix design-system/design-build run tokens:check` (Terrazzo DTCG validation) when the dev dependencies are installed.
@@ -430,11 +437,12 @@ For a project with no app code (marketing, print, video only), the build is done
 
 ### Phase 6 · Apply to the app
 Starts only after the Phase 5 gate passes and the user says to apply the system to the app. Set `phase: 6`. Work in small commits; the pre-commit hook lints every one.
+0. **List the screens.** For every screen (route) of the app, add an entry to `design-build/inventory.json` → `screens` with its name, route, purpose, source files and the components it uses (with variants and states). Then run `node design-system/design-build/ui-inventory.mjs` and add layout notes to `ui-inventory/screens/<id>.md`. The lint checks that each listed source file renders exactly those components.
 1. **Import the tokens.** Import `design-system/design-build/preview/tokens.css` once at the app's entry (e.g. `import '../design-system/design-build/preview/tokens.css'` in `src/main.tsx`, or a `<link>` in the root layout). Where JS needs a value (charts, canvas), import from `design-system/design-build/preview/tokens.mjs` (`cssVar('color.data.1')`). Never copy values out of these files; they are regenerated from `tokens_file`. The lint's `tokens-import` rule fails from Phase 6 if no app file imports them.
 2. **Wire the theme.** `tokens.css` switches on `prefers-color-scheme` and on `[data-theme="light"|"dark"]` on `<html>`. If the app has a theme toggle, set `data-theme` on `document.documentElement` and persist the choice; otherwise do nothing and the system setting applies. Remove the app's old theme variables once nothing uses them.
 3. **Replace hard-coded values.** Work through `node design-system/design-build/lint.mjs` findings in the app's code, file by file; each one names the token to use (`var(--…)`). If the user approved a baseline, the counts may only go down: after each batch, ask the user to lower the ceiling (`lint.mjs --baseline`) so the gain is locked in, until it reaches 0 or the target the user agreed (record the target in `state.yaml` → `apply.target_errors`).
-4. **Map or build components.** For each `inventory.json` component, map the existing app component onto the system (tokens, states, variants) or build the planned one, and record its real `import_path` (e.g. `src/components/Button.tsx`) with `status: existing`. Reuse, then extend, then create (§0.5); creating needs the user's yes.
-5. **Check the real app.** Run the lint, then start the dev server and run `node design-system/design-build/render.mjs --url <dev-server URL>` for the main routes (repeat `--url` per route; set `app_url` in `project.json`). Render and axe run on the app, not the preview. Fix the app until both pass; never the checks (§0.5).
+4. **Map or build components: doc first.** For each component on a screen, the doc `ui-inventory/components/<name>.md` must be filled (with the 2c reference search) **before** you build or map it (§0.5). Then use the shipped set where it fits: `import '../design-system/components/components.css'` once after `tokens.css`, and `import { Button, Input, Card, Badge } from '../design-system/components/react'` (or the `data-component` HTML API with `design-system/components/index.js` in non-React apps). Map an existing app component onto the system instead (tokens, states, variants), or build a planned one, and record its real `import` path (e.g. `src/components/Button.tsx`) with `status: existing`. Reuse, then extend, then create (§0.5); creating needs the user's yes.
+5. **Check the real app.** Run the lint, then start the dev server and run `node design-system/design-build/render.mjs --url <dev-server URL>` for the main routes (repeat `--url` per route; set `app_url` in `project.json`), and `node design-system/design-build/motion.mjs --url <dev-server URL>`, which proves that each component's motion plays and stops under reduced motion. Render, axe and motion run on the app, not the preview. Fix the app until all pass; never the checks (§0.5).
 6. **Record.** Commit, then run `lint.mjs --record` and `render.mjs --url <dev-server URL> --record`, so `state.yaml` → `checks` shows lint, render and a11y `pass` with the app commit.
 7. **User acceptance.** Show the user the app's screenshots (390, 768 and 1280 wide, light and dark) and the summary lines. Record their answer in `state.yaml` → `apply.accepted_by` and `decisions`.
 
