@@ -49,6 +49,8 @@ Before any open web search in §16 Phase 2, read the seeds for each area. §16.2
 - Agent-ready references: DESIGN.md https://designmd.ai/ · 21st.dev (MCP) https://21st.dev/ · Refero Styles https://styles.refero.design/ · Minimal Gallery https://minimal.gallery/ · AppShot https://appshot.gallery/ · Motion Primitives https://motion-primitives.com/
 - Page sections (web and landing): Navbar Gallery https://www.navbar.gallery/ · Supahero https://supahero.io/ · CTA.gallery https://www.cta.gallery/ · Footer.design https://www.footer.design/
 - Open media (sound and images, check each license): Openverse API https://api.openverse.org/v1/
+- Motion and video for agents: LottieFiles motion-design-skill https://github.com/LottieFiles/motion-design-skill · Prompt Motion https://prompt-motion.com/ · GSAP Skills https://github.com/greensock/gsap-skills · HyperFrames https://github.com/heygen-com/hyperframes · Remotion Skills https://github.com/remotion-dev/skills
+- Agent design skills (review and taste): Impeccable https://github.com/pbakaus/impeccable · Vercel web-design-guidelines https://github.com/vercel-labs/agent-skills · Anthropic frontend-design https://github.com/anthropics/skills · Google stitch-skills https://github.com/google-labs-code/stitch-skills · UI/UX Pro Max https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
 - Data viz: Carbon Data Viz https://carbondesignsystem.com/data-visualization/getting-started/ · ColorBrewer https://colorbrewer2.org/
 - Competitors and inspiration: Brandfetch https://brandfetch.com/ · Brand New https://www.underconsideration.com/brandnew/ · Wayback Machine https://web.archive.org/
 - Ad and social formats: Meta Ads Guide https://www.facebook.com/business/ads-guide

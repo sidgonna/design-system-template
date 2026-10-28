@@ -256,6 +256,18 @@ seeds:
     - { name: "Footer.design", url: "https://www.footer.design/", use_for: "footer patterns: sitemap, legal, language switch (§12)" }
   open_licensed_media:   # added 2026-10-28 from @ElliotPadfield's post (x.com/ElliotPadfield/status/2110764303087288788)
     - { name: "Openverse API", url: "https://api.openverse.org/v1/", use_for: "free, no-key search of openly licensed audio (SFX, ambience, music) and images: §M3 sound picks and moodboard or placeholder imagery. Read each result's license field: skip NC for commercial work and log CC BY credits in the sources notes" }
+  motion_video_for_agents:   # §8 motion principles and §M3 video made in code; added 2026-10-28 from @Mnilax's and @RoundtableSpace's posts
+    - { name: "LottieFiles motion-design-skill", url: "https://github.com/LottieFiles/motion-design-skill", use_for: "timing, easing, choreography and Disney's 12 principles written for agents; seed for §8 motion tokens and FEEL lines" }
+    - { name: "Prompt Motion", url: "https://prompt-motion.com/", use_for: "226+ motion videos made with Claude Opus, each beside its prompt or skill; reference wall for Phase 3 motion studies" }
+    - { name: "GSAP Skills (official)", url: "https://github.com/greensock/gsap-skills", use_for: "teaches agents correct GSAP timelines, scroll and plugin use" }
+    - { name: "HyperFrames (HeyGen)", url: "https://github.com/heygen-com/hyperframes", use_for: "agent writes HTML, renders MP4 (Apache-2.0); §M3 video studies without After Effects" }
+    - { name: "Remotion Skills (official)", url: "https://github.com/remotion-dev/skills", use_for: "Remotion best practices for coding agents; Remotion itself needs a paid company license for larger teams, so check before choosing it" }
+  agent_design_skills:   # design rules and review checks agents can load; added 2026-10-28 from @Mnilax's design-team list (x.com/Mnilax/status/2110382356028686598)
+    - { name: "Impeccable", url: "https://github.com/pbakaus/impeccable", use_for: "critique, audit and polish commands plus rules that catch AI-looking UI; feeds the Phase 4 lint and Phase 5 review" }
+    - { name: "Vercel web-design-guidelines", url: "https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines", use_for: "audits UI against accessibility, performance and UX rules; cross-check §10 and §M1" }
+    - { name: "Anthropic frontend-design", url: "https://github.com/anthropics/skills/tree/main/skills/frontend-design", use_for: "pushes agents toward a distinct visual point of view; pair with §1 personality" }
+    - { name: "Google stitch-skills", url: "https://github.com/google-labs-code/stitch-skills", use_for: "Google's skills that keep a single DESIGN.md system in sync with generated screens" }
+    - { name: "UI/UX Pro Max", url: "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill", use_for: "searchable palettes and font pairings for agents; starting options for §4 and §5, never final picks" }
   data_visualization:
     - { name: "Carbon Data Visualization", url: "https://carbondesignsystem.com/data-visualization/getting-started/", use_for: "chart rules and color use" }
     - { name: "Datawrapper Academy", url: "https://academy.datawrapper.de/", use_for: "chart choice and labeling" }
