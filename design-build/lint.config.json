@@ -14,7 +14,7 @@
   "contrast": { "normal": 4.5, "large": 3, "ui": 3 },
   "completion_min": 0.9,
   "seed_group_max": 6,
-  "template_placeholders": { "$comment": "{{…}} counts in the untouched template; completion = 1 − remaining/initial", "design.md": 26, "design/core.md": 208, "design/digital-product.md": 6, "design/marketing-content.md": 8, "design/motion-video.md": 11, "design/print.md": 7 },
+  "template_placeholders": { "$comment": "{{…}} counts in the untouched template; completion = 1 − remaining/initial", "design.md": 26, "design/core.md": 211, "design/digital-product.md": 6, "design/marketing-content.md": 8, "design/motion-video.md": 11, "design/print.md": 7 },
   "default_fonts": ["inter", "roboto", "arial", "helvetica", "helvetica neue", "segoe ui", "system-ui", "-apple-system", "blinkmacsystemfont", "ui-sans-serif", "open sans", "geist", "sf pro", "sf pro text", "sf pro display"],
   "role_slot_words": {
     "background": ["background", "backgrounds", "fill", "fills"],

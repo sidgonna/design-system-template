@@ -420,21 +420,27 @@ export const tokens = {
   "type": "shadow",
   "var": "--shadow-1",
   "css": {
-   "base": "0 1px 2px 0 #1c1b1914"
+   "base": "0 1px 2px 0 #1c1b1914",
+   "light": "0 1px 2px 0 #1c1b1914",
+   "dark": "0 1px 2px 0 #00000066"
   }
  },
  "shadow.2": {
   "type": "shadow",
   "var": "--shadow-2",
   "css": {
-   "base": "0 4px 12px 0 #1c1b191f"
+   "base": "0 4px 12px 0 #1c1b191f",
+   "light": "0 4px 12px 0 #1c1b191f",
+   "dark": "0 4px 12px 0 #00000080"
   }
  },
  "shadow.3": {
   "type": "shadow",
   "var": "--shadow-3",
   "css": {
-   "base": "0 12px 32px 0 #1c1b1929"
+   "base": "0 12px 32px 0 #1c1b1929",
+   "light": "0 12px 32px 0 #1c1b1929",
+   "dark": "0 12px 32px 0 #00000099"
   }
  },
  "icon.stroke": {

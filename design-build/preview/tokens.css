@@ -98,6 +98,9 @@
     --color-semantic-error: #f87171;
     --color-semantic-info: #93c5fd;
     --color-focus: #5cc2b1;
+    --shadow-1: 0 1px 2px 0 #00000066;
+    --shadow-2: 0 4px 12px 0 #00000080;
+    --shadow-3: 0 12px 32px 0 #00000099;
   }
 }
 :root[data-theme="dark"] {
@@ -115,6 +118,9 @@
   --color-semantic-error: #f87171;
   --color-semantic-info: #93c5fd;
   --color-focus: #5cc2b1;
+  --shadow-1: 0 1px 2px 0 #00000066;
+  --shadow-2: 0 4px 12px 0 #00000080;
+  --shadow-3: 0 12px 32px 0 #00000099;
 }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }

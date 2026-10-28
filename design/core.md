@@ -120,6 +120,7 @@ pairings:
   - { fg: "{color.text.inverse}", bg: "{color.brand.primary}", size: normal }    # primary button label
   - { fg: "{color.text.inverse}", bg: "{color.semantic.error}", size: normal }  # danger button label
   - { fg: "{color.brand.primary}", bg: "{color.surface.default}", size: normal } # links, secondary button
+  - { fg: "{color.brand.primary}", bg: "{color.surface.raised}", size: normal }  # secondary/ghost button hover
   - { fg: "{color.brand.secondary}", bg: "{color.surface.default}", size: large }
   - { fg: "{color.accent}", bg: "{color.surface.default}", size: ui }
   - { fg: "{color.semantic.success}", bg: "{color.surface.default}", size: normal }
@@ -149,6 +150,7 @@ type:
 ```
 - Hierarchy rules: {{e.g. one display line per screen or poster}}
 - MUST NOT use more than {{2}} families in one piece.
+- Loading and fallback: the template ships no font files, so until you add them every stack falls back to the next family in its list (the starter stacks end in Georgia/serif, Verdana/sans-serif and ui-monospace/monospace, so the preview and the components stay readable). To load a web font, put its licensed `.woff2` files in `assets/fonts/`, declare them with `@font-face` and `font-display: swap` (template: `assets/fonts/README.md`), and keep a metric-close system family second in the §13 stack so the swap does not shift the layout.
 
 ---
 
@@ -361,6 +363,7 @@ modes:   # only the values that change; anything not listed is the same in every
       text: { primary: "{{#f5f4f1}}", secondary: "{{#b8b2aa}}", inverse: "{{#1c1b19}}" }
       semantic: { success: "{{#4ade80}}", warning: "{{#fbbf24}}", error: "{{#f87171}}", info: "{{#93c5fd}}" }
       focus: "{{#5cc2b1}}"
+    shadow: { 1: "{{0px 1px 2px 0px #00000066}}", 2: "{{0px 4px 12px 0px #00000080}}", 3: "{{0px 12px 32px 0px #00000099}}" }   # darker, more opaque: a light-mode shadow disappears on a dark surface
 ```
 - In `tokens_file`, dimensions are `{ "value": 4, "unit": "px" }`, durations `{ "value": 150, "unit": "ms" }`, colors `{ "colorSpace": "srgb", "components": [r, g, b], "hex": "#rrggbb" }` (add `"alpha"` for translucency), easing a 4-number array and font families an array. Group `$type` is inherited by its tokens.
 - Check it: `node design-build/lint.mjs` (sync, aliases, contrast) and, with the dev dependencies installed, `npm --prefix design-build run tokens:check` (Terrazzo DTCG validation). From an app root, prefix the paths with `design-system/` (design.md §0.5).
