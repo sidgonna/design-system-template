@@ -1,6 +1,4 @@
 # GitHub Actions workflow for the design checks. It ships here because the bot that added it lacked the
-# GitHub `workflow` scope. Enable it by copying it into place and pushing:
-#   mkdir -p .github/workflows && git mv design-build/ci/design-checks.yml .github/workflows/design-checks.yml
 # PROTECTED (design.md §0.5): agents must not edit or disable it without the owner's approval.
 name: design-checks
 

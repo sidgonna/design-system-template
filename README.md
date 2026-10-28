@@ -128,7 +128,7 @@ Useful flags:
 - `lint.mjs --phase 4` enforces completion before the state says Phase 4.
 
 **Gates:**
-- **CI.** `design-build/ci/design-checks.yml` is a GitHub Actions workflow. Enable it once with `mkdir -p .github/workflows && git mv design-build/ci/design-checks.yml .github/workflows/` and push; pushing a workflow needs a token with the `workflow` scope. It runs the self-test, the lint, the tokens check and render + axe on every push and pull request. Screenshots and reports are uploaded as an artifact.
+- **CI.** `.github/workflows/design-checks.yml` is a GitHub Actions workflow. It runs the self-test, the lint, the tokens check and render + axe on every push and pull request. Screenshots and reports are uploaded as an artifact.
 - **Pre-commit.** `.githooks/pre-commit` needs no dependencies. It runs the lint. When visual files change, it also runs render + axe if they are installed, and warns if they aren't. Enable it once per clone with `git config core.hooksPath .githooks`.
 - **Agent hooks (optional).** `design-build/hooks/` has a Claude Code `PostToolUse` example and a Cursor `postToolUse` example. Each runs the lint after every agent edit and gives the findings back to the agent. See [`design-build/hooks/README.md`](design-build/hooks/README.md). They are not switched on by default.
 

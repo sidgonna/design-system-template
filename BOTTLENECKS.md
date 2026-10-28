@@ -26,7 +26,7 @@
 | 6b | Implemented | lint rule `unknown-component`: `data-component`/`data-variant` in HTML, JSX imports and tags, §M1.1 rows. |
 | 6c | Not yet | No `tsc --noEmit` step. |
 | 7a | Implemented | `design-build/state.yaml` → `decisions`, `locked_sections`; the §0.5 re-read rule; Phase 3 and 5 record picks there. |
-| 7b | Implemented | §0.5 "after any edit, run lint", backed by `.githooks/pre-commit`, the CI workflow (`design-build/ci/design-checks.yml`, to be moved into `.github/workflows/`) and the optional agent hooks in `design-build/hooks/`. |
+| 7b | Implemented | §0.5 "after any edit, run lint", backed by `.githooks/pre-commit`, the CI workflow (`.github/workflows/design-checks.yml`) and the optional agent hooks in `design-build/hooks/`. |
 | 7c | Not yet | No separate hard-rules card. §0.5 `agent_rules` is the nearest equivalent. |
 | 8a | Implemented | `design.md` §16.2 `seed_rules` (teardown only, never §13 values); TEARDOWN ONLY labels in the seeds and KICKSTART; lint rule `seed-cap`. |
 | 8b | Partially | Covered only by the 8a wording. There is no `research/competitors.json` value check in the lint yet. |

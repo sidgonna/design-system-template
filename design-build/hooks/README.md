@@ -13,7 +13,7 @@ Both call `after-edit.mjs`. It:
 - regenerates `preview/tokens.css` and `tokens.js` when `tokens.json` changed.
 - lists up to 15 errors, starting with the ones in the edited file. Each one comes with its fix.
 
-Render + axe take about 10 seconds, so they don't run on every edit. They run in `.githooks/pre-commit` (enable it with `git config core.hooksPath .githooks`) and in CI (`design-build/ci/design-checks.yml`, once it is moved into `.github/workflows/`).
+Render + axe take about 10 seconds, so they don't run on every edit. They run in `.githooks/pre-commit` (enable it with `git config core.hooksPath .githooks`) and in CI (`.github/workflows/design-checks.yml`).
 
 Test it by hand:
 
