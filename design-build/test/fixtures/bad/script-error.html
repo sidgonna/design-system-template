@@ -1,0 +1,6 @@
+<!-- expect-render: page-error, blank-page. The app's script throws before it renders anything. -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Script error</title></head>
+<body><div id="root"></div>
+<script>document.getElementById('missing').textContent = 'never';</script>
+</body></html>

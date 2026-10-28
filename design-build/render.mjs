@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 // render.mjs — screenshot + layout + accessibility harness for this design system.
 //
-// Usage: node design-build/render.mjs [target ...] [--widths 390,768,1280 (default: tokens viewport.*)] [--themes light,dark]
-//                                     [--out <dir>] [--reports <dir>] [--json] [--record] [--quiet] [--no-best-practice]
-//   target       URL (http/https/file) or file path. Default: design-build/preview/index.html.
-//                File paths are served from the repo root by a built-in static server, so relative links work.
+// Usage (from the app root): node design-system/design-build/render.mjs [target ...] [--url <url>] [--app]
+//          [--widths 390,768,1280 (default: tokens viewport.*)] [--themes light,dark] [--root <dir>]
+//          [--out <dir>] [--reports <dir>] [--json] [--record] [--quiet] [--no-best-practice]
+//   target       URL (http/https/file) or file path. Default: the design system's preview page.
+//                File paths are served from the project root by a built-in static server, so relative links work.
+//                An app that needs a build step (Vite, Next, …) must be rendered from its dev server instead:
+//   --url <url>  render this URL, e.g. start `npm run dev` and pass --url http://localhost:5173/ (repeatable)
+//   --app        render design-build/project.json → app_url
+//   --root <dir> the project (app) root (default: git top level, else the nearest package.json above design-system/)
 //   --record     write the results to design-build/state.yaml → checks.render and checks.a11y
 //
 // For each target × width × theme (prefers-color-scheme emulated, reduced motion on, animations disabled,
@@ -16,6 +21,9 @@
 //                   undersized but spaced, or inline in a sentence → warning)
 //   focus-visible   Tab reaches a control that shows no outline or box-shadow when focused (fail)
 //   reduced-motion  something still animates movement with reduced motion on (warning)
+//   page-error      an uncaught exception on the page (fail)
+//   load-error      the page, a script or a stylesheet failed to load, or a module script was refused (fail)
+//   blank-page      the body has no visible text or media, e.g. the app never mounted (fail)
 //   axe             axe-core with wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa: serious/critical → fail,
 //                   moderate/minor → warning. The best-practice tag runs separately as warnings.
 // Writes design-build/render-report.json and design-build/a11y-report.json (or into --reports <dir>).
@@ -25,15 +33,20 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gitHead, recordCheck } from './lib/context.mjs';
+import { findProject, fixHint, projectConfig } from './lib/project.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(HERE, '..');
+const DS = path.resolve(HERE, '..');
+const rootArg = process.argv.indexOf('--root');
+const WHERE = findProject(DS, rootArg > 0 ? process.argv[rootArg + 1] : null);
+const ROOT = WHERE.project; // the static server serves the project root, which contains the design system
+const hint = (s) => fixHint(WHERE, s);
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 // Default widths come from tokens_file → viewport.* (§M1.3), falling back to 390/768/1280.
 function tokenWidths() {
   try {
-    const vp = JSON.parse(fs.readFileSync(path.join(ROOT, 'tokens/tokens.json'), 'utf8')).viewport || {};
+    const vp = JSON.parse(fs.readFileSync(path.join(DS, 'tokens/tokens.json'), 'utf8')).viewport || {};
     const w = ['mobile', 'tablet', 'desktop'].map((k) => vp[k]?.$value).filter((v) => v && v.unit === 'px' && v.value > 0).map((v) => v.value);
     return w.length ? w : null;
   } catch { return null; }
@@ -51,7 +64,10 @@ function parseArgs(argv) {
     else if (k === '--record') a.record = true;
     else if (k === '--quiet') a.quiet = true;
     else if (k === '--no-best-practice') a.bestPractice = false;
-    else if (k === '--help' || k === '-h') { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 24).map((l) => l.replace(/^\/\/ ?/, '')).join('\n')); process.exit(0); }
+    else if (k === '--url') { const u = argv[++i]; if (!/^https?:\/\//.test(u || '')) { console.error(`render: --url needs an http(s) URL, got "${u}"`); process.exit(2); } a.targets.push(u); }
+    else if (k === '--app') { const u = projectConfig(DS).app_url; if (!u) { console.error(hint('render: --app needs "app_url" in design-build/project.json (e.g. "http://localhost:5173/"). Or pass --url <your dev-server URL>.')); process.exit(2); } a.targets.push(u); }
+    else if (k === '--root') i++;
+    else if (k === '--help' || k === '-h') { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 32).map((l) => l.replace(/^\/\/ ?/, '')).join('\n')); process.exit(0); }
     else if (k.startsWith('--')) { console.error(`render: unknown flag ${k}`); process.exit(2); }
     else a.targets.push(k);
   }
@@ -82,7 +98,8 @@ function pageName(target) {
     return (u.hostname + u.pathname).replace(/\/index\.html?$/, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'page';
   } catch {
     const rel = path.relative(ROOT, path.resolve(target)).replace(/\.[a-z]+$/i, '');
-    const parts = rel.split(path.sep).filter((p) => p && p !== '..' && p !== 'design-build');
+    const dsParts = new Set(['design-build', ...path.relative(ROOT, DS).split(path.sep).filter(Boolean)]);
+    const parts = rel.split(path.sep).filter((p) => p && p !== '..' && !dsParts.has(p));
     if (parts.length > 1 && parts[parts.length - 1] === 'index') parts.pop();
     return parts.join('-').replace(/[^a-z0-9-]+/gi, '-').toLowerCase() || 'page';
   }
@@ -171,6 +188,15 @@ function layoutProbe() {
   return out;
 }
 
+// Runs inside the page: is there anything to look at? (An app whose script failed renders an empty <div id="root">.)
+function contentProbe() {
+  const b = document.body;
+  if (!b) return { blank: true, text: 0, media: 0 };
+  const text = (b.innerText || '').trim().length;
+  const media = [...b.querySelectorAll('img, svg, canvas, video, iframe, input, button, select, textarea, object, embed')].filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length;
+  return { blank: text === 0 && media === 0, text, media };
+}
+
 function motionProbe() {
   const moving = /transform|translate|scale|rotate|all|left|top|right|bottom|inset|margin|width|height/;
   const found = [];
@@ -215,7 +241,7 @@ async function main() {
     ({ chromium } = await import('@playwright/test'));
     AxeBuilder = (await import('@axe-core/playwright')).default;
   } catch (e) {
-    console.error('render: Playwright or axe is not installed. Run:\n  npm --prefix design-build ci && npx --prefix design-build playwright install chromium   (add --with-deps on a fresh Linux box)\n' + e.message);
+    console.error(hint('render: Playwright or axe is not installed. Run:\n  npm --prefix design-build ci && npx --prefix design-build playwright install chromium   (add --with-deps on a fresh Linux box)\n') + e.message);
     process.exit(2);
   }
   fs.mkdirSync(opts.out, { recursive: true });
@@ -231,30 +257,44 @@ async function main() {
 
   let browser;
   try { browser = await chromium.launch(); }
-  catch (e) { server.close(); console.error('render: could not launch Chromium. Run: npx --prefix design-build playwright install chromium (add --with-deps on Linux)\n' + e.message.split('\n')[0]); process.exit(2); }
+  catch (e) { server.close(); console.error(hint('render: could not launch Chromium. Run: npx --prefix design-build playwright install chromium (add --with-deps on Linux)\n') + e.message.split('\n')[0]); process.exit(2); }
 
   const runs = [], a11yRuns = [];
   const failures = [], warnings = [];
   for (const target of opts.targets) {
     const url = resolveTarget(target), name = pageName(target);
-    for (const width of opts.widths) for (const theme of opts.themes) {
+    sizes: for (const width of opts.widths) for (const theme of opts.themes) {
       const ctx = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: theme, reducedMotion: 'reduce', deviceScaleFactor: 1 });
       const page = await ctx.newPage();
-      const consoleErrors = [];
-      page.on('pageerror', (e) => consoleErrors.push(String(e.message || e)));
-      page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+      const consoleErrors = [], pageErrors = [], loadErrors = [];
+      page.on('pageerror', (e) => pageErrors.push(String(e.message || e).split('\n')[0]));
+      page.on('console', (m) => {
+        if (m.type() !== 'error') return;
+        const t = m.text();
+        if (/Failed to load module script|Refused to execute script|Cross origin requests are only supported|blocked by CORS/i.test(t)) loadErrors.push(t.split('\n')[0].slice(0, 200));
+        else consoleErrors.push(t);
+      });
+      const critical = new Set(['document', 'script', 'stylesheet']);
+      page.on('requestfailed', (r) => { if (critical.has(r.resourceType())) loadErrors.push(`${r.resourceType()} ${r.url()} failed: ${r.failure()?.errorText || 'error'}`); });
+      page.on('response', (r) => { const t = r.request().resourceType(); if (critical.has(t) && r.status() >= 400) loadErrors.push(`${t} ${r.url()} returned HTTP ${r.status()}`); });
       const id = `${name}-${width}-${theme}`;
       const run = { id, target, url, width, theme, screenshot: null, checks: {} };
       try {
-        await page.goto(url, { waitUntil: 'load' });
+        try { await page.goto(url, { waitUntil: 'load', timeout: 30000 }); }
+        catch (e) {
+          const refused = /ERR_CONNECTION_REFUSED|ECONNREFUSED|ERR_NAME_NOT_RESOLVED/.test(e.message);
+          throw new Error(refused ? `nothing is listening at ${url}. Start the app's dev server first (e.g. npm run dev) and pass the URL it prints: --url <url>` : e.message.split('\n')[0]);
+        }
+        if (/^https?:/.test(url)) await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
         await page.evaluate(() => document.fonts && document.fonts.ready);
+        const content = await page.evaluate(contentProbe);
         const motion = await page.evaluate(motionProbe);
         await page.addStyleTag({ content: '*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;scroll-behavior:auto!important;caret-color:transparent!important}' });
         await page.evaluate(() => document.fonts && document.fonts.ready);
         const layout = await page.evaluate(layoutProbe);
         const shot = path.join(opts.out, `${id}.png`);
         await page.screenshot({ path: shot, fullPage: true, animations: 'disabled' });
-        run.screenshot = path.relative(ROOT, shot);
+        run.screenshot = path.relative(ROOT, shot).split(path.sep).join('/');
         const focus = await focusWalk(page);
         await page.evaluate(() => { document.activeElement && document.activeElement.blur && document.activeElement.blur(); window.scrollTo(0, 0); });
 
@@ -265,8 +305,11 @@ async function main() {
         for (const t of layout.tapTargets) add(t.level === 'error' ? failures : warnings, 'tap-target', `${t.el} is ${t.w}×${t.h}px: ${t.reason}. Fix: min-block-size and min-inline-size var(--size-target-min)`, t);
         for (const m of focus.missing) add(failures, 'focus-visible', `${m} shows no visible focus style. Fix: :focus-visible { outline: var(--border-width-thick) solid var(--color-focus) }`);
         for (const m of motion) add(warnings, 'reduced-motion', `${m.el} still moves with reduced motion on (${m.animation || m.transition}). Fix: wrap it in @media (prefers-reduced-motion: no-preference) or set transition: none under reduce`, m);
-        for (const e of consoleErrors) add(warnings, 'console', `page error: ${e}`);
-        run.checks = { overflow: !layout.overflow, offViewport: layout.offViewport.length, overlap: layout.overlap.length, tapTargetErrors: layout.tapTargets.filter((t) => t.level === 'error').length, tapTargetWarnings: layout.tapTargets.filter((t) => t.level !== 'error').length, focusStops: focus.stops, focusMissing: focus.missing.length, reducedMotionWarnings: motion.length, consoleErrors: consoleErrors.length };
+        for (const e of pageErrors) add(failures, 'page-error', `uncaught error on the page: ${e}. Fix: open the page in a browser, read the console and fix the exception`);
+        for (const e of [...new Set(loadErrors)]) add(failures, 'load-error', `${e.replace(/\.+$/, '')}. Fix: ${/module script|MIME|\.(tsx?|jsx|vue|svelte)\b/i.test(e) ? 'this page needs a build step: start the dev server (npm run dev) and render its URL with --url' : 'make the file load (path, server, CORS)'}`);
+        if (content.blank) add(failures, 'blank-page', `the page has no visible text or media${pageErrors.length || loadErrors.length ? ' (see the errors above)' : ''}. Fix: if this is an app, start its dev server and render --url <dev-server URL>; otherwise check the page actually renders content`);
+        for (const e of consoleErrors) add(warnings, 'console', `console error: ${e}`);
+        run.checks = { overflow: !layout.overflow, offViewport: layout.offViewport.length, overlap: layout.overlap.length, tapTargetErrors: layout.tapTargets.filter((t) => t.level === 'error').length, tapTargetWarnings: layout.tapTargets.filter((t) => t.level !== 'error').length, focusStops: focus.stops, focusMissing: focus.missing.length, reducedMotionWarnings: motion.length, consoleErrors: consoleErrors.length, pageErrors: pageErrors.length, loadErrors: loadErrors.length, blank: content.blank, textChars: content.text };
 
         const wcag = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
         const bp = opts.bestPractice ? await new AxeBuilder({ page }).withTags(['best-practice']).analyze() : { violations: [] };
@@ -277,6 +320,7 @@ async function main() {
         for (const v of a.bestPractice) add(warnings, `axe-bp:${v.rule}`, `best practice: ${v.help} (${v.count}, first: ${v.nodes[0]?.target})`);
       } catch (e) {
         failures.push({ id, check: 'harness', message: `could not render ${url}: ${e.message.split('\n')[0]}` });
+        if (/nothing is listening/.test(e.message)) { runs.push(run); await ctx.close(); break sizes; }
       }
       runs.push(run);
       await ctx.close();
@@ -286,17 +330,19 @@ async function main() {
   server.close();
 
   const commit = gitHead(ROOT), at = new Date().toISOString();
+  for (const w of WHERE.warnings) warnings.push({ id: '-', check: 'layout', message: w });
   const axeFail = failures.filter((f) => f.check.startsWith('axe:')).length;
   const layoutFail = failures.length - axeFail;
   const incomplete = a11yRuns.reduce((n, r) => n + r.incomplete.length, 0);
-  const renderReport = { tool: 'design-build/render.mjs', commit, at, ok: layoutFail === 0, widths: opts.widths, themes: opts.themes, runs, failures: failures.filter((f) => !f.check.startsWith('axe:')), warnings: warnings.filter((w) => !w.check.startsWith('axe')) };
+  const renderReport = { tool: 'design-build/render.mjs', commit, at, ok: layoutFail === 0, project_root: ROOT, targets: opts.targets, widths: opts.widths, themes: opts.themes, runs, failures: failures.filter((f) => !f.check.startsWith('axe:')), warnings: warnings.filter((w) => !w.check.startsWith('axe')) };
   const a11yReport = { tool: 'design-build/render.mjs (axe-core via @axe-core/playwright)', commit, at, ok: axeFail === 0, tags: WCAG_TAGS, failOn: ['serious', 'critical'], note: 'Automated checks find only part of WCAG. The manual checks in core §11 still need a person (checks.a11y.manual).', runs: a11yRuns };
   fs.mkdirSync(opts.reports, { recursive: true });
   fs.writeFileSync(path.join(opts.reports, 'render-report.json'), JSON.stringify(renderReport, null, 2) + '\n');
   fs.writeFileSync(path.join(opts.reports, 'a11y-report.json'), JSON.stringify(a11yReport, null, 2) + '\n');
   if (opts.record) {
-    recordCheck(ROOT, 'render', { status: layoutFail ? 'fail' : 'pass', commit, at, failures: layoutFail, screenshots: runs.filter((r) => r.screenshot).length });
-    recordCheck(ROOT, 'a11y', { status: axeFail ? 'fail' : 'pass', commit, at, serious_or_critical: axeFail, manual: `${incomplete} axe needs-review item(s); core §11 manual checks pending` });
+    const target = opts.targets.length === 1 ? (/^https?:/.test(opts.targets[0]) ? opts.targets[0] : path.relative(ROOT, path.resolve(opts.targets[0])).split(path.sep).join('/')) : `${opts.targets.length} targets`;
+    recordCheck(DS, 'render', { status: layoutFail ? 'fail' : 'pass', commit, at, failures: layoutFail, screenshots: runs.filter((r) => r.screenshot).length, target });
+    recordCheck(DS, 'a11y', { status: axeFail ? 'fail' : 'pass', commit, at, serious_or_critical: axeFail, manual: `${incomplete} axe needs-review item(s); core §11 manual checks pending` });
   }
   const ok = failures.length === 0;
   if (opts.json) console.log(JSON.stringify({ ok, failures, warnings, screenshots: runs.map((r) => r.screenshot) }, null, 2));
@@ -304,7 +350,7 @@ async function main() {
     const byId = (list) => list.forEach((f) => console.log(`${f.id}  ${f.check}  ${f.message}`));
     if (failures.length) { console.log('FAILURES'); byId(failures); }
     if (warnings.length && !opts.quiet) { console.log('WARNINGS'); byId(warnings); }
-    console.log(`\ndesign render: ${ok ? 'PASS' : 'FAIL'} — ${layoutFail} layout failure(s), ${axeFail} serious/critical axe issue(s), ${warnings.length} warning(s) · ${runs.length} screenshots in ${path.relative(process.cwd(), opts.out) || '.'} · ${incomplete} axe needs-review item(s) · reports: ${path.relative(process.cwd(), path.join(opts.reports, 'render-report.json'))}, ${path.relative(process.cwd(), path.join(opts.reports, 'a11y-report.json'))}`);
+    console.log(`\ndesign render: ${ok ? 'PASS' : 'FAIL'} — ${layoutFail} layout failure(s), ${axeFail} serious/critical axe issue(s), ${warnings.length} warning(s) · ${runs.filter((r) => r.screenshot).length} screenshots in ${path.relative(process.cwd(), opts.out) || '.'} · ${incomplete} axe needs-review item(s) · reports: ${path.relative(process.cwd(), path.join(opts.reports, 'render-report.json'))}, ${path.relative(process.cwd(), path.join(opts.reports, 'a11y-report.json'))}`);
   }
   process.exit(ok ? 0 : 1);
 }
