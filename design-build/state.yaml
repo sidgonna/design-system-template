@@ -1,0 +1,12 @@
+# §16 build state. The harness updates this after every step.
+phase: 0            # 0 not started, 1 intake, 2 research, 3 studies, 4 fill, 5 review, done
+gate_passed: false
+project_type: []    # inferred in KICKSTART step 2
+evidence: []        # file paths that showed the type
+research:
+  started_at: null
+  sources_used: 0
+  competitors_used: 0
+choices: {}         # Phase 3 picks per aspect, e.g. color: B
+completion: 0.0     # Phase 4 lint
+version: "0.0.0"
