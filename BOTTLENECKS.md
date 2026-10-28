@@ -1,7 +1,38 @@
 # Where AI coding agents stumble on design-system work
 
-> **Status: PROPOSALS, not yet implemented.** These are known ways AI coding agents (Claude Code, Cursor, Codex, v0, Lovable and similar) go wrong on design-system and UI work, based on reports from Oct 2025 to Oct 2026. Each one has fix options for this template.
-> Nothing here is a rule yet. Where this file disagrees with [`design.md`](design.md), [`design/core.md`](design/core.md), the modules or [`KICKSTART.md`](KICKSTART.md), **those files win** until a fix is implemented and moved into them.
+> **Status: mostly implemented (28 Oct 2026).** These are known ways AI coding agents (Claude Code, Cursor, Codex, v0, Lovable and similar) go wrong on design-system and UI work, based on reports from Oct 2025 to Oct 2026. Each one has fix options for this template. 21 of the 24 options are implemented in their owning files, 1 is partial (8b) and 2 are not yet (6c, 7c). The table below says where each one lives.
+> The rules themselves live in [`design.md`](design.md), [`design/core.md`](design/core.md), the modules and [`KICKSTART.md`](KICKSTART.md). Where this file disagrees with them, **those files win**. The "Not yet" and "Partially" items are still proposals.
+
+**Implementation status**
+
+| # | Status | Where it lives now |
+|---|---|---|
+| 1a | Implemented | `design-build/lint.mjs` (+ `lib/`, `lint.config.json`). Every Phase 4 `lint` key in `design.md` maps to a rule id. It scans the design docs and `code_dirs`; point `--src` at project code. |
+| 1b | Implemented | lint rule `role-slot`. It reads the §4 "Never use for" column and checks CSS properties and Tailwind classes. |
+| 1c | Implemented | `lint.mjs --baseline` → `design-build/lint-baseline.json`. A run fails only when a rule's count rises, and prints a lower-the-ceiling reminder when a count drops. |
+| 2a | Implemented | `design/core.md` §2 `avoid_defaults`: 9 entries, 7 `checked: lint`, 2 `checked: review`. |
+| 2b | Implemented | `design.md` Phase 3: each direction carries a `breaks: … · signature: … · differs from competitors by: …` line. |
+| 2c | Implemented | lint rule `avoid-default`: sole default font, purple-blue gradient, pill buttons, mono eyebrow, emoji icons, glassmorphism, colored or italic heading word. A `justified` entry turns the error into info. |
+| 3a | Implemented | `KICKSTART.md` Step 2 writes `design-build/inventory.json` (the README block is identical, checked by lint `kickstart-sync`); `state.yaml` → `inventory`. Not yet tried on a real React repo. |
+| 3b | Implemented | `design.md` §0.5 (reuse, then extend, then create). |
+| 3c | Implemented | `design.md` Phase 1 intake Q4. |
+| 4a | Implemented | `design-build/render.mjs`: axe `wcag2a/aa`, `wcag21a/aa`, `wcag22aa` in light and dark at every width. Serious or critical fails. Output in `a11y-report.json`. |
+| 4b | Implemented | lint rule `contrast`: every §4 pairing in light and dark, using its own OKLCH → sRGB math. |
+| 4c | Implemented | `design/core.md` §11 `structure` key, plus the rule → check table. A missing skip link or label fails through axe; landmarks and heading order are best-practice warnings. |
+| 5a | Implemented | `design-build/render.mjs`: `screenshots/<page>-<w>-<theme>.png`; checks overflow, off-viewport, overlap, tap targets (24px floor with the 2.5.8 spacing exception) and focus visibility. Output in `render-report.json`. |
+| 5b | Implemented | `design.md` Phase 3 (screenshots required) and §15 render item. |
+| 5c | Implemented | `design/digital-product.md` §M1.3, plus `{viewport.*}` tokens, which `render.mjs` reads as its default widths. |
+| 6a | Implemented | `design.md` §0.5 (look it up in `inventory.json` before use). |
+| 6b | Implemented | lint rule `unknown-component`: `data-component`/`data-variant` in HTML, JSX imports and tags, §M1.1 rows. |
+| 6c | Not yet | No `tsc --noEmit` step. |
+| 7a | Implemented | `design-build/state.yaml` → `decisions`, `locked_sections`; the §0.5 re-read rule; Phase 3 and 5 record picks there. |
+| 7b | Implemented | §0.5 "after any edit, run lint", backed by `.githooks/pre-commit`, the CI workflow (`design-build/ci/design-checks.yml`, to be moved into `.github/workflows/`) and the optional agent hooks in `design-build/hooks/`. |
+| 7c | Not yet | No separate hard-rules card. §0.5 `agent_rules` is the nearest equivalent. |
+| 8a | Implemented | `design.md` §16.2 `seed_rules` (teardown only, never §13 values); TEARDOWN ONLY labels in the seeds and KICKSTART; lint rule `seed-cap`. |
+| 8b | Partially | Covered only by the 8a wording. There is no `research/competitors.json` value check in the lint yet. |
+| 8c | Implemented | `design.md` Phase 3 direction line (`differs from competitors by: …`). |
+
+How the checks are run, and the §0.5 anti-gaming rule, are in the README under **Quality checks**.
 
 **How to read this**
 - **Sources:** only pages that were actually opened. Vendor posts (people selling a fix) are marked *(vendor)*. Dates are publish dates.
@@ -103,7 +134,7 @@ The agent builds a new button or card instead of using the one in the repo, or u
 
 | # | Option | Where | Impact | Effort |
 |---|---|---|---|---|
-| 3a | **Component inventory in KICKSTART Step 2.** For coding projects, the agent writes `design-build/inventory.md` with:<br>• the UI library (shadcn, MUI or in-house)<br>• each existing component: name, aliases, import path, variants<br>• theme and token files<br>• counts of hard-coded colours<br>It also records the inventory path in `state.yaml` (`inventory: design-build/inventory.md`). | Kickstart prompt, `state.yaml` | H: the agent can't reuse what it hasn't listed. | S: one step and one file. |
+| 3a | **Component inventory in KICKSTART Step 2.** For coding projects, the agent writes `design-build/inventory.json` with:<br>• the UI library (shadcn, MUI or in-house)<br>• each existing component: name, aliases, import path, variants<br>• theme and token files<br>• counts of hard-coded colours<br>It also records the inventory path in `state.yaml` (`inventory: design-build/inventory.json`). | Kickstart prompt, `state.yaml` | H: the agent can't reuse what it hasn't listed. | S: one step and one file. |
 | 3b | **Reuse rule in §0.5 `agent_rules`.** "Reuse an existing component, then extend it with a variant, and create a new one only for a genuinely new pattern. If nothing fits, stop and ask, saying what you searched for. Log any new component in §14.4." Also add a "Code source / import" column to the §M1.1 table. | §0.5 agent rules, §M1.1 module | H: pairs with 3a. | S: wording. |
 | 3c | **Intake question 4 extension.** Add: "Is there a component library or design system in code we must keep (shadcn, MUI, in-house)? Where does it live?" | §16 Phase 1 intake | M: catches libraries the scan misses. | S: one line. |
 
@@ -122,7 +153,7 @@ Contrast is the most common failure. Missing skip links, landmarks, input labels
 
 **What the template already does**
 - `design.md` §0.4: §11 beats everything.
-- `core.md` §11: WCAG 2.2 AA, 4.5:1 and 3:1 contrast, 44px touch targets, visible focus, reduced motion, alt text.
+- `core.md` §11: WCAG 2.2 AA, 4.5:1 and 3:1 contrast, a `{size.target.min}` touch target (44px placeholder; `render.mjs` enforces the 24px WCAG 2.5.8 floor), visible focus, reduced motion, alt text.
 - §16 Phase 3: live contrast ratios and a light and dark preview.
 - Phase 4 `contrast_failures: 0`.
 - §15 checks contrast, alt text and reduced motion.
@@ -188,8 +219,8 @@ The agent uses props that don't exist or components that were renamed. Docs past
 
 | # | Option | Where | Impact | Effort |
 |---|---|---|---|---|
-| 6a | **Look-up-before-use rule** in §0.5: "Before using a component or prop, confirm it in `design-build/inventory.md`, the library's source or types, or its official MCP or registry. Never guess a prop. If you can't confirm it, stop and ask." | §0.5 agent rules | M: cheap and pairs with 3a. | S: wording. |
-| 6b | **Component-existence check** in `lint.mjs`. Every component named in §M1.1 and in the preview or mockup code must appear in `inventory.md` or be logged as new in §14.4. Unknown imports fail. | Phase 4 gate | M: a backstop for 6a. | M: needs simple parsing of imports and JSX. |
+| 6a | **Look-up-before-use rule** in §0.5: "Before using a component or prop, confirm it in `design-build/inventory.json`, the library's source or types, or its official MCP or registry. Never guess a prop. If you can't confirm it, stop and ask." | §0.5 agent rules | M: cheap and pairs with 3a. | S: wording. |
+| 6b | **Component-existence check** in `lint.mjs`. Every component named in §M1.1 and in the preview or mockup code must appear in `inventory.json` or be logged as new in §14.4. Unknown imports fail. | Phase 4 gate | M: a backstop for 6a. | M: needs simple parsing of imports and JSX. |
 | 6c | **TypeScript check when present.** If the project has `tsconfig.json`, Phase 5 runs `tsc --noEmit` on generated UI. Invalid props fail the type check. | Phase 5 gate | M: free in TypeScript projects, useless elsewhere. | S |
 
 **Pick: 6a.** It's nearly free once the inventory (3a) exists. Add 6b later inside the lint.
@@ -288,8 +319,8 @@ Quick wins to add with step 2, since they're wording only: 6a (look-up-before-us
 | Step | What | Files that change | Done when |
 |---|---|---|---|
 | **A. Wording and rules** (no tooling) | 2a, 2b, 3b, 3c, 4c, 6a, 7a, 8a | `design/core.md` (§2, §11), `design.md` (§0.5, §16.2 `seed_rules`, Phase 1 Q4, Phase 3 gate, §15), `design/digital-product.md` (§M1.1 column, §M1.3), `design-build/state.yaml` (`decisions`, `locked_sections`, `inventory`) | Each new rule appears once, in its owning file (§0.3). No rule is restated elsewhere. |
-| **B. Kickstart Step 2 inventory** (3a) | Step 2 writes `design-build/inventory.md` | `KICKSTART.md` and the README kickstart block (kept identical) | On a sample React repo, the kickstart run produces an inventory with import paths. The README and KICKSTART prompts still diff clean. |
-| **C. Lint core** (1a) | `lint.mjs` implements the 6 existing Phase 4 keys | `design-build/lint.mjs` (new), Phase 4 text in `design.md` points to `node design-build/lint.mjs` | On the unfilled template it reports placeholders and exits 1. Adding a hex value to `core.md` §4 makes it fail at that line. Removing the hex value makes it pass. |
+| **B. Kickstart Step 2 inventory** (3a) | Step 2 writes `design-build/inventory.json` | `KICKSTART.md` and the README kickstart block (kept identical) | On a sample React repo, the kickstart run produces an inventory with import paths. The README and KICKSTART prompts still diff clean. |
+| **C. Lint core** (1a) | `lint.mjs` implements the 6 existing Phase 4 keys | `design-build/lint.mjs` (new), Phase 4 text in `design.md` points to `node design-build/lint.mjs` | *(Changed when built: completion is enforced from Phase 4, so the unfilled template passes and reports placeholders as progress.)* On the unfilled template it reports placeholders. Adding a hex value to `core.md` §4 makes it fail at that line. Removing the hex value makes it pass. |
 | **D. Lint extensions** (needs C) | 1b role-slot, 4b both-theme contrast, 1c `--baseline` ceiling, then 2c fingerprints, 6b component existence, 8b competitor values | `design-build/lint.mjs`, `design-build/lint-baseline.json` (created on first run), `design-build/research/competitors.json` (8b) | Each check has a small fixture that fails as expected. A rising count fails `--baseline`, and a falling count prints the "lower baseline" reminder. |
 | **E. Render harness** (5a) | Playwright, 390/768/1280 × light/dark, overflow, off-screen, overlap and tap-target checks | `design-build/render.mjs` (new), a minimal `design-build/package.json` for the Playwright dependency, Phase 3 and 5 text in `design.md` | Running it on `studies/index.html` writes 6 PNGs. A page with a deliberately overflowing element exits 1. |
 | **F. Accessibility gate** (4a, needs E) | `@axe-core/playwright` in `render.mjs`, both themes | `design-build/render.mjs`, `design-build/a11y-report.json` (output), §15 line | A page with an unlabelled input or a low-contrast pairing fails. A clean page passes. |
