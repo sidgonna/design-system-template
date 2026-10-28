@@ -185,6 +185,7 @@ seeds:
     - { name: "Radix Primitives", url: "https://www.radix-ui.com/primitives", use_for: "accessible component behavior" }
     - { name: "shadcn/ui", url: "https://ui.shadcn.com/", use_for: "token-driven component code patterns" }
     - { name: "React Aria", url: "https://react-spectrum.adobe.com/react-aria/", use_for: "interaction and state handling" }
+    - { name: "Kokonut UI", url: "https://kokonutui.com/", use_for: "animated React and Tailwind components; a second look at motion-rich patterns (via @neropursue, 22 Oct 2026)" }
   accessibility:
     - { name: "WCAG 2.2", url: "https://www.w3.org/TR/WCAG22/", use_for: "§11 requirements, the source of truth" }
     - { name: "WAI-ARIA Authoring Practices", url: "https://www.w3.org/WAI/ARIA/apg/", use_for: "keyboard and screen-reader patterns per component" }
@@ -254,6 +255,7 @@ seeds:
     - { name: "Supahero", url: "https://supahero.io/", use_for: "hero sections, the first screen where §1 personality shows most" }
     - { name: "CTA.gallery", url: "https://www.cta.gallery/", use_for: "call-to-action blocks, paired with the §6 label rules" }
     - { name: "Footer.design", url: "https://www.footer.design/", use_for: "footer patterns: sitemap, legal, language switch (§12)" }
+    - { name: "Landing.gallery", url: "https://landing.gallery/", use_for: "whole landing pages, to see how sections flow together (via @neropursue, 22 Oct 2026)" }
   open_licensed_media:   # added 2026-10-28 from @ElliotPadfield's post (x.com/ElliotPadfield/status/2110764303087288788)
     - { name: "Openverse API", url: "https://api.openverse.org/v1/", use_for: "free, no-key search of openly licensed audio (SFX, ambience, music) and images: §M3 sound picks and moodboard or placeholder imagery. Read each result's license field: skip NC for commercial work and log CC BY credits in the sources notes" }
   motion_video_for_agents:   # §8 motion principles and §M3 video made in code; added 2026-10-28 from @Mnilax's and @RoundtableSpace's posts
@@ -268,6 +270,37 @@ seeds:
     - { name: "Anthropic frontend-design", url: "https://github.com/anthropics/skills/tree/main/skills/frontend-design", use_for: "pushes agents toward a distinct visual point of view; pair with §1 personality" }
     - { name: "Google stitch-skills", url: "https://github.com/google-labs-code/stitch-skills", use_for: "Google's skills that keep a single DESIGN.md system in sync with generated screens" }
     - { name: "UI/UX Pro Max", url: "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill", use_for: "searchable palettes and font pairings for agents; starting options for §4 and §5, never final picks" }
+  motion_building_blocks:   # added 2026-10-28 from @beamnxw (11 Oct) and @jowettbrendan (10 Oct)
+    - { name: "Motion Canvas", url: "https://motioncanvas.io/", use_for: "code-driven vector animation and explainer video (MIT); §M3 studies" }
+    - { name: "Rive", url: "https://rive.app/", use_for: "interactive, state-driven animations that run in web and native apps; animated icons, onboarding, empty states" }
+    - { name: "three.js", url: "https://threejs.org/", use_for: "3D and WebGL on the web; only when §1 calls for depth, with a static fallback" }
+    - { name: "Satori (Vercel)", url: "https://github.com/vercel/satori", use_for: "HTML and CSS to SVG images; generate §M2 social cards and OG images from tokens" }
+    - { name: "Remotion", url: "https://www.remotion.dev/", use_for: "React code to video for §M3; larger companies need a paid license, so check before choosing it" }
+    - { name: "React Bits", url: "https://reactbits.dev/", use_for: "animated React components and text effects; pick one or two for motion studies, never a whole page of effects" }
+  animation_tools_for_people:   # visual tools for the user or a designer, not for agents; added 2026-10-28 from @Abmankendrick (4 Oct)
+    - { name: "Jitter", url: "https://jitter.video/", use_for: "quick UI and social motion in the browser; export video, GIF or Lottie" }
+    - { name: "ProtoPie", url: "https://www.protopie.io/", use_for: "high-fidelity interactive prototypes to test §8 motion on real gestures" }
+    - { name: "Lottielab", url: "https://www.lottielab.com/", use_for: "make and edit Lottie animations without After Effects" }
+  design_md_collections:   # libraries of DESIGN.md files; added 2026-10-28 from @Skirook (15 Oct)
+    - { name: "Devault DESIGN.md", url: "https://devault.design/design-md", use_for: "collection of DESIGN.md files to compare with ours (blocks automated access)" }
+    - { name: "designmd.supply", url: "https://designmd.supply/", use_for: "DESIGN.md files and design resources (blocks automated access)" }
+    - { name: "Neuform", url: "https://neuform.ai/", use_for: "reusable DESIGN.md files for agent-ready design systems, plus landing templates" }
+    - { name: "TypeUI", url: "https://typeui.sh/", use_for: "UI components and design files for AI coding, per the poster (blocks automated access, not reviewed)" }
+  design_md_extractors_and_builders:   # tools that write or use a DESIGN.md; added 2026-10-28 from @Skirook (15 Oct)
+    - { name: "DESIGNMD (Hyperbrowser)", url: "https://design-md.hyperbrowser.ai/", use_for: "extract a DESIGN.md from any site in Google's format; fast competitor teardown for Phase 2" }
+    - { name: "DesignMD", url: "https://designmd.me/", use_for: "paste a URL, get tokens, type and component styles as a DESIGN.md; same use as above" }
+    - { name: "Open Design", url: "https://open-design.ai/", use_for: "open-source workspace where your agent builds prototypes, pages and slides" }
+    - { name: "Aura", url: "https://aura.build/", use_for: "AI landing page builder with HTML and Figma export; quick Phase 3 drafts only" }
+  ai_design_workflow:   # AI builders and skill directories; use for fast drafts, not as sources. Added 2026-10-28 from @neropursue (22 Oct)
+    - { name: "Skill Issue", url: "https://skill-issue.in/", use_for: "curated library of SKILL.md files for coding agents, including design skills" }
+    - { name: "UX Pilot", url: "https://uxpilot.ai/", use_for: "AI UI design and wireframes for quick layout options" }
+    - { name: "v0", url: "https://v0.app/", use_for: "generate UI from a prompt; quick Phase 3 studies" }
+    - { name: "Base44", url: "https://base44.com/", use_for: "AI app builder; only for a clickable prototype, never for design decisions" }
+  web_and_motion_references:   # added 2026-10-28 from @neropursue (22 Oct) and @MaybeFlorent (12 Oct)
+    - { name: "Inspora", url: "https://inspora.design/", use_for: "curated archive of recent visual design work for the moodboard" }
+    - { name: "Motionin", url: "https://motionin.design/", use_for: "physics-based, cursor-responsive web sections; motion references for §8" }
+    - { name: "Oversight Supply", url: "https://supply.madebyoversight.com/", use_for: "192+ curated website design references" }
+    - { name: "Oversight Supply sections", url: "https://supply.madebyoversight.com/sections", use_for: "interactive website sections to study section-level motion" }
   data_visualization:
     - { name: "Carbon Data Visualization", url: "https://carbondesignsystem.com/data-visualization/getting-started/", use_for: "chart rules and color use" }
     - { name: "Datawrapper Academy", url: "https://academy.datawrapper.de/", use_for: "chart choice and labeling" }

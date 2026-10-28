@@ -36,7 +36,7 @@ SEED SOURCES — research starts deep, not wide
 Before any open web search in §16 Phase 2, read the seeds for each area. §16.2 in design.md is the full, owning list; this is the short version. If they differ, §16.2 wins.
 - Tokens: W3C Design Tokens Format https://tr.designtokens.org/format/ · Style Dictionary https://styledictionary.com/
 - Reference systems: Material 3 https://m3.material.io/ · Apple HIG https://developer.apple.com/design/human-interface-guidelines · IBM Carbon https://carbondesignsystem.com/ · GOV.UK https://design-system.service.gov.uk/
-- Components: Component Gallery https://component.gallery/ · Radix https://www.radix-ui.com/primitives · shadcn/ui https://ui.shadcn.com/
+- Components: Component Gallery https://component.gallery/ · Radix https://www.radix-ui.com/primitives · shadcn/ui https://ui.shadcn.com/ · Kokonut UI https://kokonutui.com/
 - Accessibility: WCAG 2.2 https://www.w3.org/TR/WCAG22/ · ARIA Authoring Practices https://www.w3.org/WAI/ARIA/apg/ · WebAIM Contrast https://webaim.org/resources/contrastchecker/
 - Color: Radix Colors https://www.radix-ui.com/colors · Leonardo https://leonardocolor.io/ · OKLCH https://oklch.com/
 - Type: Google Fonts https://fonts.google.com/ · Noto (Indic) https://fonts.google.com/noto · Fontshare https://www.fontshare.com/ · Practical Typography https://practicaltypography.com/
@@ -47,10 +47,16 @@ Before any open web search in §16 Phase 2, read the seeds for each area. §16.2
 - Pick colors → full palette (for agents): The Color API https://www.thecolorapi.com/docs · Leonardo https://github.com/adobe/leonardo · Material Color Utilities https://github.com/material-foundation/material-color-utilities · chroma.js https://gka.github.io/chroma.js/ · Culori https://culorijs.org/
 - Motion libraries: Motion https://motion.dev/ · GSAP https://gsap.com/ · Anime.js https://animejs.com/ · Lottie https://airbnb.io/lottie/ · AutoAnimate https://auto-animate.formkit.com/
 - Agent-ready references: DESIGN.md https://designmd.ai/ · 21st.dev (MCP) https://21st.dev/ · Refero Styles https://styles.refero.design/ · Minimal Gallery https://minimal.gallery/ · AppShot https://appshot.gallery/ · Motion Primitives https://motion-primitives.com/
-- Page sections (web and landing): Navbar Gallery https://www.navbar.gallery/ · Supahero https://supahero.io/ · CTA.gallery https://www.cta.gallery/ · Footer.design https://www.footer.design/
+- Page sections (web and landing): Landing.gallery https://landing.gallery/ · Navbar Gallery https://www.navbar.gallery/ · Supahero https://supahero.io/ · CTA.gallery https://www.cta.gallery/ · Footer.design https://www.footer.design/
 - Open media (sound and images, check each license): Openverse API https://api.openverse.org/v1/
 - Motion and video for agents: LottieFiles motion-design-skill https://github.com/LottieFiles/motion-design-skill · Prompt Motion https://prompt-motion.com/ · GSAP Skills https://github.com/greensock/gsap-skills · HyperFrames https://github.com/heygen-com/hyperframes · Remotion Skills https://github.com/remotion-dev/skills
 - Agent design skills (review and taste): Impeccable https://github.com/pbakaus/impeccable · Vercel web-design-guidelines https://github.com/vercel-labs/agent-skills · Anthropic frontend-design https://github.com/anthropics/skills · Google stitch-skills https://github.com/google-labs-code/stitch-skills · UI/UX Pro Max https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
+- Motion building blocks: Motion Canvas https://motioncanvas.io/ · Rive https://rive.app/ · three.js https://threejs.org/ · Satori https://github.com/vercel/satori · Remotion https://www.remotion.dev/ (check license) · React Bits https://reactbits.dev/
+- Animation tools for people: Jitter https://jitter.video/ · ProtoPie https://www.protopie.io/ · Lottielab https://www.lottielab.com/
+- DESIGN.md collections: Devault https://devault.design/design-md · designmd.supply https://designmd.supply/ · Neuform https://neuform.ai/ · TypeUI https://typeui.sh/
+- DESIGN.md extractors and builders: DESIGNMD https://design-md.hyperbrowser.ai/ · DesignMD https://designmd.me/ · Open Design https://open-design.ai/ · Aura https://aura.build/
+- AI design workflow (drafts, not sources): Skill Issue https://skill-issue.in/ · UX Pilot https://uxpilot.ai/ · v0 https://v0.app/ · Base44 https://base44.com/
+- Web and motion references: Inspora https://inspora.design/ · Motionin https://motionin.design/ · Oversight Supply https://supply.madebyoversight.com/ (and /sections)
 - Data viz: Carbon Data Viz https://carbondesignsystem.com/data-visualization/getting-started/ · ColorBrewer https://colorbrewer2.org/
 - Competitors and inspiration: Brandfetch https://brandfetch.com/ · Brand New https://www.underconsideration.com/brandnew/ · Wayback Machine https://web.archive.org/
 - Ad and social formats: Meta Ads Guide https://www.facebook.com/business/ads-guide
