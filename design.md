@@ -109,6 +109,7 @@ agent_rules:
   - Assets: logos {asset_root}/logo, icons {asset_root}/icons, motion specs {asset_root}/motion, templates {asset_root}/templates.
   - When explaining a decision, quote the FEEL line of each section you used.
   - To build a new system from this template, follow §16 phase by phase and respect its hard limits.
+  - Start research from the §16.2 seed sources; search the open web only for what seeds can't answer.
   - Before delivering, run §15 and report any failed item.
 ```
 
@@ -149,6 +150,86 @@ design-build/
 ```
 `state.yaml` is updated at the end of every step, so a harness that restarts can resume where it left off.
 
+### 16.2 Seed sources (research starts here, not with a blank web search)
+**FEEL:** "Start deep, not wide."
+
+Phase 2 research **MUST** open with the seeds for each area before running any open web search. Seeds are primary, expert sources: specs, mature design systems and reference tools. Open search is only for what seeds can't answer, like competitors, the category, local market and culture, and the brand's own assets.
+```yaml
+seed_rules:
+  - For each Phase 2a area, read at least 1 seed from the matching group below before searching the open web.
+  - Seeds count toward the §16.0 source cap. Record each one in research/notes.md like any other source.
+  - Prefer specs and official systems over blog posts, listicles and AI-generated summaries.
+  - Treat mature design systems as patterns to learn from, never as values to copy. Our values come from §1 and the user's picks.
+  - Sites that need a login or block automated access (e.g. Mobbin, Behance): skip them, note that in research/notes.md, and don't stall.
+  - Teams can add their own seeds here. Keep each group to 6 or fewer, so the list stays a starting point and not a library.
+```
+
+```yaml
+seeds:
+  tokens_and_architecture:
+    - { name: "W3C Design Tokens Format (DTCG)", url: "https://tr.designtokens.org/format/", use_for: "tokens.json structure, naming, aliasing" }
+    - { name: "Style Dictionary", url: "https://styledictionary.com/", use_for: "turning tokens into CSS, iOS, Android and other outputs" }
+    - { name: "Material 3 design tokens", url: "https://m3.material.io/foundations/design-tokens/overview", use_for: "reference/system/component token tiers" }
+  design_systems_reference:
+    - { name: "Material 3", url: "https://m3.material.io/", use_for: "full-system reference: color roles, type, motion" }
+    - { name: "Apple Human Interface Guidelines", url: "https://developer.apple.com/design/human-interface-guidelines", use_for: "platform conventions, iOS/macOS" }
+    - { name: "IBM Carbon", url: "https://carbondesignsystem.com/", use_for: "governance, motion, data viz, documentation style" }
+    - { name: "Atlassian Design", url: "https://atlassian.design/", use_for: "foundations, content and voice guidance" }
+    - { name: "Shopify Polaris", url: "https://polaris.shopify.com/", use_for: "content guidelines, merchant-facing patterns" }
+    - { name: "GOV.UK Design System", url: "https://design-system.service.gov.uk/", use_for: "plain-language, accessibility-first patterns" }
+  components:
+    - { name: "The Component Gallery", url: "https://component.gallery/", use_for: "how 90+ systems name and build each component" }
+    - { name: "Design Systems Repo", url: "https://designsystemsrepo.com/", use_for: "finding systems by industry" }
+    - { name: "Radix Primitives", url: "https://www.radix-ui.com/primitives", use_for: "accessible component behavior" }
+    - { name: "shadcn/ui", url: "https://ui.shadcn.com/", use_for: "token-driven component code patterns" }
+    - { name: "React Aria", url: "https://react-spectrum.adobe.com/react-aria/", use_for: "interaction and state handling" }
+  accessibility:
+    - { name: "WCAG 2.2", url: "https://www.w3.org/TR/WCAG22/", use_for: "§11 requirements, the source of truth" }
+    - { name: "WAI-ARIA Authoring Practices", url: "https://www.w3.org/WAI/ARIA/apg/", use_for: "keyboard and screen-reader patterns per component" }
+    - { name: "WebAIM Contrast Checker", url: "https://webaim.org/resources/contrastchecker/", use_for: "checking §4 pairings" }
+    - { name: "Inclusive Components", url: "https://inclusive-components.design/", use_for: "deep dives on accessible components" }
+  color:
+    - { name: "Radix Colors", url: "https://www.radix-ui.com/colors", use_for: "accessible 12-step scales, light and dark" }
+    - { name: "Adobe Leonardo", url: "https://leonardocolor.io/", use_for: "generating palettes by target contrast ratio" }
+    - { name: "OKLCH picker", url: "https://oklch.com/", use_for: "perceptually even color scales" }
+    - { name: "ColorBrewer", url: "https://colorbrewer2.org/", use_for: "data visualization palettes (§M1.6)" }
+  typography:
+    - { name: "Google Fonts", url: "https://fonts.google.com/", use_for: "open-license families" }
+    - { name: "Google Noto", url: "https://fonts.google.com/noto", use_for: "Indic and other scripts for §12" }
+    - { name: "Fontshare (Indian Type Foundry)", url: "https://www.fontshare.com/", use_for: "free quality families, Indian foundry" }
+    - { name: "Butterick's Practical Typography", url: "https://practicaltypography.com/", use_for: "type rules: line length, spacing, hierarchy" }
+    - { name: "Typescale", url: "https://typescale.com/", use_for: "building the §13 type scale" }
+    - { name: "W3C Indic Layout Requirements", url: "https://www.w3.org/TR/ilreq/", use_for: "Indian script layout rules" }
+  iconography:
+    - { name: "Lucide", url: "https://lucide.dev/", use_for: "outline set, consistent 24px grid" }
+    - { name: "Phosphor", url: "https://phosphoricons.com/", use_for: "6 weights including duotone" }
+    - { name: "Material Symbols", url: "https://fonts.google.com/icons", use_for: "variable-weight icon font" }
+    - { name: "Tabler Icons", url: "https://tabler.io/icons", use_for: "large outline and filled set" }
+    - { name: "Iconify", url: "https://icon-sets.iconify.design/", use_for: "comparing 150+ sets side by side" }
+  motion:
+    - { name: "Material 3 Motion", url: "https://m3.material.io/styles/motion/overview", use_for: "easing and duration tokens, transition patterns" }
+    - { name: "Carbon Motion", url: "https://carbondesignsystem.com/elements/motion/overview/", use_for: "productive vs expressive motion" }
+    - { name: "Easings.net", url: "https://easings.net/", use_for: "seeing and comparing easing curves" }
+    - { name: "MDN prefers-reduced-motion", url: "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion", use_for: "reduced-motion fallback (§11)" }
+    - { name: "LottieFiles", url: "https://lottiefiles.com/", use_for: "motion spec files and examples" }
+    - { name: "Rive", url: "https://rive.app/", use_for: "interactive and state-machine motion" }
+  data_visualization:
+    - { name: "Carbon Data Visualization", url: "https://carbondesignsystem.com/data-visualization/getting-started/", use_for: "chart rules and color use" }
+    - { name: "Datawrapper Academy", url: "https://academy.datawrapper.de/", use_for: "chart choice and labeling" }
+  inspiration_and_competitors:
+    - { name: "Brand New (UnderConsideration)", url: "https://www.underconsideration.com/brandnew/", use_for: "identity redesign critiques" }
+    - { name: "Brandfetch", url: "https://brandfetch.com/", use_for: "competitor logos, colors and fonts" }
+    - { name: "Wayback Machine", url: "https://web.archive.org/", use_for: "how competitors' sites changed over time" }
+    - { name: "Land-book", url: "https://land-book.com/", use_for: "landing page patterns" }
+    - { name: "Awwwards", url: "https://www.awwwards.com/", use_for: "high-craft web and motion references" }
+    - { name: "Mobbin (login needed)", url: "https://mobbin.com/", use_for: "real app screens and flows" }
+  marketing_formats:
+    - { name: "Meta Ads Guide", url: "https://www.facebook.com/business/ads-guide", use_for: "official ad sizes and specs (§M2.1)" }
+    - { name: "Sprout Social image size guide", url: "https://sproutsocial.com/insights/social-media-image-sizes-guide/", use_for: "current sizes across platforms" }
+  print:
+    - { name: "Pantone Connect", url: "https://www.pantone.com/connect", use_for: "spot color matches for §M4" }
+```
+
 ### Phase 1 · Intake
 Ask in **one** message, grouped and numbered, with examples so answers are quick. **Always ask every question**, even when the project is empty or already has brand files. Where files suggest an answer, show it as a pre-filled suggestion to confirm, never as a skipped question. Infer the project type from the project's files first (see `KICKSTART.md`); question 2 confirms it, or decides it when the project is empty.
 1. **The business:** name, what the product or app is, who it's for, and where (city, region, languages).
@@ -177,7 +258,7 @@ Ask in **one** message, grouped and numbered, with examples so answers are quick
 
 **Gate 2a:** show the plan. Proceed if the user approves or doesn't object.
 
-**2b. Execute** within §16.0 limits. Log each source as one line in `research/notes.md` with its URL and the takeaway. The timer starts at the first fetch. When a cap is hit, stop and go to Phase 3.
+**2b. Execute** within §16.0 limits, **starting each area from its §16.2 seeds**, then searching the open web only for the gaps. Log each source as one line in `research/notes.md` with its URL and the takeaway. The timer starts at the first fetch. When a cap is hit, stop and go to Phase 3.
 
 ### Phase 3 · Visual studies (show, don't tell)
 Build `studies/index.html`, a single self-contained page, and save a PNG of each panel for chat-only surfaces. Offer **2–3 directions** per aspect, labeled A, B and C:
