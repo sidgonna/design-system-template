@@ -1,0 +1,5 @@
+/* expect: role-slot=2 */
+.oops {
+  background: var(--color-text-primary);
+  color: var(--color-surface-default);
+}

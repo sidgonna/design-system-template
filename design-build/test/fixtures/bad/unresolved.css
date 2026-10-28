@@ -1,0 +1,5 @@
+/* expect: unresolved-token=2 */
+.note {
+  color: var(--color-brand-tertiary);
+  padding: var(--space-5);
+}

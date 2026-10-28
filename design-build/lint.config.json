@@ -1,0 +1,24 @@
+{
+  "$comment": "Configuration for lint.mjs. PROTECTED (design.md §0.5): an agent must not edit this file, add allowlist entries or loosen thresholds without the user's explicit approval. Paths are relative to the repo root.",
+  "index": "design.md",
+  "design_files": ["design.md", "design/core.md", "design/digital-product.md", "design/marketing-content.md", "design/motion-video.md", "design/print.md"],
+  "token_sections": [{ "file": "design/core.md", "section": "§13" }],
+  "code_dirs": ["design-build/preview", "design-build/studies"],
+  "code_extensions": [".html", ".htm", ".css", ".scss", ".sass", ".less", ".js", ".jsx", ".ts", ".tsx", ".vue", ".svelte", ".astro"],
+  "generated_files": ["design-build/preview/tokens.css", "design-build/preview/tokens.js"],
+  "exclude_dirs": ["node_modules", ".git", "screenshots", "fixtures", ".terrazzo", "dist", "build", ".next"],
+  "kickstart_sync": { "source": "KICKSTART.md", "copy": "README.md" },
+  "allow": [
+    { "file": "design/marketing-content.md", "section": "§M2.1", "rule": "raw-value", "reason": "Platform safe areas and sizes are fixed by each platform's published spec (Meta, YouTube), not brand values, so they are not tokens." }
+  ],
+  "contrast": { "normal": 4.5, "large": 3, "ui": 3 },
+  "completion_min": 0.9,
+  "seed_group_max": 6,
+  "template_placeholders": { "$comment": "{{…}} counts in the untouched template; completion = 1 − remaining/initial", "design.md": 26, "design/core.md": 208, "design/digital-product.md": 6, "design/marketing-content.md": 8, "design/motion-video.md": 11, "design/print.md": 7 },
+  "default_fonts": ["inter", "roboto", "arial", "helvetica", "helvetica neue", "segoe ui", "system-ui", "-apple-system", "blinkmacsystemfont", "ui-sans-serif", "open sans", "geist", "sf pro", "sf pro text", "sf pro display"],
+  "role_slot_words": {
+    "background": ["background", "backgrounds", "fill", "fills"],
+    "foreground": ["text", "icons", "icon", "foreground"],
+    "border": ["border", "borders", "outline", "outlines"]
+  }
+}

@@ -1,0 +1,7 @@
+/* expect: raw-value=4 */
+.alert {
+  color: #ff0000;
+  background: rgb(250 250 249);
+  padding: 13px;
+  transition: opacity 200ms ease;
+}

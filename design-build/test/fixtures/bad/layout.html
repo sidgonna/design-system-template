@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- Render fixture (not a lint fixture: it is full of raw values on purpose).
+     expect-render: overflow, overlap, tap-target, focus-visible, axe:image-alt, axe:color-contrast -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Broken layout fixture</title>
+<style>
+  body { margin: 0; font: 16px sans-serif; }
+  .wide { width: 900px; height: 40px; background: #eee; }
+  .stack { position: relative; height: 60px; }
+  .stack button { position: absolute; top: 0; width: 80px; height: 40px; }
+  .stack .b { left: 40px; }
+  .tiny { display: inline-flex; gap: 2px; }
+  .tiny a { display: inline-block; width: 12px; height: 12px; background: #333; }
+  .nofocus:focus { outline: none; }
+  .faint { color: #bbb; background: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Broken layout</h1>
+  <div class="wide">This row is wider than a phone.</div>
+  <div class="stack"><button type="button" class="a">One</button><button type="button" class="b">Two</button></div>
+  <div class="tiny"><a href="#1" aria-label="one"></a><a href="#2" aria-label="two"></a><a href="#3" aria-label="three"></a></div>
+  <p><button type="button" class="nofocus">No focus ring</button></p>
+  <p class="faint">This text is too faint to read.</p>
+  <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="40" height="40">
+</main>
+</body>
+</html>

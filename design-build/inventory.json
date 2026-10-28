@@ -1,0 +1,22 @@
+{
+  "$comment": "Components this project has (status: existing, read from the code in KICKSTART Step 2) or has agreed to build (status: planned, matching design/digital-product.md §M1.1). lint.mjs (rule unknown-component) rejects any component, variant or prop not listed here. Reuse, then extend, then create, and add a new entry only with the user's agreement (design.md §0.5). Do not edit `ignore` without the user's approval.",
+  "library": null,
+  "theme_files": [],
+  "token_files": ["tokens/tokens.json"],
+  "hardcoded_colors": null,
+  "components": [
+    { "name": "Button", "aliases": ["btn"], "status": "planned", "import": "design-build/preview/index.html", "props": ["variant", "disabled", "type"], "variants": ["primary", "secondary", "ghost", "danger"] },
+    { "name": "Input", "aliases": ["TextField"], "status": "planned", "import": "design-build/preview/index.html", "props": ["label", "hint", "error", "disabled", "required"], "variants": ["default", "error"] },
+    { "name": "Card", "aliases": [], "status": "planned", "import": "design-build/preview/index.html", "props": ["elevation"], "variants": ["flat", "raised"] },
+    { "name": "Modal", "aliases": ["Sheet", "Dialog"], "status": "planned", "import": null, "props": ["open", "title"], "variants": [] },
+    { "name": "Navigation", "aliases": ["Nav"], "status": "planned", "import": null, "props": [], "variants": [] },
+    { "name": "Table", "aliases": [], "status": "planned", "import": null, "props": [], "variants": [] },
+    { "name": "Badge", "aliases": ["Tag"], "status": "planned", "import": "design-build/preview/index.html", "props": ["variant"], "variants": ["neutral", "success", "warning", "error", "info"] },
+    { "name": "Toast", "aliases": [], "status": "planned", "import": null, "props": ["variant"], "variants": ["success", "warning", "error", "info"] }
+  ],
+  "ignore": {
+    "$comment": "Tags and props that are never design-system components: framework built-ins and generic HTML/ARIA attributes.",
+    "tags": ["Fragment", "React.Fragment", "Suspense", "StrictMode", "Head", "Html", "Script", "Link", "Image", "Slot", "Transition", "TransitionGroup", "Teleport", "KeepAlive", "Component", "RouterView", "RouterLink", "Outlet"],
+    "props": ["id", "key", "ref", "className", "class", "style", "children", "as", "asChild", "href", "title", "role", "tabIndex", "name", "value", "defaultValue", "placeholder", "onClick", "onChange", "onSubmit"]
+  }
+}
