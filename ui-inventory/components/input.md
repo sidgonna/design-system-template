@@ -6,7 +6,7 @@
 | Status | existing |
 | React import | `import { Input } from '…/design-system/components/react'` |
 | HTML/CSS API | `<div data-component="input" data-variant="default\|error"><label><input>` + `components/components.css` |
-| Props | `label`, `hint`, `error`, `disabled`, `required`, `type`, `autoComplete`, `inputMode` |
+| Props | `label`, `hint`, `error`, `disabled`, `required`, `type`, `autoComplete`, `inputMode`, `readOnly`, `autoFocus`, `maxLength`, `minLength`, `pattern`, `min`, `max`, `step`, `form`, `spellCheck`, `enterKeyHint` |
 | Variants | `default`, `error` |
 | Used on | [Design system preview](../screens/preview.md) (`default`, `error`; `default`, `focus`, `error`) |
 <!-- /ui-inventory:generated -->
@@ -85,7 +85,7 @@ The field fills its container up to 8 × `{space.12}`, so lines stay readable on
   - Rely on red alone: the message text and the thicker border carry the error too.
 
 ## References
-Searched separately for this component (design.md §16.2 components seeds):
+Searched separately for this component (the per-component seeds, design.md §16 Phase 2c):
 - **https://21st.dev/community/components/tigerabrodi/input-with-feedback** (MIT)
   - Borrowed: helper text under the field that is replaced by a red border and an error message, plus a disabled look.
   - Ours: keeps the hint and adds the error after it. Both are wired with `aria-describedby` and `aria-invalid`. Plain CSS on tokens, no Tailwind.

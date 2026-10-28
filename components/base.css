@@ -1,0 +1,20 @@
+/* components/base.css — optional page defaults from the tokens. Import once in the app entry, after tokens.css.
+ * Without it the browser default applies (Times New Roman on a white page, no dark mode), because components.css
+ * styles only [data-component] elements. It sets the body and heading fonts, text and page colors, and the base
+ * line height, so the app follows the tokens in light and dark. Skip it if your app already has its own base styles.
+ * The font stacks fall back to system fonts until you self-host the files (assets/fonts/README.md). */
+body {
+  margin: 0;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-body);
+  line-height: var(--font-line-height-base);
+  color: var(--color-text-primary);
+  background: var(--color-surface-default);
+}
+h1, h2, h3 { font-family: var(--font-family-heading); line-height: var(--font-line-height-tight); }
+h1 { font-size: var(--font-size-h1); }
+h2 { font-size: var(--font-size-h2); }
+h3 { font-size: var(--font-size-h3); }
+code, kbd, pre, samp { font-family: var(--font-family-mono); }
+a { color: var(--color-brand-primary); }
+:focus-visible { outline: var(--border-width-thick) solid var(--color-focus); outline-offset: var(--border-width-thick); }

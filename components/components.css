@@ -4,11 +4,17 @@
  * Uses only token variables from design-build/preview/tokens.css (import that first). Zero runtime dependencies.
  * Docs: ui-inventory/components/<name>.md · inventory: design-build/inventory.json · motion: core.md §10.
  *
- * Motion (all from motion.* tokens; every movement is switched off under prefers-reduced-motion: reduce):
+ * Motion (all from motion.* tokens). Reduced-motion policy (core.md §10): under prefers-reduced-motion: reduce
+ * nothing moves (no transform, position or size change); only opacity and colour fades of at most
+ * motion.duration.fast remain. design-build/motion.mjs checks both halves.
  *   button  hover lift + press scale (transform, motion.duration.instant/fast), loading spinner (rotate)
+ *           reduce: colour/shadow fades only; the spinner is a still ring
  *   input   focus ring + border color (color only), error shake on entering the error state
- *   card    entrance (opacity + translateY, motion.duration.base, ease.enter), interactive hover lift
+ *           reduce: no shake; the error border and message still appear
+ *   card    entrance with data-enter (opacity + translateY, motion.duration.base, ease.enter), interactive hover lift
+ *           reduce: the entrance is an opacity fade (motion.duration.fast); no lift
  *   badge   pop-in on insert (opacity + scale, motion.duration.fast, ease.enter)
+ *           reduce: an opacity fade (motion.duration.fast)
  */
 
 /* ---------- keyframes ---------- */
@@ -22,6 +28,7 @@
   from { opacity: 0; transform: translateY(var(--space-4)); }
   to { opacity: 1; transform: none; }
 }
+@keyframes ds-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ds-pop {
   from { opacity: 0; transform: scale(0.8); }
   to { opacity: 1; transform: none; }
@@ -45,7 +52,7 @@
     transform var(--motion-duration-fast) var(--motion-ease-standard);
 }
 [data-component="button"][data-variant="secondary"] { background: var(--color-surface-default); color: var(--color-brand-primary); }
-[data-component="button"][data-variant="ghost"] { background: var(--color-surface-default); color: var(--color-brand-primary); border-color: var(--color-surface-default); text-decoration: underline; text-underline-offset: var(--border-width-thick); }
+[data-component="button"][data-variant="ghost"] { background: transparent; color: var(--color-brand-primary); border-color: transparent; text-decoration: underline; text-underline-offset: var(--border-width-thick); }
 [data-component="button"][data-variant="danger"] { background: var(--color-semantic-error); color: var(--color-text-inverse); border-color: var(--color-semantic-error); }
 [data-component="button"][aria-pressed="true"] { background: var(--color-brand-primary); color: var(--color-text-inverse); border-color: var(--color-brand-primary); }
 [data-component="button"]:hover:not([disabled], [aria-disabled="true"]) { transform: translateY(calc(var(--border-width-thin) * -1)); box-shadow: var(--shadow-1); }
@@ -97,12 +104,14 @@
   padding: var(--space-6); border-radius: var(--radius-lg);
   background: var(--color-surface-default); color: var(--color-text-primary);
   border: var(--border-width-thin) solid var(--color-surface-raised);
-  animation: ds-enter var(--motion-duration-base) var(--motion-ease-enter) backwards;   /* backwards, not both: a held end state would block the hover lift */
   transition:
     box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
     transform var(--motion-duration-fast) var(--motion-ease-standard),
     border-color var(--motion-duration-fast) var(--motion-ease-standard);
 }
+/* Entrance is opt-in (data-enter / enter prop): use it for a card that arrives after the page has loaded, not for
+   every card in a list, where 20 cards sliding in at once is noise. */
+[data-component="card"][data-enter] { animation: ds-enter var(--motion-duration-base) var(--motion-ease-enter) backwards; }   /* backwards, not both: a held end state would block the hover lift */
 [data-component="card"][data-variant="raised"] { box-shadow: var(--shadow-2); }
 [data-component="card"] > :first-child { margin-block-start: 0; }
 [data-component="card"] > :last-child { margin-block-end: 0; }
@@ -130,15 +139,19 @@
 [data-component="badge"][data-variant="info"] { color: var(--color-semantic-info); }
 
 /* ---------- helpers ---------- */
-[data-component] [data-part="visually-hidden"] { position: absolute; inline-size: var(--border-width-thin); block-size: var(--border-width-thin); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Screen-reader-only text (loading announcements, extra context). A hairline-sized box (border-width.thin is the
+   smallest size token), clipped to nothing; position: absolute keeps it out of the layout. */
+[data-component] [data-part="visually-hidden"] { position: absolute; inline-size: var(--border-width-thin); block-size: var(--border-width-thin); margin: calc(var(--border-width-thin) * -1); padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* ---------- reduced motion: nothing moves; color, border and shadow changes stay (instant feedback) ---------- */
+/* ---------- reduced motion (core.md §10): nothing moves; opacity and colour fades of at most motion.duration.fast stay ---------- */
 @media (prefers-reduced-motion: reduce) {
   [data-component],
   [data-component] [data-part],
   [data-component="input"] input,
   [data-component="input"] textarea,
   [data-component]::before { animation: none !important; }   /* !important: beats the more specific state selectors above */
+  [data-component="card"][data-enter],
+  [data-component="badge"] { animation: ds-fade var(--motion-duration-fast) var(--motion-ease-standard) backwards !important; }   /* the entrance becomes a short fade */
   [data-component="button"],
   [data-component="card"] { transition-property: background-color, color, border-color, box-shadow; }
   [data-component="button"]:hover:not([disabled], [aria-disabled="true"]),

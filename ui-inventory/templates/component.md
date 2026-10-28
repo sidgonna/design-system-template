@@ -45,9 +45,9 @@
 - **Don't** {{…}}
 
 ## References
-<!-- The per-component reference search (design.md §16 Phase 2): search each §16.2 components seed for this component
-     on its own (21st.dev, Refero Styles, The Component Gallery, shadcn/ui + Radix, Kokonut UI, React Aria,
-     WAI-ARIA APG…). One line each: URL · the pattern borrowed · how ours differs. Patterns only, never pasted
+<!-- The per-component reference search (design.md §16 Phase 2): search each per-component seed (listed in §16 Phase 2c)
+     for this component on its own (The Component Gallery, Radix, shadcn/ui, React Aria, Kokonut UI, 21st.dev,
+     Refero Styles, WAI-ARIA APG). One line each: URL · the pattern borrowed · how ours differs. Patterns only, never pasted
      code (design-build/references/21st-dev.md). -->
 - {{URL}} · {{pattern}} · {{how ours differs}}
 

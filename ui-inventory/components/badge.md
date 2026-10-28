@@ -6,7 +6,7 @@
 | Status | existing |
 | React import | `import { Badge } from '…/design-system/components/react'` |
 | HTML/CSS API | `<span data-component="badge" data-variant="…">` + `components/components.css` |
-| Props | `variant` |
+| Props | `variant`, `live` |
 | Variants | `neutral`, `success`, `warning`, `error`, `info` |
 | Used on | [Design system preview](../screens/preview.md) (`neutral`, `success`, `warning`, `error`, `info`; `default`) |
 <!-- /ui-inventory:generated -->
@@ -55,13 +55,13 @@ Each color applies to the text, dot and border, always on `{color.surface.defaul
 ## Motion
 | Movement | Trigger | How | Tokens | Reduced motion |
 |---|---|---|---|---|
-| Pop-in | inserted into the DOM | `ds-pop`: opacity 0 → 1 and scale 0.8 → 1, with fill `backwards` | `{motion.duration.fast}`, `{motion.ease.enter}` | None. It appears at once. |
+| Pop-in | inserted into the DOM | `ds-pop`: opacity 0 → 1 and scale 0.8 → 1, with fill `backwards` | `{motion.duration.fast}`, `{motion.ease.enter}` | No scale: an opacity fade (`ds-fade`) of `{motion.duration.fast}`. |
 
 When a status changes in place (for example, Pending to Paid), call `replay(el)` from `components/index.js` so the change is noticed. Announce it too, if it matters (see Accessibility).
 
 ## Accessibility
 - **Meaning:** the text carries it. The color and dot only reinforce it (WCAG 1.4.1), so "Overdue" stays readable in grayscale.
-- **Role:** none, because it's plain text in a `<span>`. Don't add `role="status"` to every badge. If a badge changes after an action and the user must know, announce it once through a live region, such as a Toast.
+- **Role:** none by default, because it's plain text in a `<span>`. Don't add `role="status"` to every badge. For one badge whose status changes while the user is on the page and matters (Saving → Saved, Online → Offline), set `live` (React) or `createBadge({ live: true })`: it gets `role="status"`, so the new text is announced politely. Otherwise announce it once through a live region, such as a Toast.
 - **Hidden context:** for counts, add hidden text, such as `<Badge>3<span data-part="visually-hidden"> unread</span></Badge>`.
 - **Contrast pairings** (core.md §4, normal text, checked in light and dark):
   - `{color.text.primary}` on `{color.surface.default}`
@@ -87,7 +87,7 @@ The badge stays inline and never wraps within itself (two or three words). In ti
   - Invent new colors outside the five variants.
 
 ## References
-Searched separately for this component (design.md §16.2 components seeds):
+Searched separately for this component (the per-component seeds, design.md §16 Phase 2c):
 - **https://21st.dev/community/components/serafimcloud/status-badge** (MIT, "inspired by Tremor": https://blocks.tremor.so)
   - Borrowed: the status pill pattern, with a leading indicator and a label.
   - Ours: a CSS `::before` dot instead of an icon dependency, and colors from the semantic tokens.

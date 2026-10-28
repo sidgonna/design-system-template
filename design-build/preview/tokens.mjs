@@ -124,56 +124,72 @@ export const tokens = {
   "type": "color",
   "var": "--color-data-1",
   "css": {
-   "base": "#e69f00"
+   "base": "#be7900",
+   "light": "#be7900",
+   "dark": "#e69f00"
   }
  },
  "color.data.2": {
   "type": "color",
   "var": "--color-data-2",
   "css": {
-   "base": "#56b4e9"
+   "base": "#2c90c3",
+   "light": "#2c90c3",
+   "dark": "#56b4e9"
   }
  },
  "color.data.3": {
   "type": "color",
   "var": "--color-data-3",
   "css": {
-   "base": "#009e73"
+   "base": "#009b70",
+   "light": "#009b70",
+   "dark": "#009e73"
   }
  },
  "color.data.4": {
   "type": "color",
   "var": "--color-data-4",
   "css": {
-   "base": "#f0e442"
+   "base": "#978a00",
+   "light": "#978a00",
+   "dark": "#f0e442"
   }
  },
  "color.data.5": {
   "type": "color",
   "var": "--color-data-5",
   "css": {
-   "base": "#0072b2"
+   "base": "#0072b2",
+   "light": "#0072b2",
+   "dark": "#0875b5"
   }
  },
  "color.data.6": {
   "type": "color",
   "var": "--color-data-6",
   "css": {
-   "base": "#d55e00"
+   "base": "#d55e00",
+   "light": "#d55e00",
+   "dark": "#d55e00"
   }
  },
  "color.data.7": {
   "type": "color",
   "var": "--color-data-7",
   "css": {
-   "base": "#cc79a7"
+   "base": "#bf6d9b",
+   "light": "#bf6d9b",
+   "dark": "#cc79a7"
   }
  },
  "color.data.8": {
   "type": "color",
   "var": "--color-data-8",
   "css": {
-   "base": "#7f7f7f"
+   "base": "#7f7f7f",
+   "light": "#7f7f7f",
+   "dark": "#7f7f7f"
   }
  },
  "color.focus": {

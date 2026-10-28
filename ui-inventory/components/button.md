@@ -6,7 +6,7 @@
 | Status | existing |
 | React import | `import { Button } from '…/design-system/components/react'` |
 | HTML/CSS API | `<button data-component="button" data-variant="…">` + `components/components.css` |
-| Props | `variant`, `loading`, `disabled`, `type` |
+| Props | `variant`, `loading`, `loadingLabel`, `disabled`, `type`, `form`, `autoFocus` |
 | Variants | `primary`, `secondary`, `ghost`, `danger` |
 | Used on | [Design system preview](../screens/preview.md) (`primary`, `secondary`, `ghost`, `danger`; `default`, `hover`, `focus`, `active`, `disabled`, `loading`) |
 <!-- /ui-inventory:generated -->
@@ -24,7 +24,7 @@ Its parts sit on one row: `inline-flex`, gap `{space.2}`.
 ## Variants
 - **primary**: the main action. Its fill is `{color.brand.primary}` and its label is `{color.text.inverse}`.
 - **secondary**: an action next to the primary. It has a `{color.surface.default}` fill, a `{color.brand.primary}` border and a brand label.
-- **ghost**: a low-emphasis action, such as Cancel or tertiary toolbar actions. It has no visible border (the border matches the surface) and an underlined brand label, so it still reads as clickable without a fill.
+- **ghost**: a low-emphasis action, such as Cancel or tertiary toolbar actions. It has a transparent background and border (so it works on any surface) and an underlined brand label, so it still reads as clickable without a fill.
 - **danger**: destructive actions, such as Delete or Remove. Its fill is `{color.semantic.error}` and its label is `{color.text.inverse}`. Confirm before the action runs.
 
 A toggle button (APG) uses `aria-pressed`. Pressed buttons take the primary fill, whatever their variant.
@@ -37,7 +37,7 @@ A toggle button (APG) uses `aria-pressed`. Pressed buttons take the primary fill
 | focus | A `{border-width.thick}` outline in `{color.focus}`, offset by `{border-width.thick}`. It shows on `:focus-visible` only, so mouse clicks don't flash a ring. |
 | active | Scales to 0.97 and drops the shadow. The transition takes `{motion.duration.instant}`, so the press feels immediate. |
 | disabled | Uses the native `disabled` attribute: `{color.surface.raised}` fill, a `{color.text.secondary}` label and border, a not-allowed cursor, and no lift. Prefer keeping the button enabled and explaining in an error message why the action can't run yet. |
-| loading | Sets `aria-busy="true"` and `aria-disabled="true"`, NOT `disabled`, so focus stays on the button and screen readers keep it in the tab order. The spinner appears before the label. The label doesn't change. Clicks are ignored. Shows a progress cursor. |
+| loading | Sets `aria-busy="true"` and `aria-disabled="true"`, NOT `disabled`, so focus stays on the button and screen readers keep it in the tab order. The spinner appears before the label. The label doesn't change. A visually hidden `role="status"` inside the button says `loadingLabel` (default "Loading"), so screen readers hear that it is working. Clicks are ignored. Shows a progress cursor. |
 | error | n/a on the button itself. The form or Input shows the error. Re-enable the button after a failed request so the user can retry. |
 
 ## Tokens
@@ -66,12 +66,12 @@ A toggle button (APG) uses `aria-pressed`. Pressed buttons take the primary fill
 | Press | `:active` | scale(0.97) | `{motion.duration.instant}` | No scale. |
 | Spinner | loading | `ds-spin`, a linear rotation every 2 × `{motion.duration.slow}` | duration | It stops and shows a static quarter arc, so "busy" still reads (with `aria-busy`). |
 
-Color transitions use `{motion.duration.fast}` in every mode. `design-build/motion.mjs` checks that every movement plays and that each one is still under `prefers-reduced-motion: reduce`.
+Color transitions use `{motion.duration.fast}` in every mode. `design-build/motion.mjs` checks that every movement plays and that nothing moves under `prefers-reduced-motion: reduce` (only colour fades of at most `{motion.duration.fast}`, core.md §10).
 
 ## Accessibility
 - **Element:** a native `<button>`, never a `div` or an `<a href="#">`. Enter and Space activate it for free. Default `type="button"`, so it doesn't submit a form by accident.
 - **Name:** the visible label. An icon-only button needs `aria-label`. Don't change the label while toggling `aria-pressed` (WAI-ARIA APG).
-- **Loading:** `aria-busy="true"` plus `aria-disabled="true"`, so it keeps focus. Announce completion in a live region elsewhere, such as a Toast or status text.
+- **Loading:** `aria-busy="true"` plus `aria-disabled="true"`, so it keeps focus. `aria-busy` alone is not announced, so the button adds a visually hidden `role="status"` with `loadingLabel` (React prop, or the third argument of `setButtonLoading`). Announce completion in a live region elsewhere, such as a Toast or status text.
 - **Focus:** a visible `{color.focus}` ring at 3:1 or better on `{color.surface.default}` and `{color.surface.raised}` (core.md §4, size ui).
 - **Target:** at least `{size.target.min}` in both dimensions (WCAG 2.5.8).
 - **Contrast pairings** (core.md §4), checked by lint in light and dark:
@@ -100,7 +100,7 @@ The button sizes to its label, with a minimum of `{size.target.min}`.
   - Put two primary buttons side by side.
 
 ## References
-Searched separately for this component (design.md §16.2 components seeds):
+Searched separately for this component (the per-component seeds, design.md §16 Phase 2c):
 - **https://21st.dev/community/components/sean0205/button-1/loading** (ReUI, MIT)
   - Borrowed: the loading pattern, with a spinner before the label and the button kept in place.
   - Theirs swaps the label to "Submitting…"; ours keeps it unchanged, per the APG. It uses `aria-busy` + `aria-disabled` and plain CSS on token variables, with no Radix, lucide or cva.

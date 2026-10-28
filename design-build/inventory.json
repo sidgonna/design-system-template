@@ -1,17 +1,17 @@
 {
-  "$comment": "The single source of truth for components and screens. Components this project has (status: existing, read from the code in KICKSTART Step 2) or has agreed to build (status: planned, matching design/digital-product.md §M1.1). lint.mjs (rule unknown-component) rejects any component, variant or prop not listed here. Reuse, then extend, then create, and add a new entry only with the user's agreement (design.md §0.5). import = the module apps import from (React wrappers); html = the framework-agnostic markup API (components/components.css); doc = its ui-inventory doc. Do not edit `ignore` without the user's approval.",
+  "$comment": "The single source of truth for components and screens. Components this project has (status: existing, read from the code in KICKSTART Step 2) or has agreed to build (status: planned, matching design/digital-product.md §M1.1). lint.mjs (rule unknown-component) rejects any component, variant or prop not listed here. Reuse, then extend, then create, and add a new entry only with the user's agreement (design.md §0.5). import = the React wrappers' folder, relative to the project root: app code imports it relatively ('../design-system/components/react') or through a path alias, and the lint checks every import path that ends in design-system/components; props = the props the lint accepts (native attributes the wrapper forwards included); html = the framework-agnostic markup API (components/components.css); doc = its ui-inventory doc. Do not edit `ignore` without the user's approval.",
   "library": null,
   "theme_files": [],
   "token_files": ["tokens/tokens.json"],
   "hardcoded_colors": null,
   "components": [
-    { "name": "Button", "aliases": ["btn"], "status": "existing", "import": "design-system/components/react", "html": "<button data-component=\"button\" data-variant=\"…\">", "doc": "ui-inventory/components/button.md", "props": ["variant", "loading", "disabled", "type"], "variants": ["primary", "secondary", "ghost", "danger"] },
-    { "name": "Input", "aliases": ["TextField"], "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"input\" data-variant=\"default|error\"><label><input>", "doc": "ui-inventory/components/input.md", "props": ["label", "hint", "error", "disabled", "required", "type", "autoComplete", "inputMode"], "variants": ["default", "error"] },
-    { "name": "Card", "aliases": [], "status": "existing", "import": "design-system/components/react", "html": "<article data-component=\"card\" data-variant=\"…\" [data-interactive]>", "doc": "ui-inventory/components/card.md", "props": ["variant", "interactive"], "variants": ["flat", "raised"] },
+    { "name": "Button", "aliases": ["btn"], "status": "existing", "import": "design-system/components/react", "html": "<button data-component=\"button\" data-variant=\"…\">", "doc": "ui-inventory/components/button.md", "props": ["variant", "loading", "loadingLabel", "disabled", "type", "form", "autoFocus"], "variants": ["primary", "secondary", "ghost", "danger"] },
+    { "name": "Input", "aliases": ["TextField"], "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"input\" data-variant=\"default|error\"><label><input>", "doc": "ui-inventory/components/input.md", "props": ["label", "hint", "error", "disabled", "required", "type", "autoComplete", "inputMode", "readOnly", "autoFocus", "maxLength", "minLength", "pattern", "min", "max", "step", "form", "spellCheck", "enterKeyHint"], "variants": ["default", "error"] },
+    { "name": "Card", "aliases": [], "status": "existing", "import": "design-system/components/react", "html": "<article data-component=\"card\" data-variant=\"…\" [data-interactive] [data-enter]>", "doc": "ui-inventory/components/card.md", "props": ["variant", "interactive", "enter"], "variants": ["flat", "raised"] },
     { "name": "Modal", "aliases": ["Sheet", "Dialog"], "status": "planned", "import": null, "props": ["open", "title"], "variants": [] },
     { "name": "Navigation", "aliases": ["Nav"], "status": "planned", "import": null, "props": [], "variants": [] },
     { "name": "Table", "aliases": [], "status": "planned", "import": null, "props": [], "variants": [] },
-    { "name": "Badge", "aliases": ["Tag"], "status": "existing", "import": "design-system/components/react", "html": "<span data-component=\"badge\" data-variant=\"…\">", "doc": "ui-inventory/components/badge.md", "props": ["variant"], "variants": ["neutral", "success", "warning", "error", "info"] },
+    { "name": "Badge", "aliases": ["Tag"], "status": "existing", "import": "design-system/components/react", "html": "<span data-component=\"badge\" data-variant=\"…\">", "doc": "ui-inventory/components/badge.md", "props": ["variant", "live"], "variants": ["neutral", "success", "warning", "error", "info"] },
     { "name": "Toast", "aliases": [], "status": "planned", "import": null, "props": ["variant"], "variants": ["success", "warning", "error", "info"] }
   ],
   "screens": {
@@ -30,8 +30,8 @@
     }
   },
   "ignore": {
-    "$comment": "Tags and props that are never design-system components: framework built-ins and generic HTML/ARIA attributes.",
-    "tags": ["Fragment", "React.Fragment", "Suspense", "StrictMode", "Head", "Html", "Script", "Link", "Image", "Slot", "Transition", "TransitionGroup", "Teleport", "KeepAlive", "Component", "RouterView", "RouterLink", "Outlet"],
+    "$comment": "Tags and props that are never design-system components: the app root (App), framework built-ins and generic HTML/ARIA attributes. Screens and pages are recognised from screens.*.source, so they need no entry here.",
+    "tags": ["App", "Fragment", "React.Fragment", "Suspense", "StrictMode", "Head", "Html", "Script", "Link", "Image", "Slot", "Transition", "TransitionGroup", "Teleport", "KeepAlive", "Component", "RouterView", "RouterLink", "Outlet"],
     "props": ["id", "key", "ref", "className", "class", "style", "children", "as", "asChild", "href", "title", "role", "tabIndex", "name", "value", "defaultValue", "placeholder", "onClick", "onChange", "onSubmit"]
   }
 }

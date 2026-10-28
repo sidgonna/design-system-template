@@ -129,6 +129,14 @@ pairings:
   - { fg: "{color.semantic.info}", bg: "{color.surface.default}", size: normal }
   - { fg: "{color.focus}", bg: "{color.surface.default}", size: ui }
   - { fg: "{color.focus}", bg: "{color.surface.raised}", size: ui }
+  - { fg: "{color.data.1}", bg: "{color.surface.raised}", size: ui }    # chart series on the chart panel: non-text 3:1 (surface.default is higher in both modes)
+  - { fg: "{color.data.2}", bg: "{color.surface.raised}", size: ui }
+  - { fg: "{color.data.3}", bg: "{color.surface.raised}", size: ui }
+  - { fg: "{color.data.4}", bg: "{color.surface.raised}", size: ui }
+  - { fg: "{color.data.5}", bg: "{color.surface.raised}", size: ui }
+  - { fg: "{color.data.6}", bg: "{color.surface.raised}", size: ui }
+  - { fg: "{color.data.7}", bg: "{color.surface.raised}", size: ui }
+  - { fg: "{color.data.8}", bg: "{color.surface.raised}", size: ui }
 ```
 - Dark mode: {{supported / not supported}}; values live in §13 `modes.dark`.
 
@@ -246,7 +254,7 @@ motion:
   easing: { enter: "{motion.ease.enter}", exit: "{motion.ease.exit}", standard: "{motion.ease.standard}" }
   what_moves: ["{{state changes}}", "{{entrances}}", "{{feedback}}"]
   what_never_moves: ["{{body text}}", "{{logo, except in M3 intro}}"]
-  reduced_motion: "replace movement with opacity fade ≤ {motion.duration.fast}"   # → §11
+  reduced_motion: "nothing moves (no transform, position or size change, no shake, no spin); only opacity and colour fades (including border and shadow colour) of at most {motion.duration.fast} remain"   # → §11; checked by design-build/motion.mjs
   specs_folder: "{asset_root}/motion/"
 ```
 **Motion spec block** (one per named animation; Lottie, Rive or video files live in `specs_folder`):
@@ -290,7 +298,7 @@ a11y:
 | `touch_target` | axe `target-size` (WCAG 2.5.8); render.mjs `tap-target` (under 24 CSS pixels, or overlapping) | the larger `{size.target.min}` goal |
 | `focus` | none in axe: render.mjs tabs through and checks a visible focus style | focus order makes sense |
 | `color_alone` | axe `link-in-text-block` | everything else |
-| `motion` | render.mjs runs with reduced motion | flashing, auto-play |
+| `motion` | `design-build/motion.mjs`: with motion allowed every component motion must play; with reduced motion it fails on any movement or a fade longer than `{motion.duration.fast}`. render.mjs screenshots with reduced motion on and warns on movement | flashing, auto-play |
 | `alt_text` | axe `image-alt`, `input-image-alt`, `svg-img-alt`, `role-img-alt`, `area-alt`, `object-alt` | whether the alt text is *useful* |
 | `captions` | axe `video-caption` (best practice, needs review) | yes |
 | `structure` | axe `html-has-lang`, `document-title`, `label`, `button-name`, `link-name`, `aria-*`, `list`, `listitem`, `meta-viewport`, `bypass`; best-practice warnings `landmark-one-main`, `region`, `heading-order`, `page-has-heading-one` | reading order |
@@ -333,7 +341,7 @@ tokens:
     surface: { default: "{{#ffffff}}", raised: "{{#f5f4f1}}", inverse: "{{#1c1b19}}" }
     text: { primary: "{{#1c1b19}}", secondary: "{{#57534e}}", inverse: "{{#fafaf9}}" }
     semantic: { success: "{{#15803d}}", warning: "{{#b45309}}", error: "{{#b91c1c}}", info: "{{#1d4ed8}}" }
-    data: { 1: "{{#e69f00}}", 2: "{{#56b4e9}}", 3: "{{#009e73}}", 4: "{{#f0e442}}", 5: "{{#0072b2}}", 6: "{{#d55e00}}", 7: "{{#cc79a7}}", 8: "{{#7f7f7f}}" }   # color-blind-safe series → §M1.6
+    data: { 1: "{{#be7900}}", 2: "{{#2c90c3}}", 3: "{{#009b70}}", 4: "{{#978a00}}", 5: "{{#0072b2}}", 6: "{{#d55e00}}", 7: "{{#bf6d9b}}", 8: "{{#7f7f7f}}" }   # color-blind-safe series, ≥3:1 on both surfaces → §M1.6
     focus: "{{#0b5d52}}"
   font:
     family: { heading: "{{Source Serif 4, Georgia, serif}}", body: "{{Atkinson Hyperlegible, Verdana, sans-serif}}", mono: "{{JetBrains Mono, ui-monospace, monospace}}", te: "{{Noto Sans Telugu, sans-serif}}", hi: "{{Noto Sans Devanagari, sans-serif}}" }
@@ -363,10 +371,12 @@ modes:   # only the values that change; anything not listed is the same in every
       text: { primary: "{{#f5f4f1}}", secondary: "{{#b8b2aa}}", inverse: "{{#1c1b19}}" }
       semantic: { success: "{{#4ade80}}", warning: "{{#fbbf24}}", error: "{{#f87171}}", info: "{{#93c5fd}}" }
       focus: "{{#5cc2b1}}"
+      data: { 1: "{{#e69f00}}", 2: "{{#56b4e9}}", 3: "{{#009e73}}", 4: "{{#f0e442}}", 5: "{{#0875b5}}", 6: "{{#d55e00}}", 7: "{{#cc79a7}}", 8: "{{#7f7f7f}}" }   # the Okabe–Ito hues; 5 lightened to reach 3:1 on surface.raised
     shadow: { 1: "{{0px 1px 2px 0px #00000066}}", 2: "{{0px 4px 12px 0px #00000080}}", 3: "{{0px 12px 32px 0px #00000099}}" }   # darker, more opaque: a light-mode shadow disappears on a dark surface
 ```
 - In `tokens_file`, dimensions are `{ "value": 4, "unit": "px" }`, durations `{ "value": 150, "unit": "ms" }`, colors `{ "colorSpace": "srgb", "components": [r, g, b], "hex": "#rrggbb" }` (add `"alpha"` for translucency), easing a 4-number array and font families an array. Group `$type` is inherited by its tokens.
 - Check it: `node design-build/lint.mjs` (sync, aliases, contrast) and, with the dev dependencies installed, `npm --prefix design-build run tokens:check` (Terrazzo DTCG validation). From an app root, prefix the paths with `design-system/` (design.md §0.5).
+- Not every token is used by the shipped components and preview, and that's expected: they are the scale for your app. The ones nothing in `components/` uses yet are `color.brand.secondary`, `font.size.display`, `font.size.body-lg`, `font.size.overline`, `icon.padding`, `motion.ease.exit`, `radius.none`, `space.base`, the `breakpoint.*` set (for `matchMedia` and content widths; @media needs the px number, digital-product.md §M1.3), `viewport.*` (read by `render.mjs` as its check widths) and `size.logo.min.*` (§3; `size.logo.min.print-mm` is a plain number in mm because DTCG dimensions allow only px and rem). The `color.data.*` series is used only by charts (§M1.6). Delete a token only after a search shows nothing in the app uses it, and update §13 and `tokens_file` together.
 
 ---
 

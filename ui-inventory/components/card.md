@@ -5,8 +5,8 @@
 |---|---|
 | Status | existing |
 | React import | `import { Card } from '…/design-system/components/react'` |
-| HTML/CSS API | `<article data-component="card" data-variant="…" [data-interactive]>` + `components/components.css` |
-| Props | `variant`, `interactive` |
+| HTML/CSS API | `<article data-component="card" data-variant="…" [data-interactive] [data-enter]>` + `components/components.css` |
+| Props | `variant`, `interactive`, `enter` |
 | Variants | `flat`, `raised` |
 | Used on | [Design system preview](../screens/preview.md) (`flat`, `raised`; `default`, `hover`, `focus`) |
 <!-- /ui-inventory:generated -->
@@ -52,10 +52,10 @@ A surface that groups content about one thing: a project, a plan, an article, a 
 ## Motion
 | Movement | Trigger | How | Tokens | Reduced motion |
 |---|---|---|---|---|
-| Entrance | inserted into the DOM | `ds-enter`: opacity 0 → 1 and translateY `{space.4}` → 0. `animation-fill-mode: backwards`, so the end state doesn't block the hover transform. | `{motion.duration.base}`, `{motion.ease.enter}` | None. The card appears at once. |
+| Entrance | inserted into the DOM with `data-enter` (React `enter`, vanilla `createCard({ enter: true })`) | `ds-enter`: opacity 0 → 1 and translateY `{space.4}` → 0. `animation-fill-mode: backwards`, so the end state doesn't block the hover transform. Opt-in, so a list of cards does not re-animate on every render or route change: use it for a card that arrives after load. | `{motion.duration.base}`, `{motion.ease.enter}` | No movement: an opacity fade (`ds-fade`) of `{motion.duration.fast}`. |
 | Hover lift | `:hover` or `:focus-within` (interactive) | translateY minus `{space.1}`, plus `{shadow.3}` | `{motion.duration.fast}`, `{motion.ease.standard}` | No movement. The shadow and border change stays. |
 
-Replay the entrance with `replay(el)` from `components/index.js`, for example after filtering.
+Replay the entrance on a `data-enter` card with `replay(el)` from `components/index.js`, for example after filtering.
 
 ## Accessibility
 - **Element:** `<article>` for self-contained items. Use `as="section"` or `as="li"` (inside a `<ul>`) for lists of cards, so screen readers announce the count.
@@ -85,7 +85,7 @@ The card fills its grid cell. The layout owns the columns: one column on mobile,
   - Mix raised and flat cards randomly in one grid.
 
 ## References
-Searched separately for this component (design.md §16.2 components seeds):
+Searched separately for this component (the per-component seeds, design.md §16 Phase 2c):
 - **https://21st.dev/community/components/sean0205/card** (ReUI, MIT)
   - Borrowed: a header, body rows and a footer link as the default composition.
   - Ours: no CardHeader/CardContent subcomponents (plain children), and a token border instead of Tailwind classes.

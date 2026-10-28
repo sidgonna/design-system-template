@@ -17,8 +17,8 @@ function pick(kind, v, fallback) {
   return v;
 }
 
-/** <button data-component="button">. Options: { label, variant, type, disabled, loading, onClick } */
-export function createButton({ label, variant, type = 'button', disabled = false, loading = false, onClick } = {}) {
+/** <button data-component="button">. Options: { label, variant, type, disabled, loading, loadingLabel, onClick } */
+export function createButton({ label, variant, type = 'button', disabled = false, loading = false, loadingLabel, onClick } = {}) {
   const b = document.createElement('button');
   b.type = type;
   b.dataset.component = 'button';
@@ -29,21 +29,27 @@ export function createButton({ label, variant, type = 'button', disabled = false
   b.append(text);
   if (disabled) b.disabled = true;
   if (onClick) b.addEventListener('click', (e) => { if (b.getAttribute('aria-busy') === 'true') { e.preventDefault(); return; } onClick(e); });
-  setButtonLoading(b, loading);
+  setButtonLoading(b, loading, loadingLabel);
   return b;
 }
 
-/** Loading keeps the button focusable and its label visible (aria-busy + aria-disabled, not the disabled attribute). */
-export function setButtonLoading(button, loading = true) {
+/** Loading keeps the button focusable and its label visible (aria-busy + aria-disabled, not the disabled attribute).
+ *  aria-busy alone is not announced, so a visually hidden role="status" says loadingLabel (default "Loading"). */
+export function setButtonLoading(button, loading = true, loadingLabel = 'Loading') {
+  if (!button?.matches?.('[data-component="button"]')) throw new Error('setButtonLoading: pass the <button data-component="button"> element (from createButton or your markup)');
   let sp = button.querySelector(':scope > [data-part="spinner"]');
+  let st = button.querySelector(':scope > [data-part="visually-hidden"][role="status"]');
   if (loading) {
     button.setAttribute('aria-busy', 'true');
     button.setAttribute('aria-disabled', 'true');
     if (!sp) { sp = document.createElement('span'); sp.dataset.part = 'spinner'; sp.setAttribute('aria-hidden', 'true'); button.prepend(sp); }
+    if (!st) { st = document.createElement('span'); st.dataset.part = 'visually-hidden'; st.setAttribute('role', 'status'); button.append(st); }
+    st.textContent = loadingLabel ?? 'Loading';
   } else {
     button.removeAttribute('aria-busy');
     if (!button.disabled) button.removeAttribute('aria-disabled');
     sp?.remove();
+    st?.remove();
   }
   return button;
 }
@@ -80,15 +86,22 @@ export function createInput({ label, hint, error, id, type = 'text', name, requi
   return root;
 }
 
+function fieldOf(root, fn) {
+  const input = root?.querySelector?.('input, textarea, select');
+  if (!input) throw new Error(`${fn}: pass the <div data-component="input"> root that contains the <input>, <textarea> or <select> (got ${root?.tagName ? `<${root.tagName.toLowerCase()}>` : String(root)})`);
+  if (!input.id) input.id = nextId('ds-input');   // the error message's id is built from it
+  return input;
+}
+
 function describe(root) {
-  const input = root.querySelector('input, textarea, select');
+  const input = fieldOf(root, 'describe');
   const ids = [...root.querySelectorAll('[data-part="hint"], [data-part="error"]')].map((e) => e.id).filter(Boolean);
   if (ids.length) input.setAttribute('aria-describedby', ids.join(' ')); else input.removeAttribute('aria-describedby');
 }
 
 /** Show (string) or clear (null) the error. Sets aria-invalid, links the message, and replays the shake. */
 export function setInputError(root, message) {
-  const input = root.querySelector('input, textarea, select');
+  const input = fieldOf(root, 'setInputError');
   let err = root.querySelector('[data-part="error"]');
   if (message) {
     if (!err) { err = document.createElement('p'); err.dataset.part = 'error'; err.id = `${input.id}-error`; root.append(err); }
@@ -105,21 +118,25 @@ export function setInputError(root, message) {
   return root;
 }
 
-/** <article data-component="card">. Options: { variant, interactive, as, children: Node[] | string } */
-export function createCard({ variant, interactive = false, as = 'article', children = [] } = {}) {
+/** <article data-component="card">. Options: { variant, interactive, enter, as, children: Node[] | string }
+ *  enter plays the entrance animation (data-enter): use it for a card added after load, not every card in a list. */
+export function createCard({ variant, interactive = false, enter = false, as = 'article', children = [] } = {}) {
   const c = document.createElement(as);
   c.dataset.component = 'card';
   c.dataset.variant = pick('card', variant, 'flat');
   if (interactive) c.dataset.interactive = '';
+  if (enter) c.dataset.enter = '';
   c.append(...(typeof children === 'string' ? [children] : children));
   return c;
 }
 
-/** <span data-component="badge">. The text is the status; color is never the only signal. */
-export function createBadge({ label, variant } = {}) {
+/** <span data-component="badge">. The text is the status; color is never the only signal.
+ *  live: a status that changes while the user is on the page gets role="status" (announced politely). */
+export function createBadge({ label, variant, live = false } = {}) {
   const s = document.createElement('span');
   s.dataset.component = 'badge';
   s.dataset.variant = pick('badge', variant, 'neutral');
+  if (live) s.setAttribute('role', 'status');
   s.textContent = label ?? '';
   return s;
 }
