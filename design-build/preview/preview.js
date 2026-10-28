@@ -1,6 +1,14 @@
 // Builds the token sections of the preview from window.DESIGN_TOKENS (tokens.js). Styles come only from var(--token).
 (function () {
-  var D = window.DESIGN_TOKENS || { tokens: {}, pairings: [] };
+  var D = window.DESIGN_TOKENS;
+  if (!D) {
+    // tokens.js is missing or failed: say so on the page instead of rendering empty sections.
+    var main = document.getElementById('main'), msg = document.createElement('p');
+    msg.className = 'load-error'; msg.setAttribute('role', 'alert');
+    msg.textContent = 'tokens.js did not load, so the token sections are empty. Regenerate it with: node design-build/tokens-css.mjs (from the app root: node design-system/design-build/tokens-css.mjs), then reload.';
+    if (main) main.prepend(msg);
+    D = { tokens: {}, pairings: [] };
+  }
   var T = D.tokens;
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function v(path) { return T[path] ? 'var(' + T[path].var + ')' : ''; }
@@ -11,7 +19,7 @@
   var root = document.documentElement;
   function setTheme(choice) {
     if (choice === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', choice);
-    try { localStorage.setItem('preview-theme', choice); } catch (e) {}
+    try { localStorage.setItem('preview-theme', choice); } catch { /* storage blocked: theme still applies for this page */ }
     document.querySelectorAll('[data-theme-choice]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-theme-choice') === choice)); });
   }
   var current = root.getAttribute('data-theme') || 'system';
@@ -41,8 +49,18 @@
   // Contrast pairings
   var tb = document.getElementById('pairings');
   (D.pairings || []).forEach(function (p) {
-    var tr = el('tr'), td = el('td'), s = el('span', 'pair-sample', 'Aa');
-    s.style.setProperty('color', v(p.fg)); s.style.setProperty('background', v(p.bg));
+    // Text pairings show text; "ui" pairings (3:1, non-text: borders, focus rings, chart marks) show a mark, because
+    // text in a 3:1 color would be a real text-contrast failure on this page.
+    var tr = el('tr'), td = el('td'), s;
+    if (p.size === 'ui') {
+      s = el('span', 'pair-sample');
+      s.setAttribute('role', 'img'); s.setAttribute('aria-label', 'mark in ' + p.fg + ' on ' + p.bg);
+      var mark = el('span', 'pair-mark'); mark.style.setProperty('background', v(p.fg)); s.appendChild(mark);
+    } else {
+      s = el('span', 'pair-sample', 'Aa');
+      s.style.setProperty('color', v(p.fg));
+    }
+    s.style.setProperty('background', v(p.bg));
     td.appendChild(s); tr.appendChild(td);
     tr.appendChild(el('td', null, p.fg)); tr.appendChild(el('td', null, p.bg));
     tr.appendChild(el('td', null, p.target + ':1 (' + p.size + ')'));
@@ -84,19 +102,26 @@
 
   // Data colors
   var ch = document.getElementById('chart');
+  var sample = [64, 41, 78, 52, 35, 80, 46, 59];   // illustrative values out of 100, labeled on the page
   keys('color.data.').forEach(function (k, i) {
-    var bar = el('div', 'bar');
+    var n = k.split('.').pop(), value = sample[i % sample.length];
+    var li = el('li'), plot = el('div', 'plot'), bar = el('div', 'bar');
+    plot.appendChild(el('span', 'value', String(value)));
     bar.style.setProperty('background', v(k));
-    bar.style.setProperty('block-size', (30 + ((i * 37) % 70)) + '%');
-    ch.appendChild(bar);
+    bar.style.setProperty('block-size', value + '%');
+    bar.setAttribute('aria-hidden', 'true');
+    plot.appendChild(bar); li.appendChild(plot);
+    li.appendChild(el('span', 'series', 'S' + n));
+    ch.appendChild(li);
   });
 
   // Motion demo
   var play = document.getElementById('play-motion');
   if (play) play.addEventListener('click', function () {
+    play.setAttribute('aria-pressed', String(play.getAttribute('aria-pressed') !== 'true'));
     document.querySelectorAll('.motion-track').forEach(function (t) { t.classList.toggle('moved'); });
     // Replay the components' CSS animations (card entrance, badge pop-in, input shake). Under reduced motion
-    // components.css sets animation: none, so there is nothing to replay and the page just stays put.
+    // components.css allows only the short opacity fade on the card and badge (core §10), so that is all that replays.
     document.querySelectorAll('#components [data-component="card"], #components [data-component="badge"], #components [data-variant="error"] input').forEach(function (n) {
       n.style.animationName = 'none'; void getComputedStyle(n).animationName; n.style.animationName = '';
     });

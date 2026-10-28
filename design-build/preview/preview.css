@@ -47,9 +47,12 @@ main section { padding-block: var(--space-8); border-block-end: var(--border-wid
 .ring-sample { display: inline-block; inline-size: var(--space-12); block-size: var(--space-8); border-radius: var(--radius-sm); outline: var(--border-width-thick) solid var(--color-focus); outline-offset: var(--border-width-thick); background: var(--color-surface-raised); }
 
 .table-scroll { overflow-x: auto; max-inline-size: 100%; }
-table { border-collapse: collapse; inline-size: 100%; min-inline-size: calc(var(--space-12) * 12); font-size: var(--font-size-caption); }
+/* No min width: at the mobile check width the table wraps instead of scrolling, so every cell is on screen (and axe can measure its contrast). */
+table { border-collapse: collapse; inline-size: 100%; font-size: var(--font-size-caption); }
+td, th { overflow-wrap: anywhere; }
 th, td { text-align: start; padding: var(--space-2) var(--space-3); border-block-end: var(--border-width-thin) solid var(--color-surface-raised); vertical-align: middle; }
 th { font-weight: var(--font-weight-semibold); }
+.pair-mark { display: inline-block; vertical-align: middle; inline-size: var(--space-6); block-size: var(--space-3); border-radius: var(--radius-sm); }
 .pair-sample { display: inline-block; padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); font-size: var(--font-size-body); font-weight: var(--font-weight-semibold); }
 .pass { color: var(--color-semantic-success); font-weight: var(--font-weight-semibold); }
 .fail { color: var(--color-semantic-error); font-weight: var(--font-weight-semibold); }
@@ -71,6 +74,8 @@ th { font-weight: var(--font-weight-semibold); }
 .icon-sizes { display: flex; align-items: center; gap: var(--space-2); }
 
 .motion-demo { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+/* The tracks take their own full row: as a shrink-to-fit flex item they collapsed to one mover wide. */
+.motion-demo > #motion-tracks { flex: 1 1 100%; }
 .mover { inline-size: var(--space-8); block-size: var(--space-8); border-radius: var(--radius-sm); background: var(--color-accent); transition-property: transform; transition-timing-function: var(--motion-ease-standard); transition-duration: var(--motion-duration-base); }
 .mover.fast { transition-duration: var(--motion-duration-fast); }
 .mover.slow { transition-duration: var(--motion-duration-slow); }
@@ -83,7 +88,14 @@ th { font-weight: var(--font-weight-semibold); }
 /* Components: styles ship in components/components.css (linked before this file); only page layout lives here. */
 .row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
 
-.chart { display: flex; align-items: flex-end; gap: var(--space-2); block-size: calc(var(--space-12) * 3); padding: var(--space-3); background: var(--color-surface-raised); border-radius: var(--radius-md); }
-.chart .bar { flex: 1; border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.chart { margin: 0; padding: var(--space-3); background: var(--color-surface-raised); border-radius: var(--radius-md); }
+.chart ol { display: flex; align-items: stretch; gap: var(--space-2); margin: 0; padding: 0; list-style: none; block-size: calc(var(--space-12) * 4); }
+.chart li { flex: 1; min-inline-size: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: var(--space-1); font-size: var(--font-size-caption); color: var(--color-text-primary); }
+.chart .plot { flex: 1; inline-size: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: var(--space-1); }
+.chart .bar { inline-size: 100%; border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.chart .series { color: var(--color-text-secondary); }
+.chart figcaption { margin-block-start: var(--space-2); color: var(--color-text-secondary); font-size: var(--font-size-caption); }
+.load-error { padding: var(--space-4); border: var(--border-width-thick) solid var(--color-semantic-error); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-surface-default); }
+/* Play motion is a toggle (aria-pressed): unpressed it is a secondary button; pressed it takes the primary fill (components.css). */
 
 .site-footer { padding-block: var(--space-8); color: var(--color-text-secondary); font-size: var(--font-size-caption); }

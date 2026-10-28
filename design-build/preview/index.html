@@ -6,6 +6,7 @@
 <title>Design system preview</title>
 <meta name="description" content="Live preview of the tokens and components in this design system. It is built from tokens/tokens.json.">
 <link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../../components/base.css">
 <link rel="stylesheet" href="../../components/components.css">
 <link rel="stylesheet" href="preview.css">
 <script src="tokens.js"></script>
@@ -96,9 +97,9 @@
 
   <section id="motion" aria-labelledby="motion-h">
     <h2 id="motion-h">Motion</h2>
-    <p class="feel">Press play to move the squares at the fast, base and slow durations (standard easing), and to replay the component motion below: card entrance, badge pop-in, the input error shake and the button spinner. With reduced motion nothing moves: the squares jump and the components change state instantly.</p>
+    <p class="feel">Press play to move the squares at the fast, base and slow durations (standard easing), and to replay the component motion below: card entrance, badge pop-in, the input error shake and the button spinner. With reduced motion nothing moves (core §10): the squares jump, the card and badge only fade in (at most <code>motion.duration.fast</code>), the input does not shake and the spinner is a static ring.</p>
     <div class="motion-demo">
-      <button type="button" data-component="button" data-variant="primary" id="play-motion" aria-controls="motion-tracks">Play motion</button>
+      <button type="button" data-component="button" data-variant="secondary" id="play-motion" aria-controls="motion-tracks" aria-pressed="false">Play motion</button>
       <div id="motion-tracks" class="grid-wide">
         <div class="motion-track"><div class="mover fast"></div></div>
         <div class="motion-track"><div class="mover"></div></div>
@@ -135,7 +136,7 @@
     </div>
     <h3>Card</h3>
     <div class="grid-wide">
-      <article data-component="card" data-variant="flat"><h3>Flat card</h3><p>This card sits on the page with only a hairline border.</p></article>
+      <article data-component="card" data-variant="flat" data-enter><h3>Flat card</h3><p>This card sits on the page with only a hairline border. It has <code>data-enter</code>, so it plays the entrance.</p></article>
       <article data-component="card" data-variant="raised"><h3>Raised card</h3><p>This card uses <code>shadow.2</code> to show that it lifts off the page.</p></article>
       <article data-component="card" data-variant="raised" data-interactive><h3><a href="#components">Interactive card</a></h3><p>Hover it or tab to its link: it lifts to <code>shadow.3</code>.</p></article>
     </div>
@@ -151,8 +152,11 @@
 
   <section id="data" aria-labelledby="data-h">
     <h2 id="data-h">Data colors</h2>
-    <p class="feel">These are the eight categorical colors for charts (<code>color.data.1</code> to <code>color.data.8</code>). Label the series too, and never rely on color alone.</p>
-    <div class="chart" id="chart" role="img" aria-label="Sample bar chart using data colors 1 to 8"></div>
+    <p class="feel">These are the eight categorical colors for charts (<code>color.data.1</code> to <code>color.data.8</code>). Each is at least 3:1 against both surfaces in light and dark (the last rows of the contrast table). They color the marks only: every series and value is labeled in text, so the chart reads without color.</p>
+    <figure class="chart">
+      <ol id="chart" aria-label="Sample values, series 1 to 8"></ol>
+      <figcaption>Sample data (illustrative values, not real figures). S1 to S8 are series 1 to 8 (<code>color.data.1</code> to <code>.8</code>); each bar's height is its value out of 100.</figcaption>
+    </figure>
   </section>
 </main>
 
