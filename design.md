@@ -31,6 +31,7 @@ parts:
 ## Folder layout
 ```
 KICKSTART.md               ← paste-in prompt to start a build in any harness
+BOTTLENECKS.md             ← PROPOSALS only: where AI agents stumble and fix options; not rules until moved into these files
 design.md                  ← you are here: index, rules of the system, build workflow, checklist
 design-build/              ← working files during a §16 build (state, research, studies, preview)
 design/

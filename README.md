@@ -96,6 +96,7 @@ Begin with Step 1 now.
 | [`design/motion-video.md`](design/motion-video.md) | §M3: video, titles, captions, sound and export |
 | [`design/print.md`](design/print.md) | §M4: print, packaging and merch |
 | [`KICKSTART.md`](KICKSTART.md) | The same kickstart prompt as above |
+| [`BOTTLENECKS.md`](BOTTLENECKS.md) | Proposed fixes for where AI agents stumble (proposals, not rules yet) |
 | `tokens/tokens.json` | A machine copy of the §13 tokens |
 | `assets/` | Logo, icons, imagery, motion, moodboard, templates and fonts |
 | `design-build/` | Working files during a build: state, research notes, studies and the preview |
