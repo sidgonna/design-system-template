@@ -38,6 +38,8 @@ const RAW = [
 const hasRaw = (s) => RAW.some((re) => { re.lastIndex = 0; return re.test(s); });
 const clean = (s, src) => RAW.reduce((t, re) => t.replace(re, () => `(value in ${src})`), String(s));
 export const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// Long token names and paths in <code> wrap only after a dot or slash (never mid-word): a <wbr> goes after each one.
+export const wrapCode = (html) => html.replace(/(<code\b[^>]*>)([^<]*)(<\/code>)/g, (m, a, t, b) => a + t.replace(/([./])(?=[A-Za-z_{-])/g, '$1<wbr>') + b);
 const stripPh = (s) => String(s).replace(/\{\{|\}\}/g, '');
 const TOKREF = /\{([a-z][\w-]*(?:\.[\w*.-]+)+)\}/gi;
 
@@ -490,7 +492,7 @@ function overviewBody(M) {
 <div class="ov-id">${logo?.svg ? `<div class="ov-logo" style="color: var(${varName(logo.colorPath || 'color.brand.primary')})">${inlineSvg(logo.svg)}</div>` : ''}
 <p class="ov-name">${inline(M.brandRaw, src)}</p>
 <p class="ov-feel">${inline(M.feelLine || '{{one-line feel}}', src)}</p></div>
-<ul class="ov-palette" aria-label="Palette">${sw.map(([p, l]) => `<li class="ov-chip"><span class="chip-fill" style="background: var(${varName(p)})"></span><span class="chip-label">${l}<br><code>${p}</code></span></li>`).join('')}</ul>
+<ul class="ov-palette" aria-label="Palette">${sw.map(([p, l]) => `<li class="ov-chip"><span class="chip-fill" style="background: var(${varName(p)})"></span><span class="chip-label">${l}<br><code class="tok" title="${p}">${p}</code></span></li>`).join('')}</ul>
 <div class="ov-type"><p class="ov-aa" aria-hidden="true">Aa</p><div><p class="ov-heading">Heading in font.family.heading</p><p>Body text in <code>font.family.body</code>, the size people read most.</p><p class="lang-te" lang="te">తెలుగు స్వాగతం</p><p class="lang-hi" lang="hi">हिंदी स्वागत</p></div></div>
 <div class="ov-ui"><div class="row"><button type="button" data-component="button" data-variant="primary">Get started</button><button type="button" data-component="button" data-variant="secondary">Learn more</button></div><div class="row"><span data-component="badge" data-variant="success">Ready</span><span data-component="badge" data-variant="info">New</span></div><div data-component="card" data-variant="raised" class="ov-card"><p><strong>Card</strong> on <code>surface.raised</code></p><div class="ov-icons">${['check', 'search', 'bell', 'heart'].map((k) => svgIcon(k, 'md')).join('')}</div></div></div>
 </div>`;
@@ -639,7 +641,7 @@ ${zones}
     pairings: M.pairings.map((p) => ({ fg: p.fg, bg: p.bg, size: p.size, target: p.target, ratio: Object.fromEntries(Object.entries(p.modes).map(([m, r]) => [m, r?.ratio ?? null])) })),
     review_file: REVIEW_FILE,
   };
-  return { html, json: JSON.stringify(json, null, 1) + '\n', md: companionMd(M, json), model: M };
+  return { html: wrapCode(html), json: JSON.stringify(json, null, 1) + '\n', md: companionMd(M, json), model: M };
 }
 
 const cell = (s) => String(s).replace(/\|/g, '/').replace(/\n/g, ' ');
@@ -734,6 +736,7 @@ ${sections}
 </body>
 </html>
 `;
+  out.html = wrapCode(out.html);
   return out;
 }
 

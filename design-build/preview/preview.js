@@ -17,6 +17,13 @@
   function $(id) { return document.getElementById(id); }
   function all(sel, scope) { return Array.prototype.slice.call((scope || document).querySelectorAll(sel)); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  // A token or CSS variable name that wraps only after its dots or hyphens (color.<wbr>brand.<wbr>primary), never mid-word; the full name is the tooltip.
+  function tok(tag, cls, name, rest) {
+    var e = el(tag, cls); e.title = name;
+    (String(name).match(/^-*[^.-]*[.-]*|[^.-]+[.-]*/g) || []).forEach(function (part, i) { if (!part) return; if (i) e.appendChild(document.createElement('wbr')); e.appendChild(document.createTextNode(part)); });
+    if (rest) e.appendChild(document.createTextNode(rest));
+    return e;
+  }
   function v(path) { return T[path] ? 'var(' + T[path].var + ')' : ''; }
   function val(path, mode) { var t = T[path]; return t ? (t.css[mode] || t.css.base) : ''; }
   function keys(prefix) { return Object.keys(T).filter(function (k) { return k.indexOf(prefix) === 0; }); }
@@ -48,7 +55,7 @@
     } else {
       chip.style.setProperty('background', v(k));
     }
-    meta.appendChild(el('strong', null, k));
+    meta.appendChild(tok('strong', 'tok', k));
     meta.appendChild(el('span', null, val(k, 'light') + ' / ' + val(k, 'dark')));
     card.appendChild(chip); card.appendChild(meta); sw.appendChild(card);
   });
@@ -98,13 +105,13 @@
   if (ss) keys('space.').forEach(function (k) {
     var row = el('div', 'space-row'), bar = el('div', 'space-bar');
     bar.style.setProperty('inline-size', v(k));
-    row.appendChild(bar); row.appendChild(el('code', null, k + ' · ' + val(k, 'base')));
+    row.appendChild(bar); row.appendChild(tok('code', 'tok', k, ' · ' + val(k, 'base')));
     ss.appendChild(row);
   });
 
   var sh = $('shapes');
   if (sh) keys('radius.').concat(keys('shadow.')).forEach(function (k) {
-    var b = el('div', 'shape', k);
+    var b = tok('div', 'shape', k);
     if (k.indexOf('radius.') === 0) b.style.setProperty('border-radius', v(k));
     else { b.style.setProperty('box-shadow', v(k)); b.style.setProperty('border-radius', v('radius.md')); }
     sh.appendChild(b);
@@ -112,14 +119,14 @@
 
   var bp = $('breakpoints');
   if (bp) keys('breakpoint.').concat(keys('viewport.')).forEach(function (k) {
-    var li = el('li'); li.appendChild(el('code', null, k)); li.appendChild(document.createTextNode(' · ' + val(k, 'base')));
+    var li = el('li'); li.appendChild(tok('code', 'tok', k)); li.appendChild(document.createTextNode(' · ' + val(k, 'base')));
     bp.appendChild(li);
   });
 
   var tt = $('token-table');
   if (tt) Object.keys(T).forEach(function (k) {
     var tr = el('tr');
-    tr.appendChild(el('td', null, k)); tr.appendChild(el('td', null, T[k].var));
+    tr.appendChild(tok('td', 'tok', k)); tr.appendChild(tok('td', 'tok', T[k].var));
     tr.appendChild(el('td', null, val(k, 'light'))); tr.appendChild(el('td', null, val(k, 'dark')));
     tt.appendChild(tr);
   });
