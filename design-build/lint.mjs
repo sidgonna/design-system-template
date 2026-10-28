@@ -2,12 +2,14 @@
 // design-build/lint.mjs — static checks for this design system (design.md §16 Phase 4 lint block, §15).
 // Zero dependencies: Node >= 18 built-ins only. Every finding prints file:line, the bad value and the exact fix.
 //
-// Usage: node design-build/lint.mjs [--json] [--baseline] [--src <dir>]... [--root <dir>] [--phase <n>] [--record] [--quiet]
+// Usage (from the app root): node design-system/design-build/lint.mjs [--json] [--baseline] [--src <dir>]... [--root <dir>] [--phase <n>] [--record] [--quiet]
+//   Lints the design docs, tokens, the design system's own preview/studies AND the app's code: src/, app/, pages/,
+//   components/, styles/, top-level *.html/*.css and public/*.html (or design-build/project.json → code_dirs).
 //   --json       machine-readable result on stdout
 //   --baseline   write design-build/lint-baseline.json with today's counts per rule (needs the user's approval, §0.5);
-//                later runs fail only when a rule's count rises above its baseline
-//   --src <dir>  also lint this code directory or file (repeatable), e.g. --src src --src app
-//   --root <dir> repo root (default: the folder above design-build/)
+//                later runs fail when a rule's count rises above its baseline, so counts can only go down
+//   --src <dir>  also lint this code directory or file (repeatable)
+//   --root <dir> the project (app) root. Default: git top level, else the nearest package.json above design-system/
 //   --phase <n>  treat the build as being in phase n (default: design-build/state.yaml → phase)
 //   --record     write the result to design-build/state.yaml → checks.lint
 // Exit codes: 0 pass, 1 fail, 2 internal error.
@@ -19,6 +21,7 @@ import { inSection, yamlBlock, yamlBlockKeys, table, placeholders, unwrap, analy
 import { parseColor, parseDtcgColor, toHex, deltaE, srgbToOklch, suggestPassingColor } from './lib/color.mjs';
 import { varName, toPx, collectAliases } from './lib/tokens.mjs';
 import { generate } from './tokens-css.mjs';
+import { DS_ROOT, findProject, fixHint, appCodeTargets, projectConfig, APP_EXCLUDE } from './lib/project.mjs';
 
 const RULES = {
   'raw-value': 'raw hex/rgb/hsl/oklch/px/ms value outside the token-owning sections and files',
@@ -31,9 +34,11 @@ const RULES = {
   completion: 'filled placeholders below the Phase 4 minimum (phase >= 4 only)',
   'tokens-format': 'tokens_file is not valid DTCG, or a themed color lacks a mode',
   'tokens-sync': 'core.md §13 and tokens_file disagree',
-  'tokens-css-stale': 'generated preview/tokens.css or tokens.js out of date',
+  'tokens-css-stale': 'generated preview/tokens.css, tokens.js or tokens.mjs out of date',
   'seed-cap': 'a §16.2 seed group has more entries than allowed',
   'kickstart-sync': 'README kickstart block differs from KICKSTART.md',
+  'tokens-import': 'Phase 6+: no app code file imports the generated tokens.css',
+  layout: 'the design system is not where the scripts expect it (warning)',
   'checklist-15': '§15 items that need a person (info only)',
 };
 
@@ -105,16 +110,31 @@ function tokenIndex(ctx) {
   return { colors, dims, durs };
 }
 
-function suggestFor(ctx, idx, hit, inCode) {
+// Which slot (background / foreground / border) a raw value sits in, from the CSS property or utility class before it.
+const SLOT_OF = { background: /^(background|background-color|background-image|bg|fill-bg)$/, foreground: /^(color|fill|stroke|-webkit-text-fill-color|text-decoration-color|caret-color|text|placeholder)$/, border: /^(border(-[a-z]+)*|outline(-color)?|ring|divide|column-rule-color)$/ };
+function slotAt(line, index) {
+  const before = line.slice(0, index);
+  const tw = before.match(/\b(bg|text|fill|stroke|border|outline|ring|divide|placeholder)-\[$/);
+  const prop = tw ? tw[1] : (before.match(/["']?([a-zA-Z-]+)["']?\s*:\s*[^;:{}]*$/)?.[1] || '').replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
+  return Object.entries(SLOT_OF).find(([, re]) => re.test(prop))?.[0] || null;
+}
+// Token groups that never fit a slot: text colors are not backgrounds, surfaces are not text.
+const WRONG_GROUP = { background: ['text'], foreground: ['surface'], border: [] };
+const fitsSlot = (p, slot) => !slot || !WRONG_GROUP[slot].includes(p.split('.')[1]);
+
+function suggestFor(ctx, idx, hit, inCode, slot = null) {
   const use = (paths) => paths.map((p) => (inCode ? `var(${varName(p)})` : ref(p))).join(' or ');
   if (hit.kind === 'hex' || hit.kind === 'color-fn') {
     const c = parseColor(hit.value);
-    if (!c) return `replace it with a color token from §13, e.g. ${use(['color.text.primary'])}`;
-    const exact = [...new Set(idx.colors.filter((t) => t.hex.toLowerCase() === toHex(c).toLowerCase()).map((t) => t.path))];
+    const role = slot ? ` for a ${slot}` : '';
+    if (!c) return `replace it with a color token from §13, e.g. ${use([slot === 'background' ? 'color.surface.default' : 'color.text.primary'])}`;
+    const all = [...new Set(idx.colors.filter((t) => t.hex.toLowerCase() === toHex(c).toLowerCase()).map((t) => t.path))];
+    const exact = all.filter((p) => fitsSlot(p, slot));
     if (exact.length === 1) return `use ${use(exact)} (same value)`;
     if (exact.length > 1) return `use ${use(exact)} (all have this value; pick the one whose §4 role matches this use)`;
-    const near = [...new Map(idx.colors.map((t) => [t.path, { path: t.path, d: deltaE(c, t.c) }])).values()].sort((a, b) => a.d - b.d).slice(0, 3);
-    return `no token has this value; use the closest by role: ${near.map((n) => `${use([n.path])} (ΔE ${n.d.toFixed(1)})`).join(', ')}, or add a token to §13 and tokens_file`;
+    const near = [...new Map(idx.colors.filter((t) => fitsSlot(t.path, slot)).map((t) => [t.path, { path: t.path, d: deltaE(c, t.c) }])).values()].sort((a, b) => a.d - b.d).slice(0, 3);
+    const wrong = all.length ? `${use(all)} has this value but is not a ${slot} role; ` : 'no token has this value; ';
+    return `${wrong}use the closest token${role}: ${near.map((n) => `${use([n.path])} (ΔE ${n.d.toFixed(1)})`).join(', ')}, or add a token to §13 and tokens_file`;
   }
   if (hit.kind === 'px') {
     const px = parseFloat(hit.value);
@@ -151,15 +171,17 @@ function missingRange(ctx, p) {
 }
 
 // ---------- code files ----------
-function walkFiles(dir, exts, exclude, out = []) {
+const lintable = (f, exts) => exts.includes(path.extname(f).toLowerCase()) && !/\.d\.ts$|\.min\.(js|css)$/.test(f);
+function walkFiles(dir, exts, exclude, excludeAbs = [], out = []) {
   let ents;
-  try { if (fs.statSync(dir).isFile()) { if (exts.includes(path.extname(dir).toLowerCase())) out.push(dir); return out; } } catch { return out; }
+  if (excludeAbs.some((x) => dir === x || dir.startsWith(x + path.sep))) return out;
+  try { if (fs.statSync(dir).isFile()) { if (lintable(dir, exts)) out.push(dir); return out; } } catch { return out; }
   try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return out; }
   for (const e of ents) {
     if (exclude.includes(e.name)) continue;
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) walkFiles(p, exts, exclude, out);
-    else if (exts.includes(path.extname(e.name).toLowerCase())) out.push(p);
+    if (e.isDirectory()) walkFiles(p, exts, exclude, excludeAbs, out);
+    else if (lintable(e.name, exts)) out.push(p);
   }
   return out;
 }
@@ -200,13 +222,16 @@ const TW_SLOT = { bg: 'background', text: 'foreground', fill: 'foreground', stro
 
 // ---------- main ----------
 export function lint(opts = {}) {
-  const root = path.resolve(opts.root || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'));
+  // root = the design-system folder (where design.md lives); project = the app it serves (see lib/project.mjs).
+  const root = path.resolve(opts.root || DS_ROOT);
+  const where = findProject(root, opts.project || null);
   const ctx = loadContext(root);
   const C = ctx.config;
   const findings = [];
   const add = (rule, severity, file, line, message, fix, extra = {}) => findings.push({ rule, severity, file, line, message, fix, ...extra });
   const idx = tokenIndex(ctx);
-  const phase = opts.phase ?? (typeof ctx.state.phase === 'number' ? ctx.state.phase : ctx.state.phase === 'done' ? 6 : 0);
+  const phase = opts.phase ?? (typeof ctx.state.phase === 'number' ? ctx.state.phase : ctx.state.phase === 'done' ? 7 : 0);
+  for (const w of where.warnings) add('layout', 'warning', 'design.md', 1, w, 'use the supported layout: the template in design-system/ at the app root, committed in the app\'s own repo (README Quick start)');
   const isAllowed = (rule, file, section) => C.allow.some((a) => a.rule === rule && a.file === file && (!a.section || inSection(section, a.section)));
   const isTokenSection = (file, section) => C.token_sections.some((t) => t.file === file && inSection(section, t.section));
 
@@ -324,7 +349,7 @@ export function lint(opts = {}) {
   // ---- tokens-css-stale ----
   try {
     const gen = generate(root);
-    for (const [f, c] of [['design-build/preview/tokens.css', gen.css], ['design-build/preview/tokens.js', gen.js]]) {
+    for (const [f, c] of [['design-build/preview/tokens.css', gen.css], ['design-build/preview/tokens.js', gen.js], ['design-build/preview/tokens.mjs', gen.mjs]]) {
       const abs = path.join(root, f);
       if (!fs.existsSync(abs)) add('tokens-css-stale', 'error', f, 1, `${f} is missing`, 'run: node design-build/tokens-css.mjs');
       else if (fs.readFileSync(abs, 'utf8') !== c) add('tokens-css-stale', 'error', f, 1, `${f} is out of date with ${ctx.tokensRel}`, 'run: node design-build/tokens-css.mjs (never hand-edit generated files)');
@@ -365,9 +390,15 @@ export function lint(opts = {}) {
   }
 
   // ---- code files ----
-  const codeDirs = [...C.code_dirs.map((d) => path.join(root, d)), ...(opts.src || []).map((d) => path.resolve(d))];
+  const pcfg = projectConfig(root);
+  const app = appCodeTargets(where, pcfg);
+  const excludeNames = [...new Set([...C.exclude_dirs, ...APP_EXCLUDE])];
+  const ownFiles = C.code_dirs.flatMap((d) => walkFiles(path.join(root, d), C.code_extensions, C.exclude_dirs));
+  const appFiles = app.targets.flatMap((d) => walkFiles(d, C.code_extensions, excludeNames, app.exclude));
+  const srcFiles = (opts.src || []).flatMap((d) => walkFiles(path.resolve(d), C.code_extensions, C.exclude_dirs));
   const generated = new Set(C.generated_files.map((f) => path.join(root, f)));
-  const codeFiles = [...new Set(codeDirs.flatMap((d) => walkFiles(d, C.code_extensions, C.exclude_dirs)))].filter((f) => !generated.has(f));
+  const codeFiles = [...new Set([...ownFiles, ...appFiles, ...srcFiles])].filter((f) => !generated.has(f));
+  const bpPx = new Map(idx.dims.filter((d) => /^(breakpoint|viewport)\./.test(d.path)).map((d) => [d.px, d.path]));
   const varNames = new Map([...ctx.flat.keys()].map((p) => [varName(p), p]));
 
   // role slots from §4 table
@@ -460,11 +491,17 @@ export function lint(opts = {}) {
     lines.forEach((ln, i) => {
       const n = i + 1;
       const noComment = ln.replace(/\/\*.*?\*\/|<!--.*?-->/g, (c) => ' '.repeat(c.length)).replace(/(^|\s)\/\/.*$/, '');
+      const mq = noComment.match(/@(?:media|container)\b[^{]*/);
+      const mqEnd = mq ? mq.index + mq[0].length : -1;
       for (const h of findRaw(noComment)) {
         if (isAllowed('raw-value', f, null)) continue;
-        if (/^\s*--[\w-]+\s*:/.test(noComment) && !varNames.has(noComment.trim().split(':')[0])) { /* local custom property definitions still count */ }
-        const inMedia = /@media|@container/.test(noComment);
-        add('raw-value', 'error', f, n, `raw ${h.kind === 'color-fn' ? 'color' : h.kind} value "${h.value}"`, inMedia ? `CSS variables can't be used in media queries: use a container query on a token width, or ask the user to allowlist this file in lint.config.json. Nearest token: ${suggestFor(ctx, idx, h, false)}` : suggestFor(ctx, idx, h, true), { value: h.value });
+        if (mq && h.index >= mq.index && h.index < mqEnd && h.kind === 'px') {
+          // CSS variables can't be used in media queries, so a px value there is fine when it IS a breakpoint token.
+          if (bpPx.has(Math.abs(parseFloat(h.value)))) continue;
+          add('raw-value', 'error', f, n, `media/container query width "${h.value}" is not a breakpoint token`, `use a breakpoint from §M1.3: ${[...bpPx].sort((a, b) => a - b).map((v) => `${v}px (${bpPx.get(v)})`).join(', ') || '(none defined)'}; CSS variables can't go in a media query, so write the token's px value. Or add the breakpoint to §13 and tokens_file`, { value: h.value });
+          continue;
+        }
+        add('raw-value', 'error', f, n, `raw ${h.kind === 'color-fn' ? 'color' : h.kind} value "${h.value}"`, suggestFor(ctx, idx, h, true, slotAt(noComment, h.index)), { value: h.value });
       }
       for (const m of noComment.matchAll(/var\(\s*(--[\w-]+)/g)) {
         if (varNames.has(m[1]) || localVars.has(m[1])) continue;
@@ -533,10 +570,15 @@ export function lint(opts = {}) {
         if (v && !(c.variants || []).includes(v[1])) add('unknown-component', 'error', f, n, `${c.name} has no variant "${v[1]}"`, `use one of: ${(c.variants || []).join(', ')}`, { value: v[1] });
       }
       if (['.jsx', '.tsx', '.vue', '.svelte', '.astro'].includes(ext)) {
-        const imported = new Set([...text.matchAll(/import\s+(?:(\w+)|\{([^}]+)\})/g)].flatMap((m) => (m[1] ? [m[1]] : m[2].split(',').map((s) => s.trim().split(/\s+as\s+/).pop()))));
+        const importFrom = new Map();
+        for (const m of text.matchAll(/import\s+(?:type\s+)?(?:(\w+)\s*,?\s*)?(?:\{([^}]+)\})?\s*from\s*["']([^"']+)["']/g)) for (const n of [m[1], ...(m[2] || '').split(',').map((s) => s.trim().split(/\s+as\s+/).pop())].filter(Boolean)) importFrom.set(n, m[3]);
+        const imported = new Set(importFrom.keys());
+        // Components imported from a package (react-router, a UI kit…) are not this project's components, unless
+        // that package is the inventory's "library". Local imports (./, ../, @/, ~/) and unimported tags are checked.
+        const fromPackage = (tag) => { const s = importFrom.get(tag.split('.')[0]); return !!s && !/^(\.|@\/|~\/|#)/.test(s) && !(inv.library && (s === inv.library || s.startsWith(inv.library + '/'))); };
         for (const m of text.matchAll(/<([A-Z][\w]*(?:\.[A-Z]\w*)?)\b([^>]*?)\/?>/g)) {
           const tag = m[1];
-          if (ignTags.has(tag)) continue;
+          if (ignTags.has(tag) || fromPackage(tag)) continue;
           const n = text.slice(0, m.index).split('\n').length;
           const c = comps.get(normName(tag)) || comps.get(normName(tag.split('.').pop()));
           if (!c) { add('unknown-component', 'error', f, n, `<${tag}> is not in ${ctx.inventoryRel}${imported.has(tag) ? '' : ' (and is not imported)'}`, `reuse ${didYouMean(tag, (inv.components || []).map((x) => x.name)).join(' or ') || 'an existing component'}; if it really exists, add it to inventory.json with its import path (KICKSTART Step 2)`, { value: tag }); continue; }
@@ -552,6 +594,10 @@ export function lint(opts = {}) {
     }
   }
   for (const j of justifiedSkip) add('avoid-default', 'info', 'design/core.md', j.line, `${j.id} is allowed: "${j.justified}"`, 'none (justified in §2)');
+
+  // ---- tokens-import (Phase 6: the app must load the generated tokens) ----
+  if (phase >= 6 && appFiles.length && !appFiles.some((a) => /tokens\.css['"]|tokens\.css\)|tokens\.mjs['"]/.test(fs.readFileSync(a, 'utf8'))))
+    add('tokens-import', 'error', path.relative(root, app.targets[0] || where.project) || '.', 1, `no app file imports the generated tokens (${app.how})`, `import the generated tokens once in the app entry, e.g. in ${path.relative(where.project, app.targets[0] || where.project).split(path.sep).join('/') || '.'}/main.tsx: import '${(path.relative(app.targets[0] || where.project, path.join(root, 'design-build/preview/tokens.css')).split(path.sep).join('/')).replace(/^(?!\.)/, './')}' (design.md §16 Phase 6 step 1)`);
 
   // ---- completion ----
   const tp = C.template_placeholders;
@@ -571,7 +617,10 @@ export function lint(opts = {}) {
   if (ctx.index) for (const L of ctx.index.analysis.lines) if (inSection(L.section, '§15') && /^- \[ \]/.test(L.text) && !/\*\(auto/.test(L.text)) manual.push({ line: L.n, item: L.text.replace(/^- \[ \]\s*/, '') });
   for (const m of manual) add('checklist-15', 'info', C.index, m.line, `needs a person: ${m.item.replace(/\*\(.*?\)\*/g, '').trim()}`, 'check it by hand before delivery');
 
-  return { ctx, findings, completion, remaining, initial, phase, fileCount, codeFiles: codeFiles.map((a) => rel(ctx, a)), phPerFile };
+  // Report every path relative to the project root and every command so it runs from there.
+  const toProject = (f) => path.relative(where.project, path.resolve(root, f)).split(path.sep).join('/') || '.';
+  for (const x of findings) { x.file = toProject(x.file); x.message = fixHint(where, x.message); x.fix = fixHint(where, x.fix); }
+  return { ctx, where, app, findings, completion, remaining, initial, phase, fileCount, appFileCount: appFiles.length, codeFiles: codeFiles.map((a) => path.relative(where.project, a).split(path.sep).join('/')), phPerFile };
 }
 
 function parseMin(ctx) {
@@ -591,7 +640,7 @@ function sameValue(type, a, b) {
 }
 
 // ---------- output ----------
-function format(res, baseline, opts) {
+export function format(res, baseline, opts) {
   const errors = res.findings.filter((f) => f.severity === 'error');
   const warnings = res.findings.filter((f) => f.severity === 'warning');
   const counts = {};
@@ -606,20 +655,21 @@ function format(res, baseline, opts) {
     failing = errors.filter((e) => rose.includes(e.rule));
   }
   const ok = failing.length === 0;
-  return { ok, phase: res.phase, summary: { errors: errors.length, failing: failing.length, warnings: warnings.length, info: res.findings.length - errors.length - warnings.length, counts, baseline: baseline ? baseline.counts : null, rules_over_baseline: rose, rules_under_baseline: fell, completion: Number(res.completion.toFixed(4)), placeholders_remaining: res.remaining, code_files: res.fileCount, pairings_checked: res.ctx.pairings.length, modes: res.ctx.loaded.modes, tokens: res.ctx.loaded.tokens.size }, errors, warnings, info: res.findings.filter((f) => f.severity === 'info') };
+  return { ok, phase: res.phase, summary: { errors: errors.length, failing: failing.length, warnings: warnings.length, info: res.findings.length - errors.length - warnings.length, counts, baseline: baseline ? baseline.counts : null, rules_over_baseline: rose, rules_under_baseline: fell, completion: Number(res.completion.toFixed(4)), placeholders_remaining: res.remaining, code_files: res.fileCount, app_code_files: res.appFileCount, project_root: res.where.project, app_code: res.app.how, pairings_checked: res.ctx.pairings.length, modes: res.ctx.loaded.modes, tokens: res.ctx.loaded.tokens.size }, errors, warnings, info: res.findings.filter((f) => f.severity === 'info') };
 }
 
 function main() {
   let opts;
   try { opts = parseArgs(process.argv.slice(2)); } catch (e) { console.error(e.message); process.exit(2); }
-  if (opts.help) { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 14).map((l) => l.replace(/^\/\/ ?/, '')).join('\n')); return; }
-  const root = path.resolve(opts.root || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'));
+  if (opts.help) { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 17).map((l) => l.replace(/^\/\/ ?/, '')).join('\n')); return; }
+  const root = DS_ROOT;
   const baselineFile = path.join(root, 'design-build/lint-baseline.json');
-  const res = lint({ ...opts, root });
+  const res = lint({ ...opts, root, project: opts.root });
+  const relP = (f) => path.relative(res.where.project, f).split(path.sep).join('/');
   if (opts.baseline) {
     const out = format(res, null, opts);
     fs.writeFileSync(baselineFile, JSON.stringify({ $comment: 'Written by lint.mjs --baseline. PROTECTED (design.md §0.5): only regenerate with the user\'s approval. Runs fail when a rule\'s error count rises above these.', created: new Date().toISOString(), commit: gitHead(root), counts: out.summary.counts }, null, 2) + '\n');
-    console.log(`wrote ${rel(res.ctx, baselineFile)} (${out.summary.errors} existing errors baselined)`);
+    console.log(`wrote ${relP(baselineFile)} (${out.summary.errors} existing errors baselined: ${Object.entries(out.summary.counts).filter(([, c]) => c).map(([r, c]) => `${r} ${c}`).join(', ') || 'none'}). From now on a rule's count may only go down.`);
     return;
   }
   const baseline = readJson(baselineFile, null);
@@ -632,8 +682,9 @@ function main() {
   for (const w of out.warnings) console.log(show(w, 'warning'));
   if (!opts.quiet) for (const i of out.info) console.log(`${i.file}:${i.line}  info ${i.rule}  ${i.message}`);
   const s = out.summary;
-  console.log(`\ndesign lint: ${out.ok ? 'PASS' : 'FAIL'} — ${s.errors} error(s)${baseline ? ` (${s.failing} over baseline in: ${s.rules_over_baseline.join(', ') || 'none'})` : ''}, ${s.warnings} warning(s), ${s.info} info · ${s.tokens} tokens, ${s.modes.join('/')} modes, ${s.pairings_checked} pairings, ${s.code_files} code files · completion ${(s.completion * 100).toFixed(1)}% (phase ${out.phase}${out.phase < 4 ? ', enforced from phase 4' : ''})`);
-  if (baseline && s.rules_under_baseline.length) console.log(`baseline: counts dropped (${s.rules_under_baseline.join(', ')}). Ask the user to lower the ceiling with \`node design-build/lint.mjs --baseline\` so the gain is locked in.`);
+  console.log(`\napp code: ${res.app.how} · project root: ${res.where.project} (${res.where.how})`);
+  console.log(`design lint: ${out.ok ? 'PASS' : 'FAIL'} — ${s.errors} error(s)${baseline ? ` (${s.failing} over baseline in: ${s.rules_over_baseline.join(', ') || 'none'})` : ''}, ${s.warnings} warning(s), ${s.info} info · ${s.tokens} tokens, ${s.modes.join('/')} modes, ${s.pairings_checked} pairings, ${s.code_files} code files (${s.app_code_files} app) · completion ${(s.completion * 100).toFixed(1)}% (phase ${out.phase}${out.phase < 4 ? ', enforced from phase 4' : ''})`);
+  if (baseline && s.rules_under_baseline.length) console.log(`baseline: counts dropped (${s.rules_under_baseline.join(', ')}). Ask the user to lower the ceiling with \`${fixHint(res.where, 'node design-build/lint.mjs --baseline')}\` so the gain is locked in.`);
   process.exit(out.ok ? 0 : 1);
 }
 

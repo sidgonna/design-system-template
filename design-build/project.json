@@ -1,0 +1,7 @@
+{
+  "$comment": "Project settings for the app this design system serves. NOT protected: written in KICKSTART Step 2 with the user's approval (design.md §0.5). Paths are relative to the project (app) root. code_dirs: null = auto-detect src/, app/, pages/, components/, styles/, top-level *.html/*.css and public/*.html. You may ADD folders; removing a folder or adding an exclude to make lint pass needs the user's approval, like any check change. app_url: the dev-server URL that render.mjs --url checks in Phase 6.",
+  "code_dirs": null,
+  "exclude": [],
+  "app_url": null,
+  "dev_command": null
+}
