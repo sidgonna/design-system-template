@@ -1,4 +1,3 @@
-# GitHub Actions workflow for the design checks. It ships here because the bot that added it lacked the
 # PROTECTED (design.md §0.5): agents must not edit or disable it without the owner's approval.
 name: design-checks
 
