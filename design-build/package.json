@@ -1,0 +1,21 @@
+{
+  "name": "design-build-checks",
+  "private": true,
+  "description": "Quality checks for this design system: render + axe harness and the DTCG tokens check. lint.mjs needs none of these dependencies.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "lint": "node lint.mjs",
+    "lint:json": "node lint.mjs --json",
+    "test": "node test/run.mjs",
+    "render": "node render.mjs",
+    "check": "node test/run.mjs && node lint.mjs && npm run tokens:check && node render.mjs",
+    "tokens:check": "tz check ../tokens/tokens.json --config terrazzo.config.mjs",
+    "postinstall": "echo 'Next: npx playwright install chromium (add --with-deps on Linux CI)'"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
+    "@terrazzo/cli": "2.10.0"
+  }
+}

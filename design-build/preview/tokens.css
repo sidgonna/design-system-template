@@ -1,0 +1,120 @@
+/* GENERATED from tokens/tokens.json by design-build/tokens-css.mjs. Do not edit: change the tokens and re-run. */
+:root {
+  color-scheme: light dark;
+  --color-brand-primary: #0b5d52;
+  --color-brand-secondary: #8a4b14;
+  --color-accent: #c2410c;
+  --color-surface-default: #ffffff;
+  --color-surface-raised: #f5f4f1;
+  --color-surface-inverse: #1c1b19;
+  --color-text-primary: #1c1b19;
+  --color-text-secondary: #57534e;
+  --color-text-inverse: #fafaf9;
+  --color-semantic-success: #15803d;
+  --color-semantic-warning: #b45309;
+  --color-semantic-error: #b91c1c;
+  --color-semantic-info: #1d4ed8;
+  --color-data-1: #e69f00;
+  --color-data-2: #56b4e9;
+  --color-data-3: #009e73;
+  --color-data-4: #f0e442;
+  --color-data-5: #0072b2;
+  --color-data-6: #d55e00;
+  --color-data-7: #cc79a7;
+  --color-data-8: #7f7f7f;
+  --color-focus: #0b5d52;
+  --font-family-heading: "Source Serif 4", Georgia, serif;
+  --font-family-body: "Atkinson Hyperlegible", Verdana, sans-serif;
+  --font-family-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-family-te: "Noto Sans Telugu", sans-serif;
+  --font-family-hi: "Noto Sans Devanagari", sans-serif;
+  --font-size-display: 3rem;
+  --font-size-h1: 2.25rem;
+  --font-size-h2: 1.75rem;
+  --font-size-h3: 1.375rem;
+  --font-size-body-lg: 1.125rem;
+  --font-size-body: 1rem;
+  --font-size-caption: 0.875rem;
+  --font-size-overline: 0.75rem;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-line-height-tight: 1.15;
+  --font-line-height-base: 1.5;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-base: 4px;
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --border-width-thin: 1px;
+  --border-width-thick: 2px;
+  --shadow-1: 0 1px 2px 0 #1c1b1914;
+  --shadow-2: 0 4px 12px 0 #1c1b191f;
+  --shadow-3: 0 12px 32px 0 #1c1b1929;
+  --icon-stroke: 1.5px;
+  --icon-padding: 2px;
+  --icon-size-sm: 16px;
+  --icon-size-md: 20px;
+  --icon-size-lg: 24px;
+  --motion-duration-instant: 100ms;
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 250ms;
+  --motion-duration-slow: 400ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-enter: cubic-bezier(0, 0, 0, 1);
+  --motion-ease-exit: cubic-bezier(0.3, 0, 1, 1);
+  --size-logo-min-digital: 24px;
+  --size-logo-min-print-mm: 10;
+  --size-target-min: 44px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --viewport-mobile: 390px;
+  --viewport-tablet: 768px;
+  --viewport-desktop: 1280px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-brand-primary: #5cc2b1;
+    --color-brand-secondary: #e0a46b;
+    --color-accent: #fb923c;
+    --color-surface-default: #161514;
+    --color-surface-raised: #22201e;
+    --color-surface-inverse: #f5f4f1;
+    --color-text-primary: #f5f4f1;
+    --color-text-secondary: #b8b2aa;
+    --color-text-inverse: #1c1b19;
+    --color-semantic-success: #4ade80;
+    --color-semantic-warning: #fbbf24;
+    --color-semantic-error: #f87171;
+    --color-semantic-info: #93c5fd;
+    --color-focus: #5cc2b1;
+  }
+}
+:root[data-theme="dark"] {
+  --color-brand-primary: #5cc2b1;
+  --color-brand-secondary: #e0a46b;
+  --color-accent: #fb923c;
+  --color-surface-default: #161514;
+  --color-surface-raised: #22201e;
+  --color-surface-inverse: #f5f4f1;
+  --color-text-primary: #f5f4f1;
+  --color-text-secondary: #b8b2aa;
+  --color-text-inverse: #1c1b19;
+  --color-semantic-success: #4ade80;
+  --color-semantic-warning: #fbbf24;
+  --color-semantic-error: #f87171;
+  --color-semantic-info: #93c5fd;
+  --color-focus: #5cc2b1;
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }

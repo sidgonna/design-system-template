@@ -1,0 +1,7 @@
+# Design checks (design-build/): installed deps and generated output
+design-build/node_modules/
+design-build/screenshots/
+design-build/render-report.json
+design-build/a11y-report.json
+design-build/.terrazzo/
+.DS_Store
