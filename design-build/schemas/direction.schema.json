@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "direction.schema.json",
+  "title": "Phase 3 direction (design-build/studies/directions/<ID>.json)",
+  "description": "One visual direction for the Phase 3 studies page. `node design-build/board.mjs --overview-only --direction <ID>` reads it, resolves its tokens and writes <ID>.resolved.json plus studies/index.html.",
+  "type": "object",
+  "required": ["name", "breaks", "signature", "differs"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string", "description": "short direction name" },
+    "breaks": { "type": "string", "description": "the category convention it breaks" },
+    "signature": { "type": "string", "description": "its signature move" },
+    "differs": { "type": "string", "description": "how it differs from the competitor wall" },
+    "tokens": { "type": "string", "description": "DTCG tokens file next to this manifest (e.g. A.tokens.json); omitted = the current tokens_file" },
+    "competitors": { "type": "array", "items": { "$ref": "#/$defs/image" } },
+    "moodboard": { "type": "array", "items": { "$ref": "#/$defs/image" } }
+  },
+  "$defs": {
+    "image": { "type": "object", "required": ["src", "alt"], "additionalProperties": false, "properties": { "src": { "type": "string", "description": "path relative to design-build/studies/" }, "alt": { "type": "string" } } }
+  }
+}

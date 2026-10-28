@@ -87,6 +87,7 @@ logo:
 ```
 - MUST NOT stretch, recolor outside §4, add effects, or place on busy imagery without a scrim.
 - Do and don't examples: `{asset_root}/logo/usage/`.
+- Manifest: `{asset_root}/logo/logo.json` lists each variant's file and its colours as token refs, with backgrounds from `allowed_backgrounds` (schema: `design-build/schemas/logo.schema.json`); `design-build/board.mjs` reads it for the board and stamps the hex values into `board.json`.
 
 ---
 

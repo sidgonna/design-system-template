@@ -1,0 +1,13 @@
+{
+  "$schema": "../../design-build/schemas/logo.schema.json",
+  "$comment": "Logo manifest: which file is each core.md §3 variant and which colours it may use, as token refs only (never hex). The rules (clear space, minimum size, misuse) stay in core.md §3. design-build/board.mjs reads this file for the board and stamps the resolved hex values into design-build/preview/board.json for exports. Replace the placeholder SVGs and set placeholder to false when the real logo arrives.",
+  "placeholder": true,
+  "variants": {
+    "primary":    { "file": "logo-primary.svg",    "use": "Default lockup on light surfaces",          "color": "{color.brand.primary}", "background": "{color.surface.default}" },
+    "wordmark":   { "file": "logo-wordmark.svg",   "use": "Where the mark already appears nearby",     "color": "{color.text.primary}",  "background": "{color.surface.default}" },
+    "mark_only":  { "file": "logo-mark.svg",       "use": "App icons, favicons and small spaces",      "color": "{color.brand.primary}", "background": "{color.surface.default}" },
+    "mono_dark":  { "file": "logo-mono-dark.svg",  "use": "One-colour use on light backgrounds",       "color": "{color.text.primary}",  "background": "{color.surface.default}" },
+    "mono_light": { "file": "logo-mono-light.svg", "use": "One-colour use on the brand colour",        "color": "{color.text.inverse}",  "background": "{color.brand.primary}" },
+    "regional":   { "file": "logo-te.svg",         "use": "Telugu lockup for regional material (§12)", "color": "{color.brand.primary}", "background": "{color.surface.default}" }
+  }
+}

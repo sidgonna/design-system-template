@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "logo.schema.json",
+  "title": "Logo manifest ({asset_root}/logo/logo.json)",
+  "description": "Lists each core.md §3 logo variant's file and the colours it may use, as token references. Rules stay in core.md §3; design-build/board.mjs validates this shape and resolves the references.",
+  "type": "object",
+  "required": ["placeholder", "variants"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "$comment": { "type": "string" },
+    "placeholder": { "type": "boolean", "description": "true while the SVGs are the template's placeholders" },
+    "variants": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["file", "color", "background"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string", "pattern": "^[A-Za-z0-9._-]+\\.svg$", "description": "SVG file next to logo.json, drawn in currentColor" },
+          "use": { "type": "string" },
+          "color": { "$ref": "#/$defs/tokenRef" },
+          "background": { "$ref": "#/$defs/tokenRef" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "tokenRef": { "type": "string", "pattern": "^\\{color(\\.[A-Za-z0-9_-]+)+\\}$", "description": "a colour token reference such as {color.brand.primary}" }
+  }
+}
