@@ -24,6 +24,8 @@ import { TYPE_EXT } from './lib/tokens-css.mjs';
 import { RAMP_EXT, checkRamps } from './lib/ramps.mjs';
 import { generate } from './tokens-css.mjs';
 import { staleFiles as boardStale } from './board.mjs';
+import { exportSync } from './lib/designmd.mjs';
+import { chromeVarNames, checkChrome } from './lib/chrome.mjs';
 import { STATES, DOC_STATES, COMPONENT_HEADINGS, UI_DIR, expected as uiExpected, blockOf, screensOf, resolveSource } from './lib/ui-inventory.mjs';
 import { jsxOpenTags } from './lib/jsx.mjs';
 import { DS_ROOT, findProject, fixHint, appCodeTargets, projectConfig, APP_EXCLUDE } from './lib/project.mjs';
@@ -45,7 +47,9 @@ const RULES = {
   'tokens-format': 'tokens_file is not valid DTCG, or a themed color lacks a mode',
   'tokens-sync': 'core.md §13 and tokens_file disagree',
   'tokens-css-stale': 'generated preview/tokens.css, tokens.js or tokens.mjs out of date',
-  'board-stale': 'generated board (preview/index.html, board.json, board.md) out of date (warning before Phase 5)',
+  'exports-stale': 'generated DESIGN.md, Tailwind or Figma outputs out of date',
+  'board-stale': 'generated board (preview/index.html, board.json, board.md, chrome.css) out of date (warning before Phase 5)',
+  'chrome-tokens': 'the board chrome tokens (design-build/chrome/chrome.tokens.json) are not valid DTCG, a chrome font file is missing, or a chrome pairing is under its contrast minimum',
   'seed-cap': 'a §16.2 seed group has more entries than allowed',
   'kickstart-sync': 'README kickstart block differs from KICKSTART.md',
   'tokens-import': 'Phase 6+: no app code file imports the generated tokens.css',
@@ -405,11 +409,24 @@ export function lint(opts = {}) {
     }
   } catch (e) { add('tokens-css-stale', 'error', 'design-build/tokens-css.mjs', 1, `could not generate tokens.css: ${e.message}`, 'fix tokens_file first'); }
 
+  // ---- exports-stale ----
+  // DESIGN.md, Tailwind and Figma files are generated from the tokens. A drift is an error in every phase.
+  try {
+    const sync = exportSync(root);
+    if (!sync.ok) for (const f of sync.stale) add('exports-stale', 'error', f, 1, `${f} is out of date with ${ctx.tokensRel}`, 'run: node design-build/designmd.mjs (never hand-edit generated files)');
+  } catch (e) { add('exports-stale', 'error', 'design-build/designmd.mjs', 1, `could not generate the DESIGN.md outputs: ${e.message}`, 'fix tokens_file first'); }
+
   // ---- board-stale ----
   // The board is the Phase 5 review page: while drafting it may lag behind (a warning), from Phase 5 it must match.
   try {
-    for (const f of boardStale(root)) add('board-stale', phase >= 5 ? 'error' : 'warning', f, 1, `${f} is out of date with the design files, tokens, inventory or review.json`, 'run: node design-build/board.mjs (never hand-edit generated files)');
+    for (const f of boardStale(root)) add('board-stale', phase >= 5 ? 'error' : 'warning', f, 1, `${f} is out of date with the design files, tokens, chrome tokens, inventory, review.json or the DESIGN.md, Tailwind and Figma outputs`, 'run: node design-build/board.mjs (never hand-edit generated files)');
   } catch (e) { add('board-stale', 'error', 'design-build/board.mjs', 1, `could not build the board: ${e.message}`, 'fix the error above, then run: node design-build/board.mjs'); }
+
+  // ---- chrome-tokens ----
+  // The board's own interface layer (design-build/chrome): checked like tokens_file, but it never reaches app code.
+  try {
+    for (const p of checkChrome(root)) add('chrome-tokens', 'error', p.file, p.line || 1, p.message, p.fix);
+  } catch (e) { add('chrome-tokens', 'error', 'design-build/chrome/chrome.tokens.json', 1, `could not read the chrome tokens: ${e.message}`, 'fix the JSON, then run: node design-build/board.mjs'); }
 
   // ---- contrast ----
   const pr = pairingResults(ctx);
@@ -546,6 +563,10 @@ export function lint(opts = {}) {
   const codeFiles = [...new Set([...ownFiles, ...appFiles, ...srcFiles])].filter((f) => !generated.has(f));
   const bpPx = new Map(idx.dims.filter((d) => /^(breakpoint|viewport)\./.test(d.path)).map((d) => [d.px, d.path]));
   const varNames = new Map([...ctx.flat.keys()].map((p) => [varName(p), p]));
+  // --chrome-* (preview/chrome.css) resolve in the board's own files only; components and app code still need brand tokens
+  let chromeVars = new Set();
+  try { chromeVars = chromeVarNames(root); } catch { /* reported by chrome-tokens */ }
+  const BOARD_DIRS = /^design-build\/(preview|studies)\//;
   // typography composites also emit one variable per field (tokens-css.mjs): --type-body-font-size, ...-font-feature-settings
   for (const [p, e] of ctx.flat) if (e.type === 'typography') for (const prop of [...Object.values(TYPE_PROPS).map(([c]) => c), 'font-feature-settings']) varNames.set(`${varName(p)}-${prop}`, p);
   const numTokens = (re) => [...ctx.flat].filter(([p, e]) => re.test(p) && e.type === 'number').map(([p, e]) => ({ path: p, v: Number(e.css.base ?? Object.values(e.css)[0]) })).filter((t) => Number.isFinite(t.v));
@@ -659,6 +680,7 @@ export function lint(opts = {}) {
           add('token-tier', 'error', f, n, `var(${m[1]}) is a reference ramp step; code uses system roles or component tokens (core.md §13.1)`, roles.length ? `use ${roles.map((r) => `var(${varName(r)})`).join(' or ')} (they alias this step), or a component token` : 'use the §4 role this colour is for (add one if none fits)', { value: `var(${m[1]})` });
         }
         if (varNames.has(m[1]) || localVars.has(m[1])) continue;
+        if (chromeVars.has(m[1]) && BOARD_DIRS.test(f)) continue;
         const dym = didYouMean(m[1], [...varNames.keys(), ...localVars]);
         add('unresolved-token', 'error', f, n, `var(${m[1]}) is not a token or a variable defined in this file`, dym.length ? `did you mean ${dym.map((d) => `var(${d})`).join(', ')}?` : `use a token variable from preview/tokens.css (generated from ${ctx.tokensRel})`, { value: `var(${m[1]})` });
       }

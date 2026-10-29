@@ -1,0 +1,44 @@
+# Brand quick starts. Copy a preset into a new design-system root, then follow design.md §16.
+# Research URL groups are owned by design.md §16.2. Do not copy them here.
+version: "1.0.0"
+quick_starts:
+  - id: godavari-ferry
+    name: "Godavari Ferry"
+    path: examples/godavari-ferry
+    feel: "A paper ticket you can read in full sun, on a moving boat."
+    personality: [plain, punctual, river-literate]
+    themes: [light, dark]
+    default_theme: light
+    ramps:
+      primary: "#163a4a"
+      secondary: "#7c2d2a"
+      accent: "#8a5a12"
+      neutral: "#5c534c"
+      success: "#15803d"
+      warning: "#b45309"
+      error: "#b91c1c"
+      info: "#1d4ed8"
+    fonts:
+      heading: "Fraunces, Source Serif 4, serif"
+      body: "Atkinson Hyperlegible, Verdana, sans-serif"
+    modules: [digital_product, print_physical]
+  - id: sodium-yard
+    name: "Sodium Yard"
+    path: examples/sodium-yard
+    feel: "The yard at night. The next van is a lamp colour, not a sentence."
+    personality: [terse, nocturnal, exact]
+    themes: [dark, light]
+    default_theme: dark
+    ramps:
+      primary: "#c8960a"
+      secondary: "#31485a"
+      accent: "#b8432f"
+      neutral: "#3e4650"
+      success: "#15803d"
+      warning: "#b45309"
+      error: "#b91c1c"
+      info: "#1d4ed8"
+    fonts:
+      heading: "Bricolage Grotesque, Public Sans, sans-serif"
+      body: "Public Sans, sans-serif"
+    modules: [digital_product, print_physical]

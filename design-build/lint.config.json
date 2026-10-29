@@ -5,7 +5,7 @@
   "token_sections": [{ "file": "design/core.md", "section": "§13" }],
   "code_dirs": ["components", "design-build/preview", "design-build/studies"],
   "code_extensions": [".html", ".htm", ".css", ".scss", ".sass", ".less", ".js", ".jsx", ".ts", ".tsx", ".vue", ".svelte", ".astro"],
-  "generated_files": ["design-build/preview/tokens.css", "design-build/preview/tokens.js", "design-build/preview/tokens.mjs"],
+  "generated_files": ["design-build/preview/tokens.css", "design-build/preview/tokens.js", "design-build/preview/tokens.mjs", "design-build/preview/chrome.css"],
   "exclude_dirs": ["node_modules", ".git", "screenshots", "fixtures", ".terrazzo", "dist", "build", ".next"],
   "kickstart_sync": { "source": "KICKSTART.md", "copy": "README.md" },
   "allow": [

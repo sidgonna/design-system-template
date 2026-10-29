@@ -25,6 +25,8 @@ const BUILD = path.resolve(HERE, '..');
 const ROOT = path.resolve(BUILD, '..');
 const FIX = path.join(HERE, 'fixtures');
 const { lint } = await import(path.join(BUILD, 'lint.mjs'));
+const { parseYaml } = await import(path.join(BUILD, 'lib/yaml.mjs'));
+const { loadContext } = await import(path.join(BUILD, 'lib/context.mjs'));
 const args = new Set(process.argv.slice(2));
 
 let passed = 0, failed = 0;
@@ -107,9 +109,13 @@ expectRule('text.secondary made faint in light mode', 'contrast', ({ edit }) => 
 expectRule('brand.primary made faint in dark mode', 'contrast', ({ edit }) => edit('tokens/tokens.json', (s) => setColor(s, 'color.brand.primary', 'dark', '#0b3d36')));
 expectRule('tokens.json edited without core §13', 'tokens-sync', ({ edit }) => edit('tokens/tokens.json', (s) => setColor(s, 'color.accent', 'light', '#b93a0a')));
 expectRule('tokens.json edited without regenerating tokens.css', 'tokens-css-stale', ({ edit }) => edit('tokens/tokens.json', (s) => setColor(s, 'color.accent', 'light', '#b93a0a')));
+expectRule('an export file removed', 'exports-stale', ({ dir }) => fs.rmSync(path.join(dir, 'design-build/exports/DESIGN.md')));
 expectRule('dimension in mm', 'tokens-format', ({ edit }) => edit('tokens/tokens.json', (s) => s.replace('"1": { "$value": { "value": 4, "unit": "px" } }', '"1": { "$value": { "value": 4, "unit": "mm" } }')));
 expectRule('themed color missing its dark mode', 'tokens-format', ({ edit }) => edit('tokens/tokens.json', (s) => { const t = JSON.parse(s); delete t.color.accent.$extensions.mode.dark; return JSON.stringify(t, null, 2); }));
 expectRule('unknown token in a doc', 'unresolved-token', ({ edit }) => edit('design/core.md', (s) => s.replace(/\n## §6/, '\nUse `{color.brand.tertiary}` for links.\n\n## §6')));
+expectRule('a board chrome font file removed', 'chrome-tokens', ({ dir }) => fs.rmSync(path.join(dir, 'design-build/chrome/fonts/hanken-grotesk-wght-normal.woff2')));
+expectRule('a board chrome pairing under its contrast minimum', 'chrome-tokens', ({ edit }) => edit('design-build/chrome/chrome.tokens.json', (s) => s.replace('"min": 1.4 }', '"min": 21 }')));
+expectRule('a component using a board chrome variable (chrome is for the board only)', 'unresolved-token', ({ edit }) => edit('components/components.css', (s) => s + '\n[data-component="button"] { color: var(--chrome-color-ink-1); }\n'));
 expectRule('raw hex in a doc outside §13', 'raw-value', ({ edit }) => edit('design/core.md', (s) => s.replace(/\n## §6/, '\nHeadings are #1a1a1a.\n\n## §6')));
 expectRule('a module redefines a core section', 'ownership-overlap', ({ edit }) => edit('design/digital-product.md', (s) => s + '\n## §4 Color\n\nOverride.\n'));
 expectRule('README kickstart block drifts', 'kickstart-sync', ({ edit }) => edit('README.md', (s) => s.replace(/(```text\n[^\n]*\n)/, '$1EXTRA LINE\n')));
@@ -125,7 +131,7 @@ expectRule('a component doc names a token that does not exist', 'ui-inventory', 
 expectRule('a component doc hard-codes a color', 'ui-inventory', ({ edit }) => edit('ui-inventory/components/input.md', (s) => s + '\nThe error border is #c0392b.\n'));
 expectRule('a component doc names an unknown CSS variable', 'ui-inventory', ({ edit }) => edit('ui-inventory/components/badge.md', (s) => s + '\nPadding is `var(--space-badge-x)`.\n'));
 expectRule('a variant is added to inventory.json but not to its doc', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.components.find((c) => c.name === 'Badge').variants.push('brand'))));
-expectRule('a screen lists a component that is not in inventory.json', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.screens.preview.components.push({ component: 'Avatar', variants: ['default'], states: ['default'] }))));
+expectRule('a screen lists a component that is not in inventory.json', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.screens.preview.components.push({ component: 'NotAComponent', variants: ['default'], states: ['default'] }))));
 expectRule('a screen lists a state outside §M1.2', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.screens.preview.components.find((c) => c.component === 'Button').states.push('pressed-ish'))));
 expectRule('a screen lists a variant the component does not have', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => j.screens.preview.components.find((c) => c.component === 'Card').variants.push('glass'))));
 expectRule('a screen source renders a component the screen does not list', 'ui-inventory', ({ edit }) => edit('design-build/inventory.json', editInv((j) => { j.screens.preview.components = j.screens.preview.components.filter((c) => c.component !== 'Badge'); })));
@@ -138,9 +144,9 @@ test('ui-inventory.mjs: --check passes on the template; a new screen gets its pa
   assert(r.status === 0, `template --check: exit ${r.status}\n${r.stdout}${r.stderr}`);
   const dir = sandbox(({ edit }) => {
     edit('design-build/inventory.json', editInv((j) => {
-      j.components.find((c) => c.name === 'Toast').status = 'existing';
+      j.components.push({ name: 'Sparkline', aliases: [], status: 'existing', import: 'src/Sparkline.tsx', props: [], variants: ['default'] });
       j.components.push({ name: 'App', aliases: [], status: 'existing', import: 'src/App.tsx', props: [], variants: [] }); // app-only: no doc needed
-      j.screens.settings = { name: 'Settings', route: '/settings', purpose: 'Change account details.', source: [], components: [{ component: 'Button', variants: ['primary'], states: ['default', 'loading'] }, { component: 'Toast', variants: [], states: ['default'] }] };
+      j.screens.spark = { name: 'Spark', route: '/spark', purpose: 'Show a sparkline.', source: [], components: [{ component: 'Button', variants: ['primary'], states: ['default', 'loading'] }, { component: 'Sparkline', variants: [], states: ['default'] }] };
     }));
   });
   try {
@@ -148,11 +154,11 @@ test('ui-inventory.mjs: --check passes on the template; a new screen gets its pa
     assert(r.status === 1, `--check should fail before generating, got ${r.status}\n${r.stdout}${r.stderr}`);
     r = ui(dir);
     assert(r.status === 0, `generate: exit ${r.status}\n${r.stdout}${r.stderr}`);
-    assert(fs.existsSync(path.join(dir, 'ui-inventory/screens/settings.md')), 'screen page not created');
-    assert(fs.existsSync(path.join(dir, 'ui-inventory/components/toast.md')), 'missing component doc not created');
-    assert(/\/settings/.test(fs.readFileSync(path.join(dir, 'ui-inventory/index.md'), 'utf8')), 'index.md does not list the new screen');
+    assert(fs.existsSync(path.join(dir, 'ui-inventory/screens/spark.md')), 'screen page not created');
+    assert(fs.existsSync(path.join(dir, 'ui-inventory/components/sparkline.md')), 'missing component doc not created');
+    assert(/\/spark/.test(fs.readFileSync(path.join(dir, 'ui-inventory/index.md'), 'utf8')), 'index.md does not list the new screen');
     const e = errorsOf(lint({ root: dir })).filter((f) => f.rule === 'ui-inventory');
-    assert(e.some((f) => /toast\.md/.test(f.file)), `an unfilled template doc should fail:\n${show(e)}`);
+    assert(e.some((f) => /sparkline\.md/.test(f.file)), `an unfilled template doc should fail:\n${show(e)}`);
     assert(!e.some((f) => /index\.md|button\.md|app\.md/.test(f.file)), `generated files should be fresh and the app-only <App> needs no doc:\n${show(e)}`);
     assert(!fs.existsSync(path.join(dir, 'ui-inventory/components/app.md')), 'a doc was created for the app-only <App>');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
@@ -300,6 +306,7 @@ test('board: every core section, module part, component doc, screen and governan
   const noAnchor = [...ids].filter((id) => !html.includes(`id="tile-${id}"`));
   assert(!noAnchor.length, `tiles without an anchor in preview/index.html: ${noAnchor.join(', ')}`);
   assert(b.zones.length === 7, `want 7 zones, got ${b.zones.length}`);
+  for (const g of ['actions', 'inputs', 'feedback', 'navigation', 'data-display', 'layout']) assert(html.includes(`data-group="${g}"`), `board is missing data-group="${g}"`);
 });
 test('board: the coverage ring counts the same unfilled placeholders as the lint', () => {
   const b = boardJson(ROOT), res = lint({ root: ROOT });
@@ -504,15 +511,15 @@ const THEME_FIX = path.join(FIX, 'themes/make.mjs');
 const { darkOnly, threeTheme } = await import(pathToFileURL(THEME_FIX).href);
 const tz = path.join(BUILD, 'node_modules/.bin/tz');
 for (const [kind, make, themes] of [['dark-only', darkOnly, ['dark']], ['three-theme', threeTheme, ['light', 'dark', 'high-contrast']]]) {
-  test(`theme fixture ${kind}: lint, Terrazzo, tokens.css, board and ui-inventory all pass`, () => withSandbox(({ dir }) => {
+  test(`theme fixture ${kind}: lint, Terrazzo, tokens.css, exports, board and ui-inventory all pass`, () => withSandbox(({ dir }) => {
     make(dir);
-    for (const s of ['tokens-css.mjs', 'board.mjs']) { const r = spawnSync(node, [path.join(dir, 'design-build', s)], { cwd: dir, encoding: 'utf8' }); assert(r.status === 0, `${s}: ${r.stdout}${r.stderr}`); }
+    for (const s of ['tokens-css.mjs', 'designmd.mjs', 'board.mjs']) { const r = spawnSync(node, [path.join(dir, 'design-build', s)], { cwd: dir, encoding: 'utf8' }); assert(r.status === 0, `${s}: ${r.stdout}${r.stderr}`); }
   }, (dir) => {
     const res = lint({ root: dir });
     const bad = res.findings.filter((f) => f.severity !== 'info');
     assert(!bad.length, show(bad));
     assert(JSON.stringify(res.ctx.themes) === JSON.stringify(themes), `themes ${res.ctx.themes}`);
-    for (const [s, ...a] of [['tokens-css.mjs', '--check'], ['board.mjs', '--check'], ['ui-inventory.mjs', '--check']]) { const r = spawnSync(node, [path.join(dir, 'design-build', s), ...a], { cwd: dir, encoding: 'utf8' }); assert(r.status === 0, `${s} ${a}: ${r.stdout}${r.stderr}`); }
+    for (const [s, ...a] of [['tokens-css.mjs', '--check'], ['designmd.mjs', '--check'], ['board.mjs', '--check'], ['ui-inventory.mjs', '--check']]) { const r = spawnSync(node, [path.join(dir, 'design-build', s), ...a], { cwd: dir, encoding: 'utf8' }); assert(r.status === 0, `${s} ${a}: ${r.stdout}${r.stderr}`); }
     const css = fs.readFileSync(path.join(dir, 'design-build/preview/tokens.css'), 'utf8');
     for (const th of themes) assert(css.includes(`:root[data-theme="${th}"]`), `tokens.css has no [data-theme="${th}"] block`);
     if (kind === 'dark-only') assert(!css.includes('prefers-color-scheme') && /color-scheme: dark/.test(css), 'dark-only tokens.css should be dark with no OS switch');
@@ -526,6 +533,38 @@ for (const [kind, make, themes] of [['dark-only', darkOnly, ['dark']], ['three-t
     }
   }));
 }
+test('seeds.yaml matches each example, and a dark-first build emits prefers-color-scheme: light', () => {
+  const doc = parseYaml(fs.readFileSync(path.join(ROOT, 'seeds.yaml'), 'utf8')).value;
+  assert(doc.version === '1.0.0' && Array.isArray(doc.quick_starts) && doc.quick_starts.length >= 2, 'seeds.yaml quick_starts');
+  const seen = new Set();
+  for (const q of doc.quick_starts) {
+    assert(!seen.has(q.id), `duplicate quick start ${q.id}`);
+    seen.add(q.id);
+    const root = path.join(ROOT, q.path);
+    const ctx = loadContext(root);
+    assert(JSON.stringify(ctx.themes) === JSON.stringify(q.themes), `${q.id} themes ${ctx.themes} vs ${q.themes}`);
+    assert(ctx.themes[0] === q.default_theme, `${q.id} default theme`);
+    const core = fs.readFileSync(path.join(root, 'design/core.md'), 'utf8');
+    const index = fs.readFileSync(path.join(root, 'design.md'), 'utf8');
+    assert(index.includes(q.feel), `${q.id} feel is not in design.md`);
+    assert(core.includes(q.fonts.heading) && core.includes(q.fonts.body), `${q.id} font stacks`);
+    for (const [name, hex] of Object.entries(q.ramps)) assert(core.includes(`${name}: "${hex}"`), `${q.id} ramp ${name}`);
+    const bad = errorsOf(lint({ root }));
+    assert(!bad.length, `${q.id} lint\n${show(bad)}`);
+    const css = fs.readFileSync(path.join(root, 'design-build/preview/tokens.css'), 'utf8');
+    const rootCss = css.split('@media')[0];
+    if (q.default_theme === 'dark' && q.themes.includes('light')) {
+      assert(css.includes('(prefers-color-scheme: light)'), `${q.id} tokens.css has no light media query`);
+      assert(/color-scheme:\s*dark/.test(rootCss), `${q.id} :root is not dark`);
+    }
+    if (q.default_theme === 'light') {
+      assert(css.includes('(prefers-color-scheme: dark)'), `${q.id} tokens.css has no dark media query`);
+      assert(!css.includes('(prefers-color-scheme: light)'), `${q.id} light-first tokens.css must not emit a light media query`);
+    }
+  }
+  const starter = fs.readFileSync(path.join(ROOT, 'design-build/preview/tokens.css'), 'utf8');
+  assert(starter.includes('(prefers-color-scheme: dark)') && !starter.includes('(prefers-color-scheme: light)'), 'starter tokens.css OS media changed');
+});
 if (fs.existsSync(tz)) test('Terrazzo: a colour role missing its dark mode fails tokens:check (required-modes covers color.on.*)', () => withSandbox(({ edit }) => edit('tokens/tokens.json', (s) => { const t = JSON.parse(s); delete t.color.on.primary.$extensions.mode.dark; return JSON.stringify(t, null, 2); }), (dir) => {
   fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'design-build/node_modules'));
   const r = spawnSync(tz, ['check', path.join(dir, 'tokens/tokens.json'), '--config', path.join(dir, 'design-build/terrazzo.config.mjs')], { cwd: path.join(dir, 'design-build'), encoding: 'utf8' });
@@ -541,6 +580,152 @@ test('tokens-css.mjs writes tokens.mjs and it resolves CSS variables', () => {
   assert(mod.cssVar('color.brand.primary') === 'var(--color-brand-primary)', 'cssVar wrong');
   assert(mod.tokens['color.brand.primary'] && mod.modes.includes('dark'), 'tokens/modes missing');
 });
+
+const { lintDesignMd, importDesignMd, parseDesignMd, googleToDtcg, dtcgToGoogle, designMdFromParts } = await import(path.join(BUILD, 'lib/designmd.mjs'));
+const EXPORTS = path.join(BUILD, 'exports');
+test('exports: DESIGN.md fence is tokens.json, Google lint is clean, and --check passes', () => {
+  const tokens = fs.readFileSync(path.join(ROOT, 'tokens/tokens.json'), 'utf8');
+  const md = fs.readFileSync(path.join(EXPORTS, 'DESIGN.md'), 'utf8');
+  const imp = importDesignMd(md);
+  assert(imp.kind === 'tokens-file' && imp.text === tokens, 'the json tokens fence is not tokens.json byte for byte');
+  assert(!md.includes('TODO' + '(intake)'), 'generated DESIGN.md carries an intake marker');
+  assert(/\n {2}none: "?0px"?/.test(md) || md.includes('none: 0px') || md.includes('none: "0px"'), 'a zero dimension must keep its unit');
+  const bad = lintDesignMd(md).findings.filter((f) => f.severity !== 'info');
+  assert(!bad.length, bad.map((f) => `${f.severity} ${f.rule} ${f.message}`).join('\n'));
+  const r = spawnSync(node, [path.join(BUILD, 'designmd.mjs'), '--check'], { cwd: ROOT, encoding: 'utf8' });
+  assert(r.status === 0, r.stdout + r.stderr);
+  const listed = spawnSync(node, [path.join(BUILD, 'designmd.mjs'), 'lint', '--format', 'json'], { cwd: ROOT, encoding: 'utf8' });
+  const j = JSON.parse(listed.stdout);
+  assert(listed.status === 0 && j.summary.errors === 0 && j.summary.warnings === 0 && Array.isArray(j.findings), listed.stdout + listed.stderr);
+});
+test('exports: Tailwind v4 and v3 and Figma files match the tokens', () => {
+  const css = fs.readFileSync(path.join(EXPORTS, 'tailwind.theme.css'), 'utf8');
+  assert(css.includes('--spacing-4: 16px') && css.includes('--spacing-1: 4px') && css.includes('--radius-md: 8px'), 'spacing or radius missing');
+  const theme = css.slice(css.indexOf('@theme {'), css.indexOf('\n}'));
+  const darkAt = css.indexOf('[data-theme="dark"] {');
+  const dark = css.slice(darkAt, css.indexOf('\n}', darkAt));
+  const pick = (block, name) => block.match(new RegExp(`${name}: ([^;]+);`))?.[1];
+  assert(pick(theme, '--color-brand-primary') && pick(theme, '--color-brand-primary') !== pick(dark, '--color-brand-primary'), `brand primary did not change in dark (${pick(theme, '--color-brand-primary')} / ${pick(dark, '--color-brand-primary')})`);
+  const cjs = fs.readFileSync(path.join(EXPORTS, 'tailwind.config.cjs'), 'utf8');
+  const config = JSON.parse(cjs.slice(cjs.indexOf('module.exports = ') + 'module.exports = '.length).replace(/;\s*$/, ''));
+  assert(config.theme.extend.colors.brand.primary && config.theme.extend.spacing['4'] === '16px' && config.darkTheme.colors.brand.primary, 'v3 theme shape');
+  assert(config.darkMode[0] === 'selector' && config.darkMode[1] === '[data-theme="dark"]', JSON.stringify(config.darkMode));
+  assert(typeof config.theme.extend.colors.surface === 'object' && config.theme.extend.colors.surface.DEFAULT, 'surface short name should sit on DEFAULT');
+  const studio = JSON.parse(fs.readFileSync(path.join(EXPORTS, 'figma.tokens-studio.json'), 'utf8'));
+  assert(JSON.stringify(studio.$metadata.tokenSetOrder) === JSON.stringify(['global', 'light', 'dark']), JSON.stringify(studio.$metadata));
+  assert(studio.global.color.brand.primary.$value === '{palette.primary.700}', studio.global.color.brand.primary.$value);
+  assert(studio.dark.color.brand.primary.$value === '{palette.primary.300}', JSON.stringify(studio.dark.color.brand.primary));
+  assert(studio.$themes[0].selectedTokenSets.global === 'source' && studio.$themes[0].selectedTokenSets.light === 'enabled');
+  assert(studio.$comment === undefined, 'Tokens Studio file should not carry a $comment');
+  const fig = JSON.parse(fs.readFileSync(path.join(EXPORTS, 'figma.variables.json'), 'utf8'));
+  const variable = fig.collections[0].variables.find((v) => v.name === 'color/brand/primary');
+  assert(fig.collections[0].modes.join() === 'light,dark' && variable.valuesByMode.light.alias === 'palette/primary/700' && variable.valuesByMode.dark.alias === 'palette/primary/300', JSON.stringify(variable));
+});
+test('exports: a foreign DESIGN.md round-trips, and a changed hex survives import', () => {
+  const foreign = `---
+version: alpha
+name: "Sample"
+description: "A small system."
+colors:
+  primary: "#112233"
+  on-primary: "#ffffff"
+typography:
+  body:
+    fontFamily: "Example Sans"
+    fontSize: 16px
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: 0px
+rounded:
+  md: 8px
+spacing:
+  sm: 8px
+components:
+  button:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.md}"
+    padding: "{spacing.sm}"
+---
+
+# Sample
+
+## Overview
+
+A sample system.
+
+## Colors
+
+Primary is {colors.primary}.
+
+## Typography
+
+Body is the reading style.
+
+## Layout
+
+The small step is spacing sm.
+
+## Elevation & Depth
+
+None.
+
+## Shapes
+
+md is the control radius.
+
+## Components
+
+The button uses {colors.primary}.
+
+## Do's and Don'ts
+
+- Do use the tokens.
+`;
+  const parsed = parseDesignMd(foreign);
+  const once = designMdFromParts({ meta: parsed.meta, tokens: dtcgToGoogle(googleToDtcg(parsed)), sections: parsed.sections });
+  const twice = designMdFromParts({ meta: parseDesignMd(once).meta, tokens: dtcgToGoogle(googleToDtcg(parseDesignMd(once))), sections: parseDesignMd(once).sections });
+  assert(once === twice, 'canonical serialize is not stable');
+  assert(JSON.stringify(parseDesignMd(foreign).tokens) === JSON.stringify(parseDesignMd(once).tokens), 'token tree changed on round trip');
+  const doc = JSON.parse(importDesignMd(foreign.replace('#112233', '#abcdef')).text);
+  assert(doc.color.primary.$value === '#abcdef', JSON.stringify(doc.color.primary));
+  const shipped = fs.readFileSync(path.join(EXPORTS, 'DESIGN.md'), 'utf8');
+  const fence = importDesignMd(shipped).text;
+  const mutated = shipped.replace(fence, fence.replace('"#53968a"', '"#66998c"'));
+  const back = importDesignMd(mutated);
+  assert(back.kind === 'tokens-file' && back.text.includes('#66998c') && back.text !== fence, 'a hex edit inside the fence did not come back');
+});
+test('exports: Google lint flags broken refs, bad dimensions, missing primary, low contrast, section order, typos and token-like keys', () => {
+  const lintOf = (text) => lintDesignMd(text).findings;
+  const hit = (text, rule, severity) => lintOf(text).some((f) => f.rule === rule && f.severity === severity);
+  const broken = `---\nname: "X"\ncolors:\n  primary: "{colors.nope}"\n---\n# X\n`;
+  assert(hit(broken, 'broken-ref', 'error'), JSON.stringify(lintOf(broken)));
+  const dim = `---\nname: "X"\ntypography:\n  body:\n    fontFamily: "Example Sans"\n    fontSize: "16"\n    fontWeight: 400\n    lineHeight: 1.5\n---\n# X\n`;
+  assert(hit(dim, 'invalid-value', 'error'), JSON.stringify(lintOf(dim)));
+  const noPrimary = `---\nname: "X"\ncolors:\n  surface: "#ffffff"\n---\n# X\n## Colors\n\n{colors.surface}\n`;
+  assert(hit(noPrimary, 'missing-primary', 'warning') && !lintOf(noPrimary).some((f) => f.severity === 'error'), JSON.stringify(lintOf(noPrimary)));
+  const contrast = `---\nname: "X"\ncolors:\n  primary: "#ffff00"\n  on-primary: "#ffffff"\ntypography:\n  body:\n    fontFamily: "Example Sans"\n    fontSize: 16px\n    fontWeight: 400\n    lineHeight: 1.5\ncomponents:\n  button:\n    backgroundColor: "#ffff00"\n    textColor: "#ffffff"\n---\n# X\n## Colors\n\n{colors.primary} and {colors.on-primary}.\n`;
+  assert(hit(contrast, 'contrast-ratio', 'warning') && !lintOf(contrast).some((f) => f.severity === 'error'), JSON.stringify(lintOf(contrast)));
+  const order = `---\nname: "X"\ncolors:\n  primary: "#112233"\n---\n# X\n## Components\n\nButton.\n\n## Colors\n\n{colors.primary}\n`;
+  assert(hit(order, 'section-order', 'warning'), JSON.stringify(lintOf(order)));
+  const typo = `---\nname: "X"\ncolours:\n  primary: "#112233"\n---\n# X\n`;
+  assert(hit(typo, 'unknown-key', 'warning'), JSON.stringify(lintOf(typo)));
+  const extra = `---\nname: "X"\npalette:\n  ink: "#112233"\n---\n# X\n`;
+  assert(hit(extra, 'token-like-ignored', 'warning'), JSON.stringify(lintOf(extra)));
+});
+test('exports: --check fails after DESIGN.md is tampered, and the board badge goes stale', () => withSandbox(({ edit }) => edit('design-build/exports/DESIGN.md', (s) => `${s}\n`), (dir) => {
+  const r = spawnSync(node, [path.join(dir, 'design-build/designmd.mjs'), '--check'], { cwd: dir, encoding: 'utf8' });
+  assert(r.status === 1 && /DESIGN\.md/.test(r.stderr), r.stdout + r.stderr);
+  const html = fs.readFileSync(path.join(ROOT, 'design-build/preview/index.html'), 'utf8');
+  assert(html.includes('data-sync="ok"') && html.includes('Outputs synced'), 'shipped badge is not synced');
+  assert(boardJson(ROOT).exports.status === 'synced' && boardJson(ROOT).exports.stale.length === 0, JSON.stringify(boardJson(ROOT).exports));
+  fs.rmSync(path.join(dir, 'design-build/exports/DESIGN.md'));
+  const built = boardCli(dir);
+  assert(built.status === 0, built.stderr);
+  const staleHtml = fs.readFileSync(path.join(dir, 'design-build/preview/index.html'), 'utf8');
+  assert(staleHtml.includes('data-sync="stale"') && staleHtml.includes('Outputs stale'), 'badge did not go stale');
+  assert(errorsOf(lint({ root: dir })).some((f) => f.rule === 'exports-stale'), 'exports-stale did not fire');
+}));
 
 // ---------- 4. render ----------
 let hasPlaywright = false;
@@ -568,6 +753,8 @@ if (hasPlaywright || args.has('--render')) {
   };
   test('render: a blank page (app never mounted) fails blank-page', () => { const c = renderOne('bad/blank.html'); assert(c.has('blank-page'), [...c].join(', ')); });
   test('render: a script that throws fails page-error', () => { const c = renderOne('bad/script-error.html'); assert(c.has('page-error') && c.has('blank-page'), [...c].join(', ')); });
+  test('render: text drawn in a font the project does not ship (system fallback) fails font-fallback', () => { const c = renderOne('bad/font-fallback.html'); assert(c.has('font-fallback'), [...c].join(', ')); });
+  test('render: a token name that wraps in the middle of a word fails mid-word-break', () => { const c = renderOne('bad/mid-word.html'); assert(c.has('mid-word-break'), [...c].join(', ')); });
   test('render: --url with nothing listening is a harness error that says to start the dev server', () => {
     const r = spawnSync(node, [path.join(BUILD, 'render.mjs'), '--url', 'http://127.0.0.1:59999/', '--widths', '390', '--themes', 'light', '--out', os.tmpdir(), '--reports', fs.mkdtempSync(path.join(os.tmpdir(), 'design-render-'))], { encoding: 'utf8' });
     assert(r.status !== 0 && /dev server/.test(r.stdout + r.stderr), `exit ${r.status}\n${r.stdout}${r.stderr}`);
@@ -617,7 +804,7 @@ if (hasPlaywright || args.has('--render')) {
   });
   for (const [kind, make] of [['dark-only', darkOnly], ['three-theme', threeTheme]]) test(`render: the ${kind} fixture board passes render.mjs in every theme it lists`, () => withSandbox(({ dir }) => {
     make(dir);
-    for (const s of ['tokens-css.mjs', 'board.mjs']) spawnSync(node, [path.join(dir, 'design-build', s)], { cwd: dir, encoding: 'utf8' });
+    for (const s of ['tokens-css.mjs', 'designmd.mjs', 'board.mjs']) spawnSync(node, [path.join(dir, 'design-build', s)], { cwd: dir, encoding: 'utf8' });
     fs.symlinkSync(path.join(BUILD, 'node_modules'), path.join(dir, 'design-build/node_modules'));
   }, (dir) => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'design-render-'));

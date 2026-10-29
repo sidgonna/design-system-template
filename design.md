@@ -36,6 +36,10 @@ In a project, this whole template sits in one folder named `design-system/` at t
 ```
 KICKSTART.md               ← paste-in prompt to start a build in any harness
 BOTTLENECKS.md             ← where AI agents stumble, the fixes, and which are implemented (rules live here in design.md and design/)
+RULES.md                   ← short rules for coding agents. design.md §0 and §16 win if they disagree
+seeds.yaml                 ← quick-start brand presets (feel, themes, ramp seeds, fonts). §16.2 owns the research URLs
+CHANGELOG.md               ← product release history. A brand's system_version stays in that brand's design.md
+releases/                  ← notes for a product release. Publishing a git tag is separate and is not done by the notes
 design.md                  ← you are here: index, rules of the system, build workflow, checklist
 design-build/              ← working files during a §16 build (state, research, studies, the board), inventory.json and the checks
 components/                ← the shipped components: components.css (data-component API), index.js (vanilla helpers), react/ (wrappers)
@@ -110,6 +114,7 @@ Apply the first rule that decides it:
 ### 0.5 Instructions for AI agents
 ```yaml
 agent_rules:
+  - Read RULES.md before editing. It is the short card. If it disagrees with §0 or §16 in this file, this file wins. Brand quick starts live in seeds.yaml (feel, themes, ramp seeds and fonts). Research URL groups stay in §16.2. Do not copy them into seeds.yaml.
   - Read this file's front matter; load core.md always, and only modules with enabled: true.
   - Never load a disabled module or apply its rules.
   - Resolve every {token.path} from §13 / tokens_file before generating output. Never invent a token; propose it in §14.4.

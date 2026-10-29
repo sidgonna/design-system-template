@@ -31,7 +31,7 @@
 | 6d | Implemented | `ui-inventory/`: one doc per component and one entry per screen (facts in `inventory.json` → `screens`); the §0.5 doc-and-reference-search-before-build rule; §16 Phase 2c and Phase 6 step 0/4; lint rule `ui-inventory`. |
 | 7a | Implemented | `design-build/state.yaml` → `decisions` (Phase 3 picks) and `design-build/review.json` (Phase 5 verdicts per board tile, `accept` = locked, written by `board.mjs --review`); the §0.5 re-read rule. |
 | 7b | Implemented | §0.5 "after any edit, run lint", backed by the git pre-commit hook (`design-build/install-hooks.mjs` → `hooks/pre-commit.mjs`; lints app code and design files, renders on visual changes, fails loudly if the scripts are missing), CI (the template's `.github/workflows/design-checks.yml`; `design-build/ci/app-design-checks.example.yml` for apps) and the optional agent hooks in `design-build/hooks/`. |
-| 7c | Not yet | No separate hard-rules card. §0.5 `agent_rules` is the nearest equivalent. |
+| 7c | Implemented | `RULES.md` is the short card. design.md §0 and §16 win if they disagree. §0.5 `agent_rules` is still the full list. |
 | 8a | Implemented | `design.md` §16.2 `seed_rules` (teardown only, never §13 values); TEARDOWN ONLY labels in the seeds and KICKSTART; lint rule `seed-cap`. |
 | 8b | Partially | Covered only by the 8a wording. There is no `research/competitors.json` value check in the lint yet. |
 | 8c | Implemented | `design.md` Phase 3 direction line (`differs from competitors by: …`). |
@@ -46,7 +46,7 @@ How the checks are run, and the §0.5 anti-gaming rule, are in the README under 
   - the kickstart prompt (README + `KICKSTART.md`, kept identical)
   - the §16 Phase 1 intake
   - §16.2 seeds and `seed_rules`
-  - §0.5 `agent_rules`
+  - §0.5 `agent_rules` and `RULES.md` (the short card; §0 and §16 win)
   - a Phase 3, 4 or 5 gate
   - a module
 

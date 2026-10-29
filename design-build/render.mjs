@@ -4,7 +4,8 @@
 // Usage (from the app root): node design-system/design-build/render.mjs [target ...] [--url <url>] [--app]
 //          [--widths 390,768,1280 (default: tokens viewport.*)] [--themes light,dark (default: design.md themes)] [--root <dir>]
 //          [--out <dir>] [--reports <dir>] [--json] [--record] [--quiet] [--no-best-practice]
-//   target       URL (http/https/file) or file path. Default: the design system's preview page.
+//   target       URL (http/https/file) or file path, optionally with ?query (preview/index.html?board=coverage).
+//                Default: the design system's board in its three views (?board=specimen, guidelines, coverage).
 //                File paths are served from the project root by a built-in static server, so relative links work.
 //                An app that needs a build step (Vite, Next, …) must be rendered from its dev server instead:
 //   --url <url>  render this URL, e.g. start `npm run dev` and pass --url http://localhost:5173/ (repeatable)
@@ -25,6 +26,10 @@
 //   page-error      an uncaught exception on the page (fail)
 //   load-error      the page, a script or a stylesheet failed to load, or a module script was refused (fail)
 //   blank-page      the body has no visible text or media, e.g. the app never mounted (fail)
+//   font-fallback   text renders in a font the page does not ship (an installed system font stood in because a
+//                   family is missing, or a glyph is outside the shipped subset) (fail)
+//   mid-word-break  a token, label, heading, button or table/term cell wraps inside a word (fail; a break at a
+//                   space, after a hyphen in prose, or at a <wbr>/<br> is fine)
 //   axe             axe-core with wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa: serious/critical → fail,
 //                   moderate/minor → warning. The best-practice tag runs separately as warnings.
 // Writes design-build/render-report.json and design-build/a11y-report.json (or into --reports <dir>).
@@ -84,9 +89,15 @@ function parseArgs(argv) {
     else if (k.startsWith('--')) { console.error(`render: unknown flag ${k}`); process.exit(2); }
     else a.targets.push(k);
   }
-  if (!a.targets.length) a.targets.push(path.join(HERE, 'preview/index.html'));
+  if (!a.targets.length) for (const v of BOARD_VIEWS) a.targets.push(`${path.join(HERE, 'preview/index.html')}?board=${v}`);
   return a;
 }
+
+// The board's views (preview.js reads ?board=): each renders as its own page.
+export const BOARD_VIEWS = ['specimen', 'guidelines', 'coverage'];
+// "page.html?board=coverage&x=1" -> ["page.html", "?board=coverage&x=1"] (file paths only; URLs keep their query)
+const splitQuery = (t) => { const i = t.indexOf('?'); return i < 0 ? [t, ''] : [t.slice(0, i), t.slice(i)]; };
+const queryName = (q) => [...new URLSearchParams(q).values()].filter(Boolean).join('-');
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf' };
 function serve(root) {
@@ -104,11 +115,15 @@ function serve(root) {
   });
 }
 
+// The screenshot name: page, then any query values (the board view), then -<width>-<theme>.png is added.
 function pageName(target) {
+  const [file, q] = /^[a-z]+:\/\//i.test(target) && !target.startsWith('file:') ? [target, ''] : splitQuery(target);
+  if (q) return [pageName(file), queryName(q)].filter(Boolean).join('-').replace(/[^a-z0-9-]+/gi, '-').toLowerCase();
+  target = file;
   try {
     const u = new URL(target);
     if (u.protocol === 'file:') return pageName(fileURLToPath(u));
-    return (u.hostname + u.pathname).replace(/\/index\.html?$/, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'page';
+    return (u.hostname + u.pathname + (u.search ? `-${queryName(u.search)}` : '')).replace(/\/index\.html?$/, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'page';
   } catch {
     const rel = path.relative(ROOT, path.resolve(target)).replace(/\.[a-z]+$/i, '');
     const dsParts = new Set(['design-build', ...path.relative(ROOT, DS).split(path.sep).filter(Boolean)]);
@@ -201,6 +216,100 @@ function layoutProbe() {
   return out;
 }
 
+// Runs inside the page: marks one element per (font stack, weight, style, Unicode block) that holds visible text with
+// data-font-probe, so fontFallback() can ask Chromium which fonts actually drew it. Returns their descriptions.
+function fontProbeMark() {
+  const seen = new Set(), out = [];
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let t; (t = w.nextNode());) {
+    const s = t.nodeValue.replace(/\s+/g, ' ').trim();
+    const el = t.parentElement;
+    if (!s || !el || el.closest('svg, script, style, noscript, template, [hidden]')) continue;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+    const blocks = [...new Set([...s].filter((c) => c.trim()).map((c) => c.codePointAt(0) >> 7))].sort().join(',');
+    const key = `${cs.fontFamily}|${cs.fontWeight}|${cs.fontStyle}|${blocks}`;
+    if (seen.has(key) || el.hasAttribute('data-font-probe')) continue;
+    seen.add(key);
+    el.setAttribute('data-font-probe', String(out.length));
+    const name = el.id ? `#${el.id}` : el.tagName.toLowerCase() + (el.classList.length ? '.' + [...el.classList].slice(0, 2).join('.') : '');
+    out.push({ el: `${name} "${s.slice(0, 30)}"`, family: cs.fontFamily });
+    if (out.length >= 250) break;
+  }
+  return out;
+}
+
+// font-fallback: Chromium's own answer (CDP CSS.getPlatformFontsForNode) to "which font drew this text?". A font
+// that is not a web font (isCustomFont false) is an installed system font standing in: a family the page names but
+// never ships, a missing @font-face, or glyphs outside the shipped subset. Each finding: { el, family, used, glyphs }.
+async function fontFallback(page) {
+  const marked = await page.evaluate(fontProbeMark);
+  if (!marked.length) return [];
+  const cdp = await page.context().newCDPSession(page);
+  const found = [];
+  try {
+    await cdp.send('DOM.enable'); await cdp.send('CSS.enable');
+    const { root } = await cdp.send('DOM.getDocument', { depth: 0 });
+    const { nodeIds } = await cdp.send('DOM.querySelectorAll', { nodeId: root.nodeId, selector: '[data-font-probe]' });
+    for (const nodeId of nodeIds) {
+      const { attributes } = await cdp.send('DOM.getAttributes', { nodeId });
+      const i = Number(attributes[attributes.indexOf('data-font-probe') + 1]);
+      const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
+      const sys = fonts.filter((f) => !f.isCustomFont && f.glyphCount > 0);
+      if (sys.length && marked[i]) found.push({ ...marked[i], used: sys.map((f) => f.familyName).join(', '), glyphs: sys.reduce((n, f) => n + f.glyphCount, 0) });
+    }
+  } finally {
+    await cdp.detach().catch(() => {});
+    await page.evaluate(() => document.querySelectorAll('[data-font-probe]').forEach((e) => e.removeAttribute('data-font-probe')));
+  }
+  return found;
+}
+
+// Runs inside the page. mid-word-break: a token, label or heading that wraps inside a word ("color.brand.pri / mary",
+// "competitors_to_diffe / r_from"). Only multi-line elements are walked, character by character, with a Range per
+// character: a new line that starts between two word characters is a mid-word break. Fine: a break at whitespace, a
+// <br> or <wbr>, a block child, after a hyphen outside code, and scripts other than Latin (they have their own rules).
+function midWordProbe() {
+  const SEL = 'code[data-token], .tok, [data-token], dt, th, label, button, [role="tab"], h1, h2, h3, h4, h5, h6, .label, [data-label]';
+  const WORD = /[\p{Script=Latin}\p{N}_.\-\/:#@]/u;
+  const out = [], done = new Set(), range = document.createRange();
+  for (const el of document.querySelectorAll(SEL)) {
+    if (out.length >= 20) break;
+    if ([...done].some((d) => d.contains(el))) continue;
+    if (el.closest('svg, [hidden], [aria-hidden="true"]')) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+    if (r.height < lh * 1.5) continue;
+    const isCode = (n) => !!n.parentElement?.closest('code, kbd, samp, pre, .tok, [data-token]');
+    let prev = '\n', prevTop = null, prevText = '';
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) {
+      if (n.nodeType === 1) { if (/^(BR|WBR)$/.test(n.tagName) || !/^inline/.test(getComputedStyle(n).display)) { prev = '\n'; prevTop = null; } continue; }
+      for (let i = 0; i < n.data.length; i++) {
+        const ch = n.data[i];
+        range.setStart(n, i); range.setEnd(n, i + 1);
+        const rr = range.getClientRects();
+        if (!rr.length) { prev = ch; continue; }
+        const top = rr[0].top;
+        if (prevTop !== null && top > prevTop + lh * 0.5 && WORD.test(prev) && WORD.test(ch) && !(prev === '-' && !isCode(n)) && prev !== '\u00ad') {
+          const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+          const name = el.id ? `#${el.id}` : el.tagName.toLowerCase() + (el.classList.length ? '.' + [...el.classList].slice(0, 2).join('.') : '');
+          out.push({ el: `${name} "${text.slice(0, 40)}"`, at: `${prevText.slice(-12)}|${n.data.slice(i, i + 12)}` });
+          done.add(el); i = n.data.length; break;
+        }
+        prevTop = top; prev = ch; prevText = (prevText + ch).slice(-24);
+      }
+      if (done.has(el)) break;
+    }
+  }
+  return out;
+}
+
 // Runs inside the page: is there anything to look at? (An app whose script failed renders an empty <div id="root">.)
 function contentProbe() {
   const b = document.body;
@@ -277,10 +386,11 @@ async function main() {
   const base = `http://127.0.0.1:${server.address().port}`;
   const resolveTarget = (t) => {
     if (/^https?:\/\//.test(t)) return t;
-    const f = t.startsWith('file:') ? fileURLToPath(t) : path.resolve(t);
+    const [file, q] = splitQuery(t);
+    const f = file.startsWith('file:') ? fileURLToPath(file) : path.resolve(file);
     if (!fs.existsSync(f)) throw new Error(`target not found: ${t}`);
     const rel = path.relative(ROOT, f);
-    return rel.startsWith('..') ? pathToFileURL(f).href : `${base}/${rel.split(path.sep).map(encodeURIComponent).join('/')}`;
+    return (rel.startsWith('..') ? pathToFileURL(f).href : `${base}/${rel.split(path.sep).map(encodeURIComponent).join('/')}`) + q;
   };
 
   let browser;
@@ -325,6 +435,8 @@ async function main() {
         const shot = path.join(opts.out, `${id}.png`);
         await page.screenshot({ path: shot, fullPage: true, animations: 'disabled' });
         run.screenshot = path.relative(ROOT, shot).split(path.sep).join('/');
+        const midWord = await page.evaluate(midWordProbe);
+        const fonts = await fontFallback(page);
         const focus = await focusWalk(page);
         await page.evaluate(() => { document.activeElement?.blur?.(); window.scrollTo(0, 0); });
 
@@ -333,13 +445,15 @@ async function main() {
         for (const o of layout.offViewport) add(failures, 'off-viewport', `${o.el} is outside the viewport${o.reason ? ` (${o.reason})` : ` (left ${o.left}, right ${o.right})`}. Fix: keep it inside the layout at ${width}px`, o);
         for (const o of layout.overlap) add(failures, 'overlap', `${o.a} overlaps ${o.b} (${o.area}px²). Fix: add a gap or let them wrap`, o);
         for (const t of layout.tapTargets) add(t.level === 'error' ? failures : warnings, 'tap-target', `${t.el} is ${t.w}×${t.h}px: ${t.reason}. Fix: min-block-size and min-inline-size var(--size-target-min)`, t);
+        for (const f of fonts) add(failures, 'font-fallback', `${f.el} renders ${f.glyphs} glyph${f.glyphs === 1 ? '' : 's'} in ${f.used}, a system font the page does not ship (font-family: ${f.family}). Fix: ship that family as a web font (@font-face with a woff2 in the repo), or add a subset that covers these characters`, f);
+        for (const m of midWord) add(failures, 'mid-word-break', `${m.el} wraps inside a word (${m.at}). Fix: give it room (min-inline-size, fewer columns), keep it on one line (white-space: nowrap; text-overflow: ellipsis with a title), or show a human label instead of the raw name`, m);
         for (const m of focus.missing) add(failures, 'focus-visible', `${m} shows no visible focus style. Fix: :focus-visible { outline: var(--border-width-thick) solid var(--color-focus) }`);
         for (const m of motion) add(warnings, 'reduced-motion', `${m.el} still moves with reduced motion on (${m.animation || m.transition}). Fix: wrap it in @media (prefers-reduced-motion: no-preference) or set transition: none under reduce`, m);
         for (const e of pageErrors) add(failures, 'page-error', `uncaught error on the page: ${e}. Fix: open the page in a browser, read the console and fix the exception`);
         for (const e of [...new Set(loadErrors)]) add(failures, 'load-error', `${e.replace(/\.+$/, '')}. Fix: ${/module script|MIME|\.(tsx?|jsx|vue|svelte)\b/i.test(e) ? 'this page needs a build step: start the dev server (npm run dev) and render its URL with --url' : 'make the file load (path, server, CORS)'}`);
         if (content.blank) add(failures, 'blank-page', `the page has no visible text or media${pageErrors.length || loadErrors.length ? ' (see the errors above)' : ''}. Fix: ${!/^https?:\/\//.test(target) ? 'if this is an app that needs a build step, start its dev server and render --url <dev-server URL>; otherwise check the page actually renders content' : 'the app rendered nothing at this URL: check the browser console, the route, and that the root component returns markup'}`);
         for (const e of consoleErrors) add(warnings, 'console', `console error: ${e}`);
-        run.checks = { overflow: !layout.overflow, offViewport: layout.offViewport.length, overlap: layout.overlap.length, tapTargetErrors: layout.tapTargets.filter((t) => t.level === 'error').length, tapTargetWarnings: layout.tapTargets.filter((t) => t.level !== 'error').length, focusStops: focus.stops, focusMissing: focus.missing.length, reducedMotionWarnings: motion.length, consoleErrors: consoleErrors.length, pageErrors: pageErrors.length, loadErrors: loadErrors.length, blank: content.blank, textChars: content.text };
+        run.checks = { overflow: !layout.overflow, offViewport: layout.offViewport.length, overlap: layout.overlap.length, tapTargetErrors: layout.tapTargets.filter((t) => t.level === 'error').length, tapTargetWarnings: layout.tapTargets.filter((t) => t.level !== 'error').length, focusStops: focus.stops, focusMissing: focus.missing.length, reducedMotionWarnings: motion.length, fontFallback: fonts.length, midWordBreaks: midWord.length, consoleErrors: consoleErrors.length, pageErrors: pageErrors.length, loadErrors: loadErrors.length, blank: content.blank, textChars: content.text };
 
         const wcag = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
         const bp = opts.bestPractice ? await new AxeBuilder({ page }).withTags(['best-practice']).analyze() : { violations: [] };

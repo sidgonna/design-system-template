@@ -19,18 +19,27 @@ may_narrow: [§9, §10]   # never contradict
 **FEEL:** {{…}}
 
 ### M1.1 Components
-Every row must match a `name` in `design-build/inventory.json`, and every variant must be one it lists (the lint checks both, rule `unknown-component`). Button, Input, Card and Badge ship ready to use in `components/` (README → Components: usage); each component has a doc in `ui-inventory/components/`, written before it is built (§0.5). Reuse an existing component first, extend it second, and add a new one only with the user's agreement (§0.5).
+Every row must match a `name` in `design-build/inventory.json`, and every variant must be one it lists (the lint checks both, rule `unknown-component`). The shipped set lives in `components/` (README → Components: usage), grouped on the board as actions, inputs, feedback, navigation, data display and layout. Each component has a doc in `ui-inventory/components/`, written before it is built (§0.5). Reuse an existing component first, extend it second, and add a new one only with the user's agreement (§0.5).
 
 | Component | Variants | Tokens used | Notes |
 |---|---|---|---|
-| Button | primary, secondary, ghost, danger | `{color.brand.primary}`, `{color.text.inverse}`, `{color.semantic.error}`, `{radius.md}`, `{shadow.1}`, `{motion.duration.fast}` | label rules → §6; `loading` keeps focus and label (`aria-busy`); shipped: `components/`, doc `ui-inventory/components/button.md` |
-| Input | default, error | `{color.text.secondary}`, `{color.focus}`, `{color.semantic.error}`, `{radius.sm}`, `{motion.duration.slow}` | visible label, hint and error wired with `aria-describedby`; error shakes once (not under reduced motion); doc `ui-inventory/components/input.md` |
-| Card | flat, raised | `{shadow.2}`, `{shadow.3}`, `{radius.lg}`, `{space.6}`, `{motion.ease.enter}` | one entity per card; `interactive` lifts on hover and focus-within, with one real link inside; doc `ui-inventory/components/card.md` |
-| Modal / Sheet | | | |
-| Navigation | | | |
-| Table | | | |
-| Badge / Tag | neutral, success, warning, error, info | `{color.semantic.success}`, `{color.semantic.warning}`, `{color.semantic.error}`, `{color.semantic.info}`, `{radius.sm}` | text carries the meaning, color only reinforces it; pops in on insert; doc `ui-inventory/components/badge.md` |
-| Toast | | | |
+| Button | primary, secondary, ghost, danger | `{component.button.primary.bg}`, `{component.button.danger.bg}`, `{radius.md}`, `{shadow.1}`, `{motion.duration.fast}` | Actions. Label rules → §6; `loading` keeps focus and label (`aria-busy`); doc `ui-inventory/components/button.md` |
+| Input | default, error | `{component.input.fg}`, `{component.input.focus}`, `{component.input.error}`, `{radius.sm}` | Inputs. Visible label, hint and error wired with `aria-describedby`; error shakes once; doc `ui-inventory/components/input.md` |
+| Textarea | default, error | `{component.textarea.fg}`, `{component.textarea.border}`, `{component.textarea.error}` | Inputs. Same field rules as Input, for more than one line; doc `ui-inventory/components/textarea.md` |
+| Select | default, error | `{component.select.fg}`, `{component.select.border}`, `{component.select.error}` | Inputs. Native select, visible label; doc `ui-inventory/components/select.md` |
+| Checkbox | default | `{component.checkbox.fg}`, `{component.checkbox.checked}`, `{size.target.min}` | Inputs. Native checkbox inside its label; doc `ui-inventory/components/checkbox.md` |
+| Radio | default | `{component.radio.fg}`, `{component.radio.checked}` | Inputs. Fieldset, legend and native radios; doc `ui-inventory/components/radio.md` |
+| Switch | default | `{component.switch.bg}`, `{component.switch.on}`, `{component.switch.thumb}` | Inputs. Button with `role="switch"` and `aria-checked`; doc `ui-inventory/components/switch.md` |
+| Alert | info, success, warning, error | `{component.alert.fg}`, `{component.alert.bg}`, `{component.alert.error}` | Feedback. Text names the status; color reinforces it; doc `ui-inventory/components/alert.md` |
+| Toast | success, warning, error, info | `{component.toast.fg}`, `{component.toast.bg}`, `{shadow.2}`, `{z-index.toast}` | Feedback. Dismissable status; doc `ui-inventory/components/toast.md` |
+| Dialog / Modal / Sheet | default | `{component.dialog.bg}`, `{component.dialog.fg}`, `{component.dialog.scrim}`, `{z-index.modal}` | Feedback. Native dialog, labelled, Escape closes; doc `ui-inventory/components/dialog.md` |
+| Tooltip | default | `{component.tooltip.fg}`, `{component.tooltip.bg}`, `{z-index.tooltip}` | Feedback. Shows on hover and keyboard focus; doc `ui-inventory/components/tooltip.md` |
+| Badge / Tag | neutral, success, warning, error, info | `{component.badge.fg}`, `{component.badge.success}`, `{component.badge.error}`, `{radius.sm}` | Data display. Text carries the meaning; doc `ui-inventory/components/badge.md` |
+| Avatar | initials, icon | `{component.avatar.bg}`, `{component.avatar.fg}`, `{radius.full}` | Data display. Initials or an icon, with an accessible name; doc `ui-inventory/components/avatar.md` |
+| Table | default | `{component.table.fg}`, `{component.table.header.bg}`, `{component.table.border}` | Data display. Caption, header cells, scrolls on a narrow page; doc `ui-inventory/components/table.md` |
+| Tabs | default | `{component.tabs.fg}`, `{component.tabs.selected}`, `{component.tabs.focus}` | Navigation. Tablist, arrow keys; doc `ui-inventory/components/tabs.md` |
+| Nav / Navigation | default | `{component.nav.fg}`, `{component.nav.active}`, `{component.nav.border}` | Navigation. Links, one `aria-current="page"`; doc `ui-inventory/components/nav.md` |
+| Card | flat, raised | `{component.card.bg}`, `{shadow.2}`, `{shadow.3}`, `{radius.lg}`, `{space.6}` | Layout. One entity per card; doc `ui-inventory/components/card.md` |
 ### M1.2 States
 `default · hover · focus · active · disabled · loading · empty · error · success` — each component lists what changes per state, using tokens only. Focus → §11.
 ### M1.3 Breakpoints and responsive rules

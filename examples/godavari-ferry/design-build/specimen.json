@@ -1,0 +1,83 @@
+{
+  "$comment": "Optional board copy read by design-build/board.mjs. Absent on the starter, so the starter specimen strings stay as shipped.",
+  "buttons": {
+    "primary": "Book the 06:40",
+    "secondary": "Today's boats",
+    "ghost": "Not this one",
+    "danger": "Cancel ticket",
+    "disabled": "Disabled",
+    "loading": "Saving…"
+  },
+  "guidelinesButtons": {
+    "primary": "Book the 06:40",
+    "secondary": "Today's boats",
+    "ghost": "Not this one",
+    "danger": "Cancel ticket",
+    "disabled": "Disabled",
+    "loading": "Saving…"
+  },
+  "input": {
+    "label": "Mobile",
+    "value": "",
+    "hint": "For the ticket SMS.",
+    "errorLabel": "Mobile",
+    "errorValue": "98480",
+    "errorHint": "Enter all 10 digits.",
+    "error": "It needs 10 digits."
+  },
+  "guidelinesInput": {
+    "label": "Mobile number",
+    "hint": "Ten digits, for the ticket SMS.",
+    "errorLabel": "Mobile number",
+    "errorValue": "98480",
+    "errorHint": "Enter all 10 digits.",
+    "error": "That number has 5 digits. It needs 10."
+  },
+  "cards": {
+    "flatTitle": "Pier card",
+    "flatBody": "A hairline border; plays the entrance.",
+    "interactiveTitle": "Interactive card",
+    "interactiveBody": "Lifts on hover and focus."
+  },
+  "guidelinesCards": {
+    "flatTitle": "Pier card",
+    "flatBody": "A hairline border only. It has data-enter, so it plays the entrance.",
+    "raisedTitle": "Raised card",
+    "raisedBody": "Uses shadow.2 to lift off the page.",
+    "interactiveTitle": "Interactive card",
+    "interactiveBody": "Hover it or tab to its link: it lifts to shadow.3."
+  },
+  "badges": [
+    {
+      "variant": "neutral",
+      "label": "Extra"
+    },
+    {
+      "variant": "success",
+      "label": "On time"
+    },
+    {
+      "variant": "warning",
+      "label": "Delayed"
+    },
+    {
+      "variant": "error",
+      "label": "Cancelled"
+    },
+    {
+      "variant": "info",
+      "label": "Boarding"
+    }
+  ],
+  "typeSample": "Next boat is on time.",
+  "overline": "PIER 2",
+  "display": "On time.",
+  "scripts": {
+    "te": "తదుపరి పడవ సమయానికి.",
+    "hi": "अगली नाव समय पर है।"
+  },
+  "scriptNote": {
+    "te": "తదుపరి పడవ",
+    "hi": "अगली नाव"
+  }
+}

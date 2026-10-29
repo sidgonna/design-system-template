@@ -10,7 +10,7 @@ node design-system/design-build/install-hooks.mjs
 
 This writes `.git/hooks/pre-commit` (or into `core.hooksPath` if you set one). The hook runs `hooks/pre-commit.mjs`, which:
 
-1. regenerates `preview/tokens.css`, `tokens.js` and `tokens.mjs` when `tokens/tokens.json` is staged, and stages them.
+1. regenerates `preview/tokens.css`, `tokens.js` and `tokens.mjs`, the DESIGN.md / Tailwind / Figma exports and the board when `tokens/tokens.json` is staged, and stages them.
 2. runs `lint.mjs` on the design files **and the app code** (`src/`, `app/`, `pages/`, `components/`, `styles/`, top-level `*.html`/`*.css`, `public/*.html`, or `code_dirs` in `design-build/project.json`). A hard-coded color in app code blocks the commit. If the user approved a baseline (`lint.mjs --baseline`), the commit is blocked only when a rule's count goes up.
 3. runs `render.mjs` + axe when something visual is staged: the design preview when design files changed, and the app's dev server (`app_url` in `project.json`) when app code changed and the server is running. If the server is not running it warns and skips; Phase 6 still needs a render on the dev URL (design.md §16). Axe has no baseline: an existing app with serious accessibility issues (the stock Vite page has one contrast failure) blocks app-code commits while its dev server runs, until Phase 6 fixes them.
 
@@ -32,7 +32,7 @@ The examples use `design-system/design-build/hooks/after-edit.mjs`. In the templ
 Both call `after-edit.mjs`. It:
 
 - reads the hook's JSON on stdin and does nothing unless the edited file is one the lint covers (the design docs, `tokens/tokens.json`, `inventory.json`, `project.json`, the design system's pages, or app code).
-- regenerates `preview/tokens.css`, `tokens.js` and `tokens.mjs` when `tokens.json` changed.
+- regenerates `preview/tokens.css`, `tokens.js` and `tokens.mjs`, the DESIGN.md / Tailwind / Figma exports and the board when `tokens.json` changed.
 - lists up to 15 errors, starting with the ones in the edited file. Each one comes with its fix. With a baseline, it lists the rules over the baseline plus the errors in the edited file.
 
 Render + axe take about 10 seconds, so they don't run on every edit. They run in the pre-commit hook and in CI (`design-build/ci/app-design-checks.example.yml` for your app, `.github/workflows/design-checks.yml` for the template).

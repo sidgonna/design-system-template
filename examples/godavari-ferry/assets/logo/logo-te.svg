@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 56" fill="none">
+  <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="miter" stroke-linecap="square">
+    <path d="M4 14H60"/>
+    <path d="M14 14V34"/>
+    <path d="M32 14V34"/>
+    <path d="M50 14V34"/>
+    <path d="M4 34H60"/>
+    <path d="M2 42H62"/>
+  </g>
+  <text x="78" y="36" fill="currentColor" stroke="none" font-family="Noto Sans Telugu, sans-serif" font-size="28" font-weight="560">గోదావరి</text>
+</svg>

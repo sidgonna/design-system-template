@@ -1,0 +1,31 @@
+<form data-pattern="form" id="pat-form" action="#pat-form">
+  <div data-component="input" data-variant="default">
+    <label for="pat-form-name">Name <span data-part="required">(required)</span></label>
+    <input id="pat-form-name" name="name" type="text" autocomplete="name" required aria-describedby="pat-form-name-hint">
+    <p data-part="hint" id="pat-form-name-hint">As it appears on the account.</p>
+  </div>
+  <div data-component="textarea" data-variant="error">
+    <label for="pat-form-note">Note</label>
+    <textarea id="pat-form-note" name="note" aria-invalid="true" aria-describedby="pat-form-note-error">Hi</textarea>
+    <p data-part="error" id="pat-form-note-error">Add a few more words.</p>
+  </div>
+  <div data-component="select" data-variant="default">
+    <label for="pat-form-pier">Plan</label>
+    <select id="pat-form-pier" name="pier">
+      <option>Basic</option>
+      <option>Plus</option>
+    </select>
+  </div>
+  <div data-component="checkbox" data-variant="default">
+    <label><input type="checkbox" name="sms"> SMS receipts</label>
+  </div>
+  <fieldset data-component="radio" data-variant="default">
+    <legend>Seat</legend>
+    <label><input type="radio" name="pat-form-seat" value="window" checked> Window</label>
+    <label><input type="radio" name="pat-form-seat" value="aisle"> Aisle</label>
+  </fieldset>
+  <div data-part="actions">
+    <button type="submit" data-component="button" data-variant="primary">Save</button>
+    <button type="button" data-component="button" data-variant="secondary">Cancel</button>
+  </div>
+</form>

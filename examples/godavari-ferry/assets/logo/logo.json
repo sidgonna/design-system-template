@@ -1,0 +1,43 @@
+{
+  "$schema": "../../design-build/schemas/logo.schema.json",
+  "$comment": "Godavari Ferry lockups. The mark is the Dowleswaram barrage: three piers, a deck and a waterline. Colour is currentColor; the board paints it from the token refs below.",
+  "placeholder": false,
+  "variants": {
+    "primary": {
+      "file": "logo-primary.svg",
+      "use": "Default lockup on light surfaces",
+      "color": "{color.brand.primary}",
+      "background": "{color.surface.default}"
+    },
+    "wordmark": {
+      "file": "logo-wordmark.svg",
+      "use": "Where the mark already appears nearby",
+      "color": "{color.text.primary}",
+      "background": "{color.surface.default}"
+    },
+    "mark_only": {
+      "file": "logo-mark.svg",
+      "use": "App icons, favicons and small spaces",
+      "color": "{color.brand.primary}",
+      "background": "{color.surface.default}"
+    },
+    "mono_dark": {
+      "file": "logo-mono-dark.svg",
+      "use": "One-colour use on light backgrounds",
+      "color": "{color.text.primary}",
+      "background": "{color.surface.default}"
+    },
+    "mono_light": {
+      "file": "logo-mono-light.svg",
+      "use": "One-colour use on the brand colour",
+      "color": "{color.text.inverse}",
+      "background": "{color.brand.primary}"
+    },
+    "regional": {
+      "file": "logo-te.svg",
+      "use": "Telugu lockup for the jetty board (§12)",
+      "color": "{color.brand.primary}",
+      "background": "{color.surface.default}"
+    }
+  }
+}

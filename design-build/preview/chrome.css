@@ -1,0 +1,186 @@
+/* GENERATED from design-build/chrome/chrome.tokens.json by design-build/board.mjs. Do not edit: change the chrome tokens and re-run. */
+/* Board chrome only (toolbar, tabs, card frames, labels). Specimens use the brand tokens in tokens.css. */
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("../chrome/fonts/hanken-grotesk-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+  unicode-range: U+0020-007E, U+00A0-017E, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0374-0375, U+037E, U+0384-0385, U+0387, U+0394, U+03A9, U+03BC, U+03C0, U+2013-2015, U+2018-201A, U+201C-201E, U+2020-2023, U+2025-2026, U+2030-2031, U+2039-203A, U+2044, U+20AB-20AC, U+20B1, U+20B3-20B4, U+20B8, U+20BD, U+2116, U+2122, U+2126, U+2190, U+2192, U+2202, U+2205-2206, U+220F, U+2211-2212, U+2215, U+221A, U+221E, U+222B, U+2248, U+2260, U+2264-2265, U+25CA;
+}
+@font-face {
+  font-family: "Board Symbols";
+  src: url("../chrome/fonts/ibm-plex-sans-symbols-wght-normal.woff2") format("woff2");
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: block;
+  unicode-range: U+017F, U+02BB-02BC, U+0386, U+0388-038A, U+038C, U+038E-0393, U+0395-03A1, U+03A3-03A8, U+03AA-03BB, U+03BD-03BF, U+03C1-03CE, U+2000-200D, U+2010-2012, U+2028-2029, U+202F, U+2032-2033, U+20A1, U+20A4, U+20A6, U+20A8-20AA, U+20AD-20AE, U+20B2, U+20B5, U+20B9-20BA, U+20BF, U+2113, U+212E, U+2191, U+2193-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6, U+2219, U+2236, U+2713, U+274C, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("../chrome/fonts/ibm-plex-mono-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+  unicode-range: U+0020-007E, U+00A0-017F, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+03C0, U+2000-200D, U+2010-2015, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2028-2029, U+202F-2030, U+2032-2033, U+2039-203A, U+203E, U+2044, U+205F, U+20A1, U+20A4, U+20A6, U+20A8-20AE, U+20B1-20B2, U+20B4-20B5, U+20B8-20BA, U+20BD, U+20BF, U+2113, U+2116, U+2122, U+2126, U+212E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6, U+2202, U+2206, U+220F, U+2211-2212, U+2215, U+2219-221A, U+221E, U+222B, U+2236, U+2248, U+2260, U+2264-2265, U+25CA, U+2713, U+274C, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("../chrome/fonts/ibm-plex-mono-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+  unicode-range: U+0020-007E, U+00A0-017F, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+03C0, U+2000-200D, U+2010-2015, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2028-2029, U+202F-2030, U+2032-2033, U+2039-203A, U+203E, U+2044, U+205F, U+20A1, U+20A4, U+20A6, U+20A8-20AE, U+20B1-20B2, U+20B4-20B5, U+20B8-20BA, U+20BD, U+20BF, U+2113, U+2116, U+2122, U+2126, U+212E, U+2190-2199, U+21A9-21AA, U+21B0-21B3, U+21B6-21B7, U+21BA-21BB, U+21C4, U+21C6, U+2202, U+2206, U+220F, U+2211-2212, U+2215, U+2219-221A, U+221E, U+222B, U+2236, U+2248, U+2260, U+2264-2265, U+25CA, U+2713, U+274C, U+FEFF, U+FFFD;
+}
+:root {
+  --chrome-color-canvas: #f4f4f2;
+  --chrome-color-surface: #ffffff;
+  --chrome-color-raised: #ecebe8;
+  --chrome-color-ink-1: #1c1b19;
+  --chrome-color-ink-2: #5f5b55;
+  --chrome-color-ink-3: #6f6b65;
+  --chrome-color-line: #1c1b191a;
+  --chrome-color-line-strong: #1c1b1940;
+  --chrome-color-hatch: #1c1b190d;
+  --chrome-color-inverse: #1c1b19;
+  --chrome-color-on-inverse: #ffffff;
+  --chrome-color-focus: #2f5bd3;
+  --chrome-color-status-done: #1d6b45;
+  --chrome-color-status-warn: #8a5300;
+  --chrome-color-status-error: #b3261e;
+  --chrome-font-ui: "Hanken Grotesk", "Board Symbols", sans-serif;
+  --chrome-font-mono: "IBM Plex Mono", "Board Symbols", monospace;
+  --chrome-type-display: 600 28px/1.1428 "Hanken Grotesk", "Board Symbols", sans-serif;
+  --chrome-type-display-tracking: -0.4px;
+  --chrome-type-heading: 600 20px/1.4 "Hanken Grotesk", "Board Symbols", sans-serif;
+  --chrome-type-heading-tracking: -0.2px;
+  --chrome-type-title: 600 16px/1.5 "Hanken Grotesk", "Board Symbols", sans-serif;
+  --chrome-type-title-tracking: 0;
+  --chrome-type-body: 400 14px/1.4286 "Hanken Grotesk", "Board Symbols", sans-serif;
+  --chrome-type-body-tracking: 0;
+  --chrome-type-label: 500 12px/1.3333 "Hanken Grotesk", "Board Symbols", sans-serif;
+  --chrome-type-label-tracking: 0.1px;
+  --chrome-type-code: 400 12px/1.3333 "IBM Plex Mono", "Board Symbols", monospace;
+  --chrome-type-code-tracking: 0;
+  --chrome-space-1: 4px;
+  --chrome-space-2: 8px;
+  --chrome-space-3: 12px;
+  --chrome-space-4: 16px;
+  --chrome-space-5: 20px;
+  --chrome-space-6: 24px;
+  --chrome-space-8: 32px;
+  --chrome-space-12: 48px;
+  --chrome-radius-control: 8px;
+  --chrome-radius-card: 16px;
+  --chrome-radius-badge: 999px;
+  --chrome-size-bar: 56px;
+  --chrome-size-tab: 44px;
+  --chrome-size-control: 32px;
+  --chrome-size-target: 44px;
+  --chrome-size-row: 152px;
+  --chrome-size-gap: 16px;
+  --chrome-size-page: 1440px;
+  --chrome-size-minimap: 192px;
+  --chrome-size-icon: 16px;
+  --chrome-size-hairline: 1px;
+  --chrome-size-ring: 2px;
+  --chrome-shadow-card: 0 1px 2px 0 #1c1b190a;
+  --chrome-shadow-pop: 0 8px 24px 0 #1c1b1926;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --chrome-color-canvas: #121110;
+    --chrome-color-surface: #1b1a19;
+    --chrome-color-raised: #262523;
+    --chrome-color-ink-1: #f2f1ee;
+    --chrome-color-ink-2: #bcb8b1;
+    --chrome-color-ink-3: #9a968f;
+    --chrome-color-line: #ffffff17;
+    --chrome-color-line-strong: #ffffff38;
+    --chrome-color-hatch: #ffffff0d;
+    --chrome-color-inverse: #f2f1ee;
+    --chrome-color-on-inverse: #121110;
+    --chrome-color-focus: #8fa8ff;
+    --chrome-color-status-done: #7fd1a4;
+    --chrome-color-status-warn: #e8b45e;
+    --chrome-color-status-error: #f3a29b;
+    --chrome-shadow-card: 0 0 0 0 #00000000;
+    --chrome-shadow-pop: 0 8px 24px 0 #00000099;
+  }
+}
+:root[data-theme="light"] {
+  --chrome-color-canvas: #f4f4f2;
+  --chrome-color-surface: #ffffff;
+  --chrome-color-raised: #ecebe8;
+  --chrome-color-ink-1: #1c1b19;
+  --chrome-color-ink-2: #5f5b55;
+  --chrome-color-ink-3: #6f6b65;
+  --chrome-color-line: #1c1b191a;
+  --chrome-color-line-strong: #1c1b1940;
+  --chrome-color-hatch: #1c1b190d;
+  --chrome-color-inverse: #1c1b19;
+  --chrome-color-on-inverse: #ffffff;
+  --chrome-color-focus: #2f5bd3;
+  --chrome-color-status-done: #1d6b45;
+  --chrome-color-status-warn: #8a5300;
+  --chrome-color-status-error: #b3261e;
+  --chrome-shadow-card: 0 1px 2px 0 #1c1b190a;
+  --chrome-shadow-pop: 0 8px 24px 0 #1c1b1926;
+}
+:root[data-theme="dark"] {
+  --chrome-color-canvas: #121110;
+  --chrome-color-surface: #1b1a19;
+  --chrome-color-raised: #262523;
+  --chrome-color-ink-1: #f2f1ee;
+  --chrome-color-ink-2: #bcb8b1;
+  --chrome-color-ink-3: #9a968f;
+  --chrome-color-line: #ffffff17;
+  --chrome-color-line-strong: #ffffff38;
+  --chrome-color-hatch: #ffffff0d;
+  --chrome-color-inverse: #f2f1ee;
+  --chrome-color-on-inverse: #121110;
+  --chrome-color-focus: #8fa8ff;
+  --chrome-color-status-done: #7fd1a4;
+  --chrome-color-status-warn: #e8b45e;
+  --chrome-color-status-error: #f3a29b;
+  --chrome-shadow-card: 0 0 0 0 #00000000;
+  --chrome-shadow-pop: 0 8px 24px 0 #00000099;
+}
+[data-chrome="light"] {
+  --chrome-color-canvas: #f4f4f2;
+  --chrome-color-surface: #ffffff;
+  --chrome-color-raised: #ecebe8;
+  --chrome-color-ink-1: #1c1b19;
+  --chrome-color-ink-2: #5f5b55;
+  --chrome-color-ink-3: #6f6b65;
+  --chrome-color-line: #1c1b191a;
+  --chrome-color-line-strong: #1c1b1940;
+  --chrome-color-hatch: #1c1b190d;
+  --chrome-color-inverse: #1c1b19;
+  --chrome-color-on-inverse: #ffffff;
+  --chrome-color-focus: #2f5bd3;
+  --chrome-color-status-done: #1d6b45;
+  --chrome-color-status-warn: #8a5300;
+  --chrome-color-status-error: #b3261e;
+  --chrome-shadow-card: 0 1px 2px 0 #1c1b190a;
+  --chrome-shadow-pop: 0 8px 24px 0 #1c1b1926;
+}
+[data-chrome="dark"] {
+  --chrome-color-canvas: #121110;
+  --chrome-color-surface: #1b1a19;
+  --chrome-color-raised: #262523;
+  --chrome-color-ink-1: #f2f1ee;
+  --chrome-color-ink-2: #bcb8b1;
+  --chrome-color-ink-3: #9a968f;
+  --chrome-color-line: #ffffff17;
+  --chrome-color-line-strong: #ffffff38;
+  --chrome-color-hatch: #ffffff0d;
+  --chrome-color-inverse: #f2f1ee;
+  --chrome-color-on-inverse: #121110;
+  --chrome-color-focus: #8fa8ff;
+  --chrome-color-status-done: #7fd1a4;
+  --chrome-color-status-warn: #e8b45e;
+  --chrome-color-status-error: #f3a29b;
+  --chrome-shadow-card: 0 0 0 0 #00000000;
+  --chrome-shadow-pop: 0 8px 24px 0 #00000099;
+}

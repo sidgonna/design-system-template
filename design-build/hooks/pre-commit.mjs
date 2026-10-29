@@ -2,7 +2,7 @@
 // Git pre-commit checks for the design system and the app it serves. Zero dependencies (render needs Playwright).
 // Installed by: node design-system/design-build/install-hooks.mjs   (or node design-build/install-hooks.mjs in the template)
 // PROTECTED (design.md §0.5): agents must not edit this hook, remove it, or bypass it with --no-verify.
-//   1. tokens/tokens.json staged → regenerate preview/tokens.css, tokens.js, tokens.mjs and stage them
+//   1. tokens/tokens.json staged → regenerate preview/tokens.css, tokens.js, tokens.mjs, the DESIGN.md / Tailwind / Figma exports and the board, and stage them
 //   2. lint.mjs on the design files AND the app code (src/, app/, …; see design-build/project.json); a baseline,
 //      if the user approved one, is respected: a rule's count may only go down
 //   3. something visual staged → render.mjs + axe: the design preview when design files changed, and the app's
@@ -31,9 +31,16 @@ for (const w of W.warnings) console.error(`design pre-commit: WARNING ${w}`);
 
 // 1. generated token files follow tokens.json
 if (inDs.includes('tokens/tokens.json')) {
-  say('tokens.json changed → regenerating tokens.css / tokens.js / tokens.mjs');
+  say('tokens.json changed → regenerating tokens.css / tokens.js / tokens.mjs, the DESIGN.md exports and the board');
   if (node('tokens-css.mjs') !== 0) die(hint('tokens.json does not build. Fix the errors above (node design-build/tokens-css.mjs), then commit again.'));
-  execFileSync('git', ['add', ...['tokens.css', 'tokens.js', 'tokens.mjs'].map((f) => path.join(DS, 'design-build/preview', f))], { cwd: top });
+  if (node('designmd.mjs') !== 0) die(hint('tokens.json does not export. Fix the errors above (node design-build/designmd.mjs), then commit again.'));
+  if (node('board.mjs') !== 0) die(hint('the board does not build. Fix the errors above (node design-build/board.mjs), then commit again.'));
+  execFileSync('git', ['add', ...[
+    'design-build/preview/tokens.css', 'design-build/preview/tokens.js', 'design-build/preview/tokens.mjs',
+    'design-build/preview/index.html', 'design-build/preview/board.json', 'design-build/preview/board.md', 'design-build/preview/chrome.css',
+    'design-build/exports/DESIGN.md', 'design-build/exports/tailwind.theme.css', 'design-build/exports/tailwind.config.cjs',
+    'design-build/exports/figma.tokens-studio.json', 'design-build/exports/figma.variables.json',
+  ].map((f) => path.join(DS, f))], { cwd: top });
 }
 
 // 2. lint: design files + app code

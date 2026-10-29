@@ -1,11 +1,12 @@
 // The live board: `node design-build/board.mjs --serve` (watching is on by default; --no-watch serves files as they are).
 // Zero dependencies. Watches the design files, tokens, inventory, ui-inventory, assets, components, state.yaml,
-// review.json and the check reports; on a change (debounced) it rebuilds tokens.css/js/mjs, the board and the
-// studies page in memory, writes them only when every input is valid, and tells open tabs to reload over
+// review.json and the check reports; on a change (debounced) it rebuilds tokens.css/js/mjs, the DESIGN.md /
+// Tailwind / Figma exports, the board and the studies page in memory, writes them only when every input is valid, and tells open tabs to reload over
 // Server-Sent Events. A tiny client script is added to served HTML only, never to the files on disk, so
 // `board.mjs --check` and lint rule board-stale see the same bytes as a plain `node design-build/board.mjs`.
 // A bad save (malformed JSON or YAML, a broken token alias) keeps the last good board on disk and on screen and
 // shows a banner with file:line; the next good save recovers.
+import { exportPng, closeExport } from './export.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -16,7 +17,7 @@ import { analyze } from './markdown.mjs';
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.md': 'text/markdown; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf' };
 const SKIP_DIRS = new Set(['node_modules', '.git', 'screenshots', '.terrazzo', 'fixtures', 'dist', 'build', '.next']);
 // Files the generators write: never a trigger (or every write would loop).
-const GENERATED = [/^design-build\/preview\/(index\.html|board\.json|board\.md|tokens\.(css|js|mjs))$/, /^design-build\/studies\/index\.html$/, /^design-build\/studies\/directions\/[^/]+\.resolved\.json$/];
+const GENERATED = [/^design-build\/preview\/(index\.html|board\.json|board\.md|tokens\.(css|js|mjs)|chrome\.css)$/, /^design-build\/exports\//, /^design-build\/studies\/index\.html$/, /^design-build\/studies\/directions\/[^/]+\.resolved\.json$/];
 export const DEBOUNCE_MS = 200;
 export const LIVE_PATH = '/__live';
 
@@ -27,7 +28,7 @@ export function watchSpec(root) {
   let assetRoot = 'assets', tokensRel = 'tokens/tokens.json', design = [];
   try { const ctx = loadContext(root); design = ctx.config?.design_files || []; tokensRel = ctx.tokensRel || tokensRel; assetRoot = String(ctx.index?.fm?.asset_root ?? 'assets').replace(/^\{\{|\}\}$/g, '').replace(/^\.\//, '').replace(/\/$/, '') || 'assets'; } catch { /* a bad file mid-edit: use the defaults */ }
   const files = ['design.md', ...design, tokensRel, 'design-build/inventory.json', 'design-build/state.yaml', 'design-build/review.json', 'design-build/project.json', 'design-build/lint.config.json',
-    'design-build/render-report.json', 'design-build/a11y-report.json', 'design-build/motion-report.json', 'design-build/preview/preview.css', 'design-build/preview/preview.js'];
+    'design-build/render-report.json', 'design-build/a11y-report.json', 'design-build/motion-report.json', 'design-build/preview/preview.css', 'design-build/preview/preview.js', 'design-build/chrome/chrome.tokens.json'];
   const dirs = ['design', path.posix.dirname(tokensRel), 'ui-inventory', assetRoot, 'components', 'design-build/studies/directions'].filter((d) => d && d !== '.');
   return { files, dirs, tokensRel };
 }
@@ -145,7 +146,9 @@ export function changedTiles(oldHtml, newHtml, tokens = []) {
     if (!hit && tokens.length) {
       const text = c.replace(/<[^>]+>/g, '');
       hit = tokens.some((t) => text.includes(t) || text.includes(t.split('.').slice(0, -1).join('.') + '.*'))
-        || TOKEN_TARGETS.some(([el, re]) => c.includes(` id="${el}"`) && tokens.some((t) => re.test(t)));
+        || TOKEN_TARGETS.some(([el, re]) => c.includes(` id="${el}"`) && tokens.some((t) => re.test(t)))
+        // specimen tiles name the token groups they draw: data-shows="palette.primary color.brand"
+        || [...c.matchAll(/data-shows="([^"]+)"/g)].some(([, list]) => list.split(' ').some((p) => tokens.some((t) => t === p || t.startsWith(p + '.'))));
     }
     if (hit) out.push({ id, title: titleOf(c, id) });
   }
@@ -340,6 +343,16 @@ export function startLive(root, opts) {
       req.on('close', () => { clearInterval(ping); clients.delete(res); });
       return;
     }
+    if (url.pathname === '/__board/export.png') {
+      // PNG export of a board view, rendered by the board itself (Playwright from design-build/node_modules)
+      const q = url.searchParams, view = /^(specimen|guidelines|coverage)$/.test(q.get('view') || '') ? q.get('view') : 'specimen';
+      const theme = /^[a-z0-9-]+$/.test(q.get('theme') || '') ? q.get('theme') : 'light', width = Math.min(2560, Math.max(320, Number(q.get('width')) || 1280));
+      const { address, port: p } = server.address();
+      exportPng({ url: `http://${address === '::' ? 'localhost' : address}:${p}/design-build/preview/?board=${view}`, theme, width })
+        .then((buf) => { res.writeHead(200, { 'content-type': 'image/png', 'content-disposition': `attachment; filename="board-${view}-${theme}-${width}.png"`, 'cache-control': 'no-store' }); res.end(buf); })
+        .catch((e) => { res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' }); res.end(`PNG export failed: ${e.message}. Install the renderer: npm --prefix design-build ci && npx --prefix design-build playwright install chromium`); });
+      return;
+    }
     if (url.pathname === `${LIVE_PATH}/client.js`) { res.writeHead(200, { 'content-type': TYPES['.js'], 'cache-control': 'no-store' }); res.end(CLIENT); return; }
     let f = path.join(root, decodeURIComponent(url.pathname));
     if (f !== root && !f.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
@@ -363,6 +376,7 @@ export function startLive(root, opts) {
       if (watch) watcher = watchFiles(root, queue, { poll });
       const close = () => new Promise((done) => {
         clearTimeout(debounce); if (watcher) watcher.close();
+        closeExport().catch(() => {});
         for (const c of clients) c.end();
         clients.clear();
         server.close(() => done());

@@ -2,11 +2,14 @@
 // Generates the design board: design-build/preview/index.html (the page people review), plus board.json and board.md
 // (the same content for AI agents and exports). It replaces the old preview page and the Phase 3 studies page.
 // Zero dependencies. Deterministic: the output depends only on the design files, tokens, inventory, ui-inventory docs,
-// {asset_root}/logo/logo.json, {asset_root}/fonts/fonts.css (whether it exists) and design-build/review.json, so lint.mjs (rule board-stale) can tell when it is out of date.
+// {asset_root}/logo/logo.json, {asset_root}/fonts/fonts.css (whether it exists), design-build/review.json and whether
+// the DESIGN.md, Tailwind and Figma outputs match the tokens (the sync badge), so lint.mjs (rule board-stale) can tell when it is out of date.
 //
 // Usage (from the app root, prefix design-system/; from the template root, as written):
 //   node design-build/board.mjs                         write preview/index.html, preview/board.json, preview/board.md
-//   node design-build/board.mjs --check                 exit 1 if any of them is stale or logo.json is invalid
+//   node design-build/board.mjs --check                 exit 1 if any of them (or preview/chrome.css) is stale or logo.json is invalid
+//   node design-build/board.mjs --png [--view specimen|guidelines|coverage] [--theme light] [--width 1280]
+//                                                       a PNG of one board view → design-build/exports/ (needs Playwright)
 //   node design-build/board.mjs --review "§4=accept" --review "§5=edit:warmer heading font"
 //                                                       record Phase 5 verdicts in design-build/review.json, then rebuild
 //   node design-build/board.mjs --overview-only --direction A --direction B
@@ -14,23 +17,26 @@
 //                                                       → studies/index.html and studies/directions/<ID>.resolved.json
 //   node design-build/board.mjs --serve [--port 4173]   the live board: serve the design-system folder, watch the design files,
 //                                                       tokens, inventory, ui-inventory, assets, components, state.yaml and
-//                                                       review.json, rebuild tokens.css + the board (+ the studies page) on
+//                                                       review.json, rebuild tokens.css, the DESIGN.md / Tailwind / Figma
+//                                                       exports and the board (+ the studies page) on
 //                                                       save and reload open tabs (lib/live.mjs). --watch is the default with
 //                                                       --serve; --no-watch serves files as they are; --poll forces polling
 //                                                       (network drives, containers); a busy port tries the next one.
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadContext, pairingResults, readJson } from './lib/context.mjs';
 import { placeholders, unfilled, INTAKE_MARKER } from './lib/markdown.mjs';
 import { loadTokens, flatten, varName } from './lib/tokens.mjs';
 import { toHex } from './lib/color.mjs';
 import { generate as generateTokens } from './tokens-css.mjs';
 import { startLive } from './lib/live.mjs';
+import { buildChromeCss, schemeOf, CHROME_CSS } from './lib/chrome.mjs';
+import { exportSync, outputFiles } from './lib/designmd.mjs';
 import { screensOf, docPath, screenPath, slug, COMPONENT_HEADINGS, END } from './lib/ui-inventory.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-export const OUT = { html: 'design-build/preview/index.html', json: 'design-build/preview/board.json', md: 'design-build/preview/board.md' };
+export const OUT = { html: 'design-build/preview/index.html', json: 'design-build/preview/board.json', md: 'design-build/preview/board.md', css: CHROME_CSS };
 export const REVIEW_FILE = 'design-build/review.json';
 export const VERDICTS = ['accept', 'edit', 'reject'];
 
@@ -45,7 +51,7 @@ const hasRaw = (s) => RAW.some((re) => { re.lastIndex = 0; return re.test(s); })
 const clean = (s, src) => RAW.reduce((t, re) => t.replace(re, () => `(value in ${src})`), String(s));
 export const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // Long token names and paths in <code> wrap only after a dot or slash (never mid-word): a <wbr> goes after each one.
-export const wrapCode = (html) => html.replace(/(<code\b[^>]*>)([^<]*)(<\/code>)/g, (m, a, t, b) => a + t.replace(/([./])(?=[A-Za-z_{-])/g, '$1<wbr>') + b);
+export const wrapCode = (html) => html.replace(/(<code\b(?![^>]*data-token)[^>]*>)([^<]*)(<\/code>)/g, (m, a, t, b) => a + t.replace(/([./])(?=[A-Za-z_{-])/g, '$1<wbr>') + b);
 const stripPh = (s) => String(s).replace(/\{\{|\}\}/g, '');
 const TOKREF = /\{([a-z][\w-]*(?:\.[\w*.-]+)+)\}/gi;
 
@@ -116,7 +122,10 @@ function renderYaml(text, src) {
       if (/^\[[\s\S]*\]$/.test(val)) val = val.slice(1, -1);
       val = unquote(val);
     }
-    rows.push(`<div class="fact d${depth}${val ? '' : ' group'}"><dt>${inline(key, src)}</dt><dd>${val ? inline(val, src) : ''}</dd></div>`);
+    // a yaml key reads as words ("competitors to differ from"); the raw key stays in the title and in board.md
+    const plain = /^[a-z][\w-]*$/.test(key);
+    const label = plain ? key.replace(/[_-]+/g, ' ').replace(/^./, (c) => c.toUpperCase()) : null;
+    rows.push(`<div class="fact d${depth}${val ? '' : ' group'}">${plain ? `<dt title="${esc(key)}">${esc(label)}</dt>` : `<dt>${inline(key, src)}</dt>`}<dd>${val ? inline(val, src) : ''}</dd></div>`);
   }
   return rows.length ? `<dl class="facts">${rows.join('')}</dl>` : '';
 }
@@ -325,34 +334,55 @@ export function model(root) {
   const modules = Object.entries(mods).filter(([rel]) => rel !== 'design/core.md').map(([rel, m]) => ({ file: rel, key: m.key, state: m.state }));
   const hex = {};
   for (const [p, e] of ctx.flat) if (e.type === 'color') hex[p] = Object.fromEntries(Object.entries(e.color).filter(([, c]) => c).map(([m, c]) => [m, toHex(c)]));
-  return { ctx, mods, tiles, coverage, modules, review, logo, brandRaw, feelLine, pairings: pairingResults(ctx), hex };
+  return { ctx, mods, tiles, coverage, modules, review, logo, brandRaw, feelLine, pairings: pairingResults(ctx), hex, specimen: loadSpecimen(root) };
 }
+
+/** Optional design-build/specimen.json. Missing or unreadable means the starter specimen strings. */
+function loadSpecimen(root) {
+  const abs = path.join(root, 'design-build/specimen.json');
+  if (!fs.existsSync(abs)) return null;
+  try {
+    const j = JSON.parse(fs.readFileSync(abs, 'utf8'));
+    return j && typeof j === 'object' ? j : null;
+  } catch { return null; }
+}
+const specStr = (s, group, key, fallback) => {
+  const v = s && s[group] && s[group][key];
+  return typeof v === 'string' && v ? v : fallback;
+};
 
 // ---------- HTML ----------
 export const ICON = {
   check: '<path d="M5 12l5 5L19 7"/>', info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>', close: '<path d="M6 6l12 12M18 6L6 18"/>', arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>', search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>', home: '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/>', menu: '<path d="M4 7h16M4 12h16M4 17h16"/>', bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4"/>', heart: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>', download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
   link: '<path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/>',
 };
 export const svgIcon = (k, cls = '') => `<svg class="icon${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON[k]}</svg>`;
-const STATUS = { filled: ['success', 'Filled'], partial: ['warning', 'Partly filled'], empty: ['neutral', 'Not filled'], planned: ['info', 'Planned'] };
+const STATUS = { filled: ['done', 'Filled'], partial: ['warn', 'Partly filled'], empty: ['none', 'Not filled'], planned: ['info', 'Planned'] };
 export const ZONES = [
-  [0, 'Overview', 'Brand at a glance and how complete the system is.'],
-  [1, 'Brand identity', 'core.md §1, §2, §3, §6, §7 and §8: who the brand is, and how it looks and sounds.'],
-  [2, 'Foundations', 'core.md §4, §5 and §9 to §13: color, type, space, motion, accessibility, languages and tokens.'],
-  [3, 'Product (§M1)', 'digital-product.md and the component docs in ui-inventory/components/.'],
-  [4, 'Screens', 'The UI inventory: every screen and the components it uses.'],
-  [5, 'Application modules', 'marketing-content.md (§M2), motion-video.md (§M3) and print.md (§M4).'],
-  [6, 'Governance', 'core.md §14, the design.md rules (§0, §15, §16) and the Phase 5 review.'],
+  [0, 'Overview', 'The brand at a glance.'],
+  [1, 'Brand identity', 'Who the brand is, and how it looks and sounds.'],
+  [2, 'Foundations', 'Colour, type, space, motion, accessibility, languages and tokens.'],
+  [3, 'Product', 'The product rules and the component docs.'],
+  [4, 'Screens', 'Every screen and the components it uses.'],
+  [5, 'Application modules', 'Marketing and content, motion and video, print.'],
+  [6, 'Governance', 'Versioning, the rules for agents, the build workflow and the review.'],
 ];
+// The board's three views (?board=<id>, kept per browser); the first is the default.
+export const VIEWS = [['specimen', 'Specimen'], ['guidelines', 'Guidelines'], ['coverage', 'Coverage']];
 const VERDICT_LABEL = { accept: 'Accepted', edit: 'Edit requested', reject: 'Rejected' };
+const FILE_LABEL = { 'design.md': 'Rules', 'design/core.md': 'Core', 'design/digital-product.md': 'Product', 'design/marketing-content.md': 'Marketing', 'design/motion-video.md': 'Motion video', 'design/print.md': 'Print', 'design-build/review.json': 'Review', 'design-build/inventory.json': 'Inventory' };
+const status = (tone, label) => `<span class="status" data-tone="${tone}"><span class="status-dot" aria-hidden="true"></span>${label}</span>`;
+/** "§4 Color system" → ["§4", "Color system"]: the number goes in the kicker, the words are the title. */
+const splitTitle = (title) => { const m = String(title).match(/^(§[\w.]+)\s+(.*)$/); return m ? [m[1], m[2]] : [null, String(title)]; };
 
 function statusBadge(t) {
-  if (t.module === 'off') return '<span data-component="badge" data-variant="neutral">Switched off</span>';
-  const [v, label] = STATUS[t.status] || STATUS.partial;
+  if (t.module === 'off') return status('none', 'Switched off');
+  const [tone, label] = STATUS[t.status] || STATUS.partial;
   const n = t.placeholders && t.status !== 'planned' ? ` · ${t.placeholders} to fill` : '';
-  return `<span data-component="badge" data-variant="${v}">${label}${n}</span>${t.module === 'unset' ? '<span data-component="badge" data-variant="info">Not chosen</span>' : ''}`;
+  return status(tone, label + n) + (t.module === 'unset' ? status('info', 'Not chosen') : '');
 }
 
 function reviewBar(t) {
@@ -361,15 +391,18 @@ function reviewBar(t) {
 <div class="review" role="group" aria-label="Review: ${esc(t.title)}"><button type="button" class="tool" data-verdict="accept" aria-pressed="${v?.verdict === 'accept'}">Accept</button><button type="button" class="tool" data-verdict="edit" aria-pressed="${v?.verdict === 'edit'}">Edit</button><button type="button" class="tool" data-verdict="reject" aria-pressed="${v?.verdict === 'reject'}">Reject</button><label class="review-note"><span class="sr-only">Note on ${esc(t.title)}</span><input type="text" class="note" placeholder="Note (optional)" value="${esc(v?.note || '')}"></label></div>`;
 }
 
+const GROUP_LABEL = { actions: 'Actions', inputs: 'Inputs', feedback: 'Feedback', navigation: 'Navigation', 'data-display': 'Data display', layout: 'Layout' };
 function tileHtml(t, body, M) {
-  const kicker = t.kind === 'component' ? `ui-inventory · ${t.comp.status}` : t.kind === 'screen' ? 'ui-inventory · screen' : `${t.file.replace(/^design\//, '')} · ${t.sections.join(', ')}`;
+  const [num, words] = splitTitle(t.title);
+  const kicker = t.kind === 'component' ? `Component · ${GROUP_LABEL[t.comp.group] || 'Layout'} · ${t.comp.status === 'existing' ? 'shipped' : t.comp.status}` : t.kind === 'screen' ? 'Screen' : [FILE_LABEL[t.file] || t.file.replace(/^design\//, ''), num].filter(Boolean).join(' · ');
   const key = M.mods[t.file]?.key || 'module';
-  const attrs = [`class="tile${t.wide ? ' wide' : ''}"`, `id="tile-${t.id}"`, `data-tile="${t.id}"`, `data-status="${t.status}"`, `data-module-state="${t.module}"`, `data-review-id="${esc(t.review)}"`, t.verdict ? `data-verdict="${esc(t.verdict.verdict)}"` : '', t.duo ? 'data-duo' : '', `aria-labelledby="tile-${t.id}-h"`].filter(Boolean).join(' ');
-  const modNote = t.module === 'off' ? `<p class="module-note">Switched off in design.md (<code>parts.${esc(key)}.enabled: false</code>). The tile stays so nothing is lost; the coverage ring leaves it out.</p>`
-    : t.module === 'unset' ? `<p class="module-note">Module not chosen yet: set <code>parts.${esc(key)}.enabled</code> in design.md (Phase 1). Until then the coverage ring leaves it out.</p>` : '';
+  const groupAttr = t.kind === 'component' && t.comp.group ? `data-group="${esc(t.comp.group)}"` : '';
+  const attrs = [`class="tile${t.wide ? ' wide' : ''}"`, `id="tile-${t.id}"`, `data-tile="${t.id}"`, groupAttr, `data-status="${t.status}"`, `data-module-state="${t.module}"`, `data-review-id="${esc(t.review)}"`, t.verdict ? `data-verdict="${esc(t.verdict.verdict)}"` : '', `aria-labelledby="tile-${t.id}-h"`].filter(Boolean).join(' ');
+  const modNote = t.module === 'off' ? `<p class="module-note">Switched off in design.md (<code>parts.${esc(key)}.enabled: false</code>). The tile stays so nothing is lost; coverage leaves it out.</p>`
+    : t.module === 'unset' ? `<p class="module-note">Module not chosen yet: set <code>parts.${esc(key)}.enabled</code> in design.md (Phase 1). Until then coverage leaves it out.</p>` : '';
   return `<article ${attrs}>
-<header class="tile-head"><div class="tile-title"><p class="kicker">${esc(kicker)}</p><h3 id="tile-${t.id}-h">${esc(t.title)}</h3></div><div class="tile-meta">${statusBadge(t)}<a class="anchor" href="#tile-${t.id}" aria-label="Link to ${esc(t.title)}">${svgIcon('link', 'sm')}</a></div></header>
-${typeof t.feel === 'string' ? `<p class="feel"><strong>Feel:</strong> ${inline(t.feel, t.file)}</p>\n` : ''}${modNote}<div class="tile-body">
+<header class="tile-head"><p class="kicker">${esc(kicker)}</p><div class="tile-meta">${statusBadge(t)}<a class="anchor" href="#tile-${t.id}" aria-label="Link to ${esc(t.title)}">${svgIcon('link', 'sm')}</a></div><h3 id="tile-${t.id}-h">${esc(words)}</h3></header>
+${typeof t.feel === 'string' ? `<p class="feel">${inline(t.feel, t.file)}</p>\n` : ''}${modNote}<div class="tile-body">
 ${body}
 </div>
 ${reviewBar(t)}
@@ -378,56 +411,64 @@ ${reviewBar(t)}
 
 const specimen = {
   icons: () => `<div class="icon-grid">${['check', 'info', 'close', 'arrow'].map((k) => `<div class="icon-cell"><div class="icon-sizes">${svgIcon(k, 'sm')}${svgIcon(k, 'md')}${svgIcon(k)}</div>${k[0].toUpperCase() + k.slice(1)}</div>`).join('')}</div>`,
-  motion: () => `<div class="motion-demo">
-<button type="button" data-component="button" data-variant="secondary" id="play-motion" aria-controls="motion-tracks" aria-pressed="false">Play motion</button>
-<div id="motion-tracks" class="tracks">
-<div class="motion-track"><span class="track-label">fast</span><div class="mover fast"></div></div>
-<div class="motion-track"><span class="track-label">base</span><div class="mover"></div></div>
-<div class="motion-track"><span class="track-label">slow</span><div class="mover slow"></div></div>
-</div>
-<p class="note-text">Play moves the squares at the fast, base and slow durations and replays the component motion (card entrance, badge pop-in, input error shake). With reduced motion nothing moves: the squares jump, and the card and badge only fade, for at most <code>motion.duration.fast</code> (core §10).</p>
-</div>`,
-  components: () => `<div id="components" class="components">
+  // the playable demo lives on the Specimen view (#play-motion); the guideline tile repeats the tracks without ids
+  motion: () => `<div class="motion-demo brand"><button type="button" data-component="button" data-variant="secondary" data-play aria-pressed="false">Play motion</button>
+<div class="tracks">${['fast', 'base', 'slow'].map((d) => `<div class="motion-track"><span class="track-label">${d[0].toUpperCase() + d.slice(1)}</span><div class="mover${d === 'base' ? '' : ' ' + d}"></div></div>`).join('')}</div></div>
+<p class="note-text">Play moves the squares at the fast, base and slow durations. With reduced motion nothing moves: the squares jump, and the card and badge only fade, for at most <code>motion.duration.fast</code> (core §10).</p>`,
+  // Without design-build/specimen.json the strings below are the starter copy, byte for byte.
+  components: (M) => {
+    const S = M?.specimen;
+    const b = (k, d) => esc(specStr(S, 'guidelinesButtons', k, specStr(S, 'buttons', k, d)));
+    const inp = S?.guidelinesInput || {};
+    const cards = S?.guidelinesCards || {};
+    const badges = Array.isArray(S?.badges) && S.badges.length ? S.badges : [
+      { variant: 'neutral', label: 'Draft' }, { variant: 'success', label: 'Paid' }, { variant: 'warning', label: 'Due soon' }, { variant: 'error', label: 'Overdue' }, { variant: 'info', label: 'New' },
+    ];
+    const emailLabel = inp.label || 'Email address';
+    const emailType = inp.label ? 'tel' : 'email';
+    const emailAuto = inp.label ? 'tel' : 'email';
+    return `<div id="components" class="components brand">
 <h4>Button</h4>
 <div class="row">
-<button type="button" data-component="button" data-variant="primary">Save changes</button>
-<button type="button" data-component="button" data-variant="secondary">Preview</button>
-<button type="button" data-component="button" data-variant="ghost">Cancel</button>
-<button type="button" data-component="button" data-variant="danger">Delete</button>
-<button type="button" data-component="button" data-variant="primary" disabled>Disabled</button>
-<button type="button" data-component="button" data-variant="primary" id="demo-loading" aria-busy="true" aria-disabled="true"><span data-part="spinner" aria-hidden="true"></span><span data-part="label">Saving…</span></button>
+<button type="button" data-component="button" data-variant="primary">${b('primary', 'Save changes')}</button>
+<button type="button" data-component="button" data-variant="secondary">${b('secondary', 'Preview')}</button>
+<button type="button" data-component="button" data-variant="ghost">${b('ghost', 'Cancel')}</button>
+<button type="button" data-component="button" data-variant="danger">${b('danger', 'Delete')}</button>
+<button type="button" data-component="button" data-variant="primary" disabled>${b('disabled', 'Disabled')}</button>
+<button type="button" data-component="button" data-variant="primary" id="demo-loading" aria-busy="true" aria-disabled="true"><span data-part="spinner" aria-hidden="true"></span><span data-part="label">${b('loading', 'Saving…')}</span></button>
 </div>
 <h4>Input</h4>
 <div class="grid-2">
 <div data-component="input" data-variant="default">
-<label for="email">Email address <span data-part="required">(required)</span></label>
-<input id="email" type="email" autocomplete="email" required aria-describedby="email-hint">
-<p data-part="hint" id="email-hint">We only use this for receipts.</p>
+<label for="email">${esc(emailLabel)} <span data-part="required">(required)</span></label>
+<input id="email" type="${emailType}" autocomplete="${emailAuto}" required aria-describedby="email-hint">
+<p data-part="hint" id="email-hint">${esc(inp.hint || 'We only use this for receipts.')}</p>
 </div>
 <div data-component="input" data-variant="error" id="demo-phone">
-<label for="phone">Phone number</label>
-<input id="phone" type="tel" autocomplete="tel" inputmode="numeric" aria-invalid="true" aria-describedby="phone-hint phone-error" value="98765">
-<p data-part="hint" id="phone-hint">Enter all 10 digits.</p>
-<p data-part="error" id="phone-error">That number has 5 digits; it needs 10.</p>
+<label for="phone">${esc(inp.errorLabel || 'Phone number')}</label>
+<input id="phone" type="tel" autocomplete="tel" inputmode="numeric" aria-invalid="true" aria-describedby="phone-hint phone-error" value="${esc(inp.errorValue || '98765')}">
+<p data-part="hint" id="phone-hint">${esc(inp.errorHint || 'Enter all 10 digits.')}</p>
+<p data-part="error" id="phone-error">${esc(inp.error || 'That number has 5 digits; it needs 10.')}</p>
 </div>
 </div>
 <h4>Card</h4>
 <div class="grid-3">
-<article data-component="card" data-variant="flat" data-enter><h5>Flat card</h5><p>A hairline border only. It has <code>data-enter</code>, so it plays the entrance.</p></article>
-<article data-component="card" data-variant="raised"><h5>Raised card</h5><p>Uses <code>shadow.2</code> to lift off the page.</p></article>
-<article data-component="card" data-variant="raised" data-interactive><h5><a href="#components">Interactive card</a></h5><p>Hover it or tab to its link: it lifts to <code>shadow.3</code>.</p></article>
+<article data-component="card" data-variant="flat" data-enter><h5>${esc(cards.flatTitle || 'Flat card')}</h5><p>${cards.flatBody ? esc(cards.flatBody) : 'A hairline border only. It has <code>data-enter</code>, so it plays the entrance.'}</p></article>
+<article data-component="card" data-variant="raised"><h5>${esc(cards.raisedTitle || 'Raised card')}</h5><p>${cards.raisedBody ? esc(cards.raisedBody) : 'Uses <code>shadow.2</code> to lift off the page.'}</p></article>
+<article data-component="card" data-variant="raised" data-interactive><h5><a href="#components">${esc(cards.interactiveTitle || 'Interactive card')}</a></h5><p>${cards.interactiveBody ? esc(cards.interactiveBody) : 'Hover it or tab to its link: it lifts to <code>shadow.3</code>.'}</p></article>
 </div>
 <h4>Badge</h4>
 <div class="row" id="demo-badges">
-<span data-component="badge" data-variant="neutral">Draft</span>
-<span data-component="badge" data-variant="success">Paid</span>
-<span data-component="badge" data-variant="warning">Due soon</span>
-<span data-component="badge" data-variant="error">Overdue</span>
-<span data-component="badge" data-variant="info">New</span>
+${badges.map((x) => `<span data-component="badge" data-variant="${esc(x.variant)}">${esc(x.label)}</span>`).join('\n')}
 </div>
-</div>`,
-  scripts: () => `<div class="type-row"><span class="label">Telugu · font.family.te</span><p class="sample lang-te" lang="te">తెలుగు నమూనా వాక్యం: అందరికీ స్వాగతం.</p></div>
-<div class="type-row"><span class="label">Hindi · font.family.hi</span><p class="sample lang-hi" lang="hi">हिंदी नमूना वाक्य: आप सभी का स्वागत है।</p></div>`,
+</div>`;
+  },
+  scripts: (M) => {
+    const te = M?.specimen?.scripts?.te || 'తెలుగు నమూనా వాక్యం: అందరికీ స్వాగతం.';
+    const hi = M?.specimen?.scripts?.hi || 'हिंदी नमूना वाक्य: आप सभी का स्वागत है।';
+    return `<div class="type-row brand"><span class="label">Telugu</span><p class="sample lang-te" lang="te">${esc(te)}</p></div>
+<div class="type-row brand"><span class="label">Hindi</span><p class="sample lang-hi" lang="hi">${esc(hi)}</p></div>`;
+  },
 };
 
 function sliders(lines) {
@@ -475,11 +516,11 @@ function bodyFor(t, M) {
     case '§4': return `<h4>Reference ramps <span class="h-note">palette.*, 50–950 from the §13 seeds (design-build/ramps.mjs)</span></h4><div class="ramps" id="ramps"></div>
 <h4>System roles</h4><div class="grid-swatch" id="swatches"></div><h4>Roles</h4>${R({ skipYaml: ['pairings'] })}<h4>Contrast pairings</h4>
 <div class="table-scroll" role="region" aria-label="Contrast pairings" tabindex="0"><table><caption class="note-text">WCAG 2 ratios per theme (the gate) and APCA Lc (advisory, core.md §4.5), computed from the tokens for the default brand; lint.mjs checks every theme, sub-brand and state layer.</caption><thead><tr><th scope="col">Sample</th><th scope="col">Foreground</th><th scope="col">Background</th><th scope="col">Needs</th>${themesOf(M).map((t) => `<th scope="col">${esc(themeLabel(t))}</th>`).join('')}<th scope="col">APCA Lc</th></tr></thead><tbody id="pairings"></tbody></table></div>`;
-    case '§5': return `<div id="type-scale"></div>${specimen.scripts()}<h4>Rules</h4>${R()}`;
+    case '§5': return `<div id="type-scale"${M.specimen?.typeSample ? ` data-sample="${esc(M.specimen.typeSample)}"` : ''}></div>${specimen.scripts(M)}<h4>Rules</h4>${R()}`;
     case '§8': return specimen.icons() + R();
     case '§9': return `<div id="space-scale"></div>${R()}`;
     case '§10': return specimen.motion() + R();
-    case '§12': return specimen.scripts() + R();
+    case '§12': return specimen.scripts(M) + R();
     case '§13': {
       const groups = {};
       for (const p of M.ctx.flat.keys()) { const g = p.split('.').slice(0, 2).join('.'); groups[g] = (groups[g] || 0) + 1; }
@@ -487,7 +528,7 @@ function bodyFor(t, M) {
 <ul class="token-groups">${Object.entries(groups).map(([g, n]) => `<li><code>${esc(g)}</code> <span class="count">${n}</span></li>`).join('')}</ul>
 <details class="token-details"><summary>All ${M.ctx.flat.size} tokens, ${esc(themesOf(M).map(themeLabel).join(', ').toLowerCase())}</summary><div class="table-scroll" role="region" aria-label="All tokens" tabindex="0"><table><thead><tr><th scope="col">Token</th><th scope="col">CSS variable</th>${themesOf(M).map((t) => `<th scope="col">${esc(themeLabel(t))}</th>`).join('')}</tr></thead><tbody id="token-table"></tbody></table></div></details>`;
     }
-    case '§M1.1': return R() + specimen.components();
+    case '§M1.1': return R() + specimen.components(M);
     case '§M1.3': return `${R()}<h4>Breakpoints from the tokens</h4><ul class="bp-list" id="breakpoints"></ul>`;
     case '§M1.4': return `${R()}<div class="grid-shapes" id="shapes"></div>`;
     case '§M1.6': return `${R()}<figure class="chart"><ol id="chart" aria-label="Sample values, series 1 to 8"></ol><figcaption>Sample data (illustrative values, not real figures). S1 to S8 are series 1 to 8 (<code>color.data.1</code> to <code>.8</code>); each bar's height is its value out of 100.</figcaption></figure>`;
@@ -496,35 +537,180 @@ function bodyFor(t, M) {
   }
 }
 
+function patternSource(name) {
+  const p = path.join(HERE, '../components/patterns', `${name}.html`);
+  return fs.existsSync(p) ? fs.readFileSync(p, 'utf8').trim() : '';
+}
+function catalogHtml() {
+  const file = path.join(HERE, '../components/catalog.html');
+  let html = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  for (const name of ['form', 'empty', 'settings', 'table']) html = html.replace(`<!-- pattern:${name} -->`, patternSource(name));
+  return html;
+}
+
+// Specimen view: the brand at a glance on a fixed bento (12 columns, 152px rows; placement in preview.css).
+// Every cell is chrome around a brand sample: the sample sits in .brand and is the only place the brand fonts and
+// colours apply. Hex values are never written here: preview.js reads them from the computed colours (data-hex).
+const family = (M, p) => M.ctx.flat.get(p)?.families?.[0] || null;
+const cellHead = (id, title, aside = '') => `<header class="cell-head"><h3 id="tile-spec-${id}-h">${esc(title)}</h3>${aside}</header>`;
+const cellAttrs = (id, span, shows, extra = '') => `class="tile cell" id="tile-spec-${id}" data-span="${span}" data-shows="${esc(shows)}" data-duo aria-labelledby="tile-spec-${id}-h"${extra}`;
+const brandName = (M) => (placeholders(M.brandRaw).length ? null : stripPh(M.brandRaw));
+function specimenView(M) {
+  const C = (id, title, role, fill, on, ramp) => `<article ${cellAttrs(id, 's', `${fill} ${on}${ramp ? ' palette.' + ramp : ''}`, ` data-swatch style="--fill: var(${varName(fill)}); --on-fill: var(${varName(on)})"`)}>
+${cellHead(id, title, `<button type="button" class="hex copy" data-hex data-copy aria-label="Copy the ${esc(title.toLowerCase())} hex value" data-copy-what="${esc(title.toLowerCase())}"></button>`)}
+<p class="cell-note">${esc(role)}</p>
+${ramp ? `<div class="ramp" data-ramp="${ramp}" role="img" aria-label="${esc(title)} ramp, 50 to 950"></div>` : ''}
+</article>`;
+  const F = (id, title, fam, token, sample, cls = '') => `<article ${cellAttrs(id, 's', token)}>
+${cellHead(id, title, `<span class="cell-aside">${esc(fam || 'Not set')}</span>`)}
+<p class="aa brand${cls}" style="font-family: var(${varName(token)})" aria-hidden="true">${sample}</p>
+<code data-token title="${esc(token)}">${esc(token)}</code>
+</article>`;
+  const logo = M.logo.variants.find((v) => v.name === 'primary') || M.logo.variants[0];
+  const name = brandName(M), feel = placeholders(M.feelLine || '{{x}}').length ? null : M.feelLine;
+  const c = M.coverage, pct = Math.floor(c.placeholders.completion * 100), goal = Math.round(c.placeholders.phase4_min * 100);
+  const next = M.tiles.filter((t) => t.counted && t.placeholders && t.kind !== 'review').sort((a, b) => a.zone - b.zone)[0];
+  const cells = [
+    `<article ${cellAttrs('brand', 's', 'color.brand.primary')}>
+${cellHead('brand', 'Brand', M.logo.placeholder ? '<span class="cell-aside">Placeholder logo</span>' : '')}
+<div class="brand-id">${logo?.svg ? `<span class="brand-logo" style="color: var(${varName(logo.colorPath || 'color.brand.primary')})">${inlineSvg(logo.svg)}</span>` : ''}<p class="brand-name brand">${name ? esc(name) : 'Untitled brand'}</p></div>
+<p class="cell-note">${feel ? inline(feel, M.ctx.config.index) : 'Name and one-line feel: <code>brand_name</code> in design.md.'}</p>
+</article>`,
+    C('primary', 'Primary', 'Main actions, links and focus', 'color.brand.primary', 'color.on.primary', 'primary'),
+    C('secondary', 'Secondary', 'Supporting actions and fills', 'color.brand.secondary', 'color.on.secondary', 'secondary'),
+    C('accent', 'Accent', 'Highlights, used sparingly', 'color.accent', 'color.on.accent', 'accent'),
+    C('neutral', 'Neutral', 'Text, surfaces and borders', 'color.surface.inverse', 'color.text.inverse', 'neutral'),
+    F('heading', 'Headline', family(M, 'font.family.heading'), 'font.family.heading', 'Aa', ' aa-heading'),
+    F('body', 'Body', family(M, 'font.family.body'), 'font.family.body', 'Aa'),
+    F('mono', 'Mono', family(M, 'font.family.mono'), 'font.family.mono', '{ }'),
+    `<article ${cellAttrs('scripts', 's', 'font.family.te font.family.hi')}>
+${cellHead('scripts', 'Indic scripts', '<span class="cell-aside">Telugu · Hindi</span>')}
+<div class="scripts brand"><p class="aa lang-te" lang="te">అఆ</p><p class="aa lang-hi" lang="hi">अआ</p></div>
+<p class="cell-note"><span lang="te" class="lang-te brand">${esc(M.specimen?.scriptNote?.te || 'తెలుగు స్వాగతం')}</span> · <span lang="hi" class="lang-hi brand">${esc(M.specimen?.scriptNote?.hi || 'हिंदी स्वागत')}</span></p>
+</article>`,
+    `<article ${cellAttrs('buttons', 'm', 'component.button color.brand.primary')}>
+${cellHead('buttons', 'Buttons', '<span class="cell-aside">5 states</span>')}
+<div class="brand stack">
+<div class="row"><button type="button" data-component="button" data-variant="primary">${esc(specStr(M.specimen, 'buttons', 'primary', 'Get started'))}</button><button type="button" data-component="button" data-variant="secondary">${esc(specStr(M.specimen, 'buttons', 'secondary', 'Preview'))}</button></div>
+<div class="row"><button type="button" data-component="button" data-variant="ghost">${esc(specStr(M.specimen, 'buttons', 'ghost', 'Cancel'))}</button><button type="button" data-component="button" data-variant="danger">${esc(specStr(M.specimen, 'buttons', 'danger', 'Delete'))}</button></div>
+<div class="row"><button type="button" data-component="button" data-variant="primary" aria-busy="true" aria-disabled="true"><span data-part="spinner" aria-hidden="true"></span><span data-part="label">${esc(specStr(M.specimen, 'buttons', 'loading', 'Saving…'))}</span></button><button type="button" data-component="button" data-variant="primary" disabled>${esc(specStr(M.specimen, 'buttons', 'disabled', 'Disabled'))}</button></div>
+</div>
+</article>`,
+    `<article ${cellAttrs('input', 'm', 'component.input')}>
+${cellHead('input', 'Input', '<span class="cell-aside">Default · Error</span>')}
+<div class="brand stack">
+<div data-component="input" data-variant="default"><label for="spec-email">${esc(M.specimen?.input?.label || 'Email')}</label><input id="spec-email" type="${M.specimen?.input?.label ? 'tel' : 'email'}" autocomplete="${M.specimen?.input?.label ? 'tel' : 'email'}" aria-describedby="spec-email-hint"${M.specimen?.input ? '' : ' value="hello@example.com"'}><p data-part="hint" id="spec-email-hint">${esc(M.specimen?.input?.hint || 'For receipts only.')}</p></div>
+<div data-component="input" data-variant="error"><label for="spec-phone">${esc(M.specimen?.input?.errorLabel || 'Phone')}</label><input id="spec-phone" type="tel" autocomplete="tel" inputmode="numeric" aria-invalid="true" aria-describedby="spec-phone-error" value="${esc(M.specimen?.input?.errorValue || '98765')}"><p data-part="error" id="spec-phone-error">${esc(M.specimen?.input?.error || 'It needs 10 digits.')}</p></div>
+</div>
+</article>`,
+    `<article ${cellAttrs('badges', 's', 'component.badge')}>
+${cellHead('badges', 'Badges')}
+<div class="brand row wrap">${(Array.isArray(M.specimen?.badges) && M.specimen.badges.length ? M.specimen.badges : [{ variant: 'neutral', label: 'Draft' }, { variant: 'success', label: 'Paid' }, { variant: 'warning', label: 'Due soon' }, { variant: 'error', label: 'Overdue' }, { variant: 'info', label: 'New' }]).map((x) => `<span data-component="badge" data-variant="${esc(x.variant)}">${esc(x.label)}</span>`).join('')}</div>
+</article>`,
+    `<article ${cellAttrs('completion', 'm', 'completion')}>
+${cellHead('completion', 'Completion', `<span class="cell-aside">Phase 4 needs ${goal}%</span>`)}
+<div class="completion">
+<div class="ring-wrap" role="img" aria-label="${pct}% of template placeholders filled; Phase 4 needs ${goal}%"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true" focusable="false"><circle class="ring-track" cx="18" cy="18" r="15.9155" pathLength="100"/><circle class="ring-value" cx="18" cy="18" r="15.9155" pathLength="100" stroke-dasharray="${pct} 100" transform="rotate(-90 18 18)"/><circle class="ring-goal" cx="18" cy="18" r="15.9155" pathLength="100" stroke-dasharray="1 99" stroke-dashoffset="${-(goal - 0.5)}" transform="rotate(-90 18 18)"/></svg><p class="ring-text" aria-hidden="true">${pct}%</p></div>
+<dl class="facts"><div><dt>Placeholders left</dt><dd>${c.placeholders.remaining} of ${c.placeholders.initial}</dd></div><div><dt>Tiles filled</dt><dd>${c.tiles.filled} of ${c.tiles.total}</dd></div><div><dt>Components documented</dt><dd>${c.components.documented} of ${c.components.existing}</dd></div></dl>
+</div>
+${next ? `<a class="next" href="#tile-${next.id}">Next: ${esc(splitTitle(next.title)[1])} · ${next.placeholders} to fill ${svgIcon('arrow', 'sm')}</a>` : '<p class="cell-note">Every counted placeholder is filled.</p>'}
+</article>`,
+    `<article ${cellAttrs('type', 'l3', 'type font.size font.weight font.line-height')}>
+${cellHead('type', 'Type scale', `<span class="cell-aside">${esc([family(M, 'font.family.heading'), family(M, 'font.family.body')].filter(Boolean).join(' · ') || 'Not set')}</span>`)}
+<ol class="type-scale" data-type-scale${M.specimen?.typeSample ? ` data-sample="${esc(M.specimen.typeSample)}" data-overline="${esc(M.specimen.overline || 'PIER 2')}" data-display="${esc(M.specimen.display || 'On time.')}"` : ''}></ol>
+</article>`,
+    `<article ${cellAttrs('motion', 'm', 'motion')}>
+${cellHead('motion', 'Motion', '<span class="cell-aside">Fast · Base · Slow</span>')}
+<div class="motion-demo"><button type="button" class="tool" id="play-motion" aria-pressed="false">${svgIcon('arrow', 'sm')}Play</button>
+<div class="tracks" id="motion-tracks">${['fast', 'base', 'slow'].map((d) => `<div class="motion-track"><span class="track-label">${d[0].toUpperCase() + d.slice(1)}</span><div class="mover${d === 'base' ? '' : ' ' + d}"></div></div>`).join('')}</div></div>
+<p class="cell-note">Reduced motion jumps instead (core §10).</p>
+</article>`,
+    `<article ${cellAttrs('cards', 'm', 'component.card shadow')}>
+${cellHead('cards', 'Cards', '<span class="cell-aside">Flat · Interactive</span>')}
+<div class="brand stack">
+<article data-component="card" data-variant="flat" data-enter><h4>${esc(M.specimen?.cards?.flatTitle || 'Flat card')}</h4><p>${esc(M.specimen?.cards?.flatBody || 'A hairline border; plays the entrance.')}</p></article>
+<article data-component="card" data-variant="raised" data-interactive><h4><a href="#tile-spec-cards">${esc(M.specimen?.cards?.interactiveTitle || 'Interactive card')}</a></h4><p>${esc(M.specimen?.cards?.interactiveBody || 'Lifts on hover and focus.')}</p></article>
+</div>
+</article>`,
+    `<article ${cellAttrs('space', 's', 'space')}>
+${cellHead('space', 'Spacing', '<span class="cell-aside">Base 4</span>')}
+<ol class="space-scale" data-space-scale aria-label="Spacing scale"></ol>
+</article>`,
+    `<article ${cellAttrs('shape', 's', 'radius shadow')}>
+${cellHead('shape', 'Radius and elevation')}
+<ol class="shape-scale" aria-label="Radius and shadow levels">${[['sm', '1'], ['md', '2'], ['lg', '3']].map(([r, s]) => `<li><span class="shape" style="border-radius: var(--radius-${r}); box-shadow: var(--shadow-${s})"></span><span class="cell-note">${r.toUpperCase()} · ${s}</span></li>`).join('')}</ol>
+</article>`,
+    `<article ${cellAttrs('contrast', 'l2', 'color.text color.surface color.on')}>
+${cellHead('contrast', 'Contrast', '<span class="cell-aside" data-contrast-summary></span>')}
+<ul class="pairs" data-spec-pairs></ul>
+</article>`,
+    `<article ${cellAttrs('icons', 's', 'icon')}>
+${cellHead('icons', 'Icons', '<span class="cell-aside">16 · 20 · 24</span>')}
+<div class="brand icon-row">${['check', 'search', 'bell', 'heart', 'home', 'user'].map((k) => svgIcon(k)).join('')}</div>
+</article>`,
+    `<article ${cellAttrs('data', 's', 'color.data')}>
+${cellHead('data', 'Data colours', '<span class="cell-aside">8 series</span>')}
+<div class="bars" role="img" aria-label="The eight data colours as bars">${[8, 5, 7, 4, 6, 3, 5, 2].map((h, i) => `<span style="background: var(--color-data-${i + 1}); --h: ${h}"></span>`).join('')}</div>
+</article>`,
+    `<article ${cellAttrs('layout', 'w', 'breakpoint viewport')}>
+${cellHead('layout', 'Breakpoints')}
+<ol class="ruler" data-ruler aria-label="Breakpoints"></ol>
+</article>`,
+  ];
+  return `<section class="view" id="view-specimen" data-board-panel="specimen" data-mini aria-labelledby="view-specimen-h">
+<header class="view-head"><div><h2 class="view-title" id="view-specimen-h">${name ? esc(name) : 'Untitled brand'}</h2><p class="view-sub">${name ? 'Specimen: the brand tokens on real components.' : 'Specimen of the template defaults. Name the brand in design.md and this page becomes it.'}</p></div>
+<p class="view-meta">${status(pct >= goal ? 'done' : 'warn', `${pct}% filled`)}</p></header>
+<div class="bento" id="bento">
+${cells.join('\n')}
+</div>
+${catalogHtml()}
+</section>`;
+}
+
 function overviewBody(M) {
   const src = M.ctx.config.index;
-  const sw = [['color.brand.primary', 'Brand primary'], ['color.brand.secondary', 'Brand secondary'], ['color.accent', 'Accent'], ['color.surface.default', 'Surface'], ['color.surface.raised', 'Raised'], ['color.surface.inverse', 'Inverse']];
+  const sw = [['color.brand.primary', 'Primary'], ['color.brand.secondary', 'Secondary'], ['color.accent', 'Accent'], ['color.surface.default', 'Surface'], ['color.surface.raised', 'Raised'], ['color.surface.inverse', 'Inverse']];
   const logo = M.logo.variants.find((v) => v.name === 'primary') || M.logo.variants[0];
   return `<div class="ov">
-<div class="ov-id">${logo?.svg ? `<div class="ov-logo" style="color: var(${varName(logo.colorPath || 'color.brand.primary')})">${inlineSvg(logo.svg)}</div>` : ''}
+<div class="ov-id brand">${logo?.svg ? `<div class="ov-logo" style="color: var(${varName(logo.colorPath || 'color.brand.primary')})">${inlineSvg(logo.svg)}</div>` : ''}
 <p class="ov-name">${inline(M.brandRaw, src)}</p>
 <p class="ov-feel">${inline(M.feelLine || '{{one-line feel}}', src)}</p></div>
-<ul class="ov-palette" aria-label="Palette">${sw.map(([p, l]) => `<li class="ov-chip"><span class="chip-fill" style="background: var(${varName(p)})"></span><span class="chip-label">${l}<br><code class="tok" title="${p}">${p}</code></span></li>`).join('')}</ul>
-<div class="ov-type"><p class="ov-aa" aria-hidden="true">Aa</p><div><p class="ov-heading">Heading in font.family.heading</p><p>Body text in <code>font.family.body</code>, the size people read most.</p><p class="lang-te" lang="te">తెలుగు స్వాగతం</p><p class="lang-hi" lang="hi">हिंदी स्वागत</p></div></div>
-<div class="ov-ui"><div class="row"><button type="button" data-component="button" data-variant="primary">Get started</button><button type="button" data-component="button" data-variant="secondary">Learn more</button></div><div class="row"><span data-component="badge" data-variant="success">Ready</span><span data-component="badge" data-variant="info">New</span></div><div data-component="card" data-variant="raised" class="ov-card"><p><strong>Card</strong> on <code>surface.raised</code></p><div class="ov-icons">${['check', 'search', 'bell', 'heart'].map((k) => svgIcon(k, 'md')).join('')}</div></div></div>
+<ul class="chips" aria-label="Palette">${sw.map(([p, l]) => `<li class="chip" data-swatch style="--fill: var(${varName(p)})"><span class="chip-fill"></span><span class="chip-text"><span class="chip-name">${l}</span><span class="hex" data-hex></span></span></li>`).join('')}</ul>
 </div>`;
 }
 
+const zoneTiles = (M, z) => M.tiles.filter((t) => t.zone === z && t.kind !== 'review');
 function coverageTile(M) {
   const c = M.coverage, pct = Math.floor(c.placeholders.completion * 100), goal = Math.round(c.placeholders.phase4_min * 100);
-  const mods = M.modules.map((m) => `<li><code>${esc(m.file.replace('design/', ''))}</code> <span data-component="badge" data-variant="${m.state === 'on' ? 'success' : m.state === 'off' ? 'neutral' : 'info'}">${m.state === 'on' ? 'On' : m.state === 'off' ? 'Switched off' : 'Not chosen'}</span></li>`).join('');
-  const zoneRows = ZONES.slice(1).map(([z, name]) => { const ts = M.tiles.filter((t) => t.zone === z && t.kind !== 'review'); const f = ts.filter((t) => t.status === 'filled').length; return `<li><a href="#zone-${z}">${esc(name)}</a> <span class="count">${f} of ${ts.length} filled</span></li>`; }).join('');
-  return `<article class="tile" id="tile-coverage" data-tile="coverage" data-status="${pct >= 100 ? 'filled' : 'partial'}" aria-labelledby="tile-coverage-h">
-<header class="tile-head"><div class="tile-title"><p class="kicker">lint.mjs · completion</p><h3 id="tile-coverage-h">Status and coverage</h3></div><div class="tile-meta"><a class="anchor" href="#tile-coverage" aria-label="Link to Status and coverage">${svgIcon('link', 'sm')}</a></div></header>
+  const mods = M.modules.map((m) => `<li><span class="mod-name">${esc(FILE_LABEL[m.file] || m.file)}</span>${m.state === 'on' ? status('done', 'On') : m.state === 'off' ? status('none', 'Switched off') : status('info', 'Not chosen')}</li>`).join('');
+  return `<article class="tile cov-tile" id="tile-coverage" data-tile="coverage" data-status="${pct >= 100 ? 'filled' : 'partial'}" aria-labelledby="tile-coverage-h">
+<header class="tile-head"><p class="kicker">Checked by lint.mjs</p><div class="tile-meta"><a class="anchor" href="#tile-coverage" aria-label="Link to Coverage">${svgIcon('link', 'sm')}</a></div><h3 id="tile-coverage-h">Status and coverage</h3></header>
 <div class="tile-body"><div class="cov">
-<div class="ring-wrap" role="img" aria-label="${pct}% of template placeholders filled; Phase 4 needs ${goal}%"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true" focusable="false"><circle class="ring-track" cx="18" cy="18" r="15.9155" pathLength="100"/><circle class="ring-value" cx="18" cy="18" r="15.9155" pathLength="100" stroke-dasharray="${pct} 100" transform="rotate(-90 18 18)"/><circle class="ring-goal" cx="18" cy="18" r="15.9155" pathLength="100" stroke-dasharray="1 99" stroke-dashoffset="${-(goal - 0.5)}" transform="rotate(-90 18 18)"/></svg><p class="ring-text" aria-hidden="true"><strong>${pct}%</strong><span>filled</span></p></div>
-<div class="cov-facts"><p><strong>${c.placeholders.initial - c.placeholders.remaining} of ${c.placeholders.initial}</strong> template placeholders filled in the enabled files (${c.placeholders.remaining} left). Phase 4 needs ${goal}%: the tick on the ring.</p>
-<p><strong>${c.tiles.filled} of ${c.tiles.total}</strong> counted tiles filled, ${c.tiles.partial} partly filled, ${c.tiles.empty} not filled. Hatched chips like <span class="ph"><span class="sr-only">Not filled: </span>this one</span> are what is left.</p>
-<p><strong>${c.components.documented} of ${c.components.existing}</strong> shipped components fully documented; ${c.components.planned} planned.</p></div>
+<div class="ring-wrap" role="img" aria-label="${pct}% of template placeholders filled; Phase 4 needs ${goal}%"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true" focusable="false"><circle class="ring-track" cx="18" cy="18" r="15.9155" pathLength="100"/><circle class="ring-value" cx="18" cy="18" r="15.9155" pathLength="100" stroke-dasharray="${pct} 100" transform="rotate(-90 18 18)"/><circle class="ring-goal" cx="18" cy="18" r="15.9155" pathLength="100" stroke-dasharray="1 99" stroke-dashoffset="${-(goal - 0.5)}" transform="rotate(-90 18 18)"/></svg><p class="ring-text" aria-hidden="true">${pct}%</p></div>
+<dl class="facts"><div><dt>Template placeholders filled</dt><dd>${c.placeholders.initial - c.placeholders.remaining} of ${c.placeholders.initial}</dd></div><div><dt>Phase 4 needs</dt><dd>${goal}% (the tick on the ring)</dd></div><div><dt>Counted tiles</dt><dd>${c.tiles.filled} filled · ${c.tiles.partial} partly · ${c.tiles.empty} not filled</dd></div><div><dt>Shipped components documented</dt><dd>${c.components.documented} of ${c.components.existing} · ${c.components.planned} planned</dd></div></dl>
 </div>
-<h4>Modules</h4><ul class="mod-list">${mods}</ul>
-<h4>Zones</h4><ul class="zone-list">${zoneRows}</ul></div>
+<div class="cov-mods"><h4>Modules</h4><ul class="mod-list">${mods}</ul></div></div>
 </article>`;
+}
+
+function coverageView(M) {
+  const zones = ZONES.slice(1).map(([z, name]) => {
+    const ts = zoneTiles(M, z), f = ts.filter((t) => t.status === 'filled').length;
+    const left = ts.reduce((n, t) => n + (t.counted ? t.placeholders : 0), 0);
+    return `<section class="zone-card" aria-labelledby="cov-zone-${z}-h"><header class="cell-head"><h3 id="cov-zone-${z}-h">${esc(name)}</h3><span class="cell-aside">${f} of ${ts.length} filled</span></header>
+<div class="meter" role="img" aria-label="${f} of ${ts.length} tiles filled"><span style="--v: ${ts.length ? f / ts.length : 1}"></span></div>
+<ul class="tile-list">${ts.map((t) => { const [tone] = t.module === 'off' ? ['none'] : STATUS[t.status] || STATUS.partial; return `<li><a href="#tile-${t.id}"><span class="status-dot" data-tone="${tone}" aria-hidden="true"></span><span class="tl-name">${esc(splitTitle(t.title)[1])}</span><span class="tl-left">${t.module === 'off' ? 'Off' : t.placeholders ? `${t.placeholders} to fill` : 'Done'}</span></a></li>`; }).join('')}</ul>
+<p class="cell-note">${left ? `${left} placeholders left` : ts.some((t) => t.placeholders) ? 'Not counted until its module is chosen' : 'Nothing left to fill'}</p></section>`;
+  }).join('\n');
+  return `<section class="view" id="view-coverage" data-board-panel="coverage" data-mini aria-labelledby="view-coverage-h">
+<header class="view-head"><div><h2 class="view-title" id="view-coverage-h">Coverage</h2><p class="view-sub">What is filled, per zone and module. The same numbers as <code>node design-build/lint.mjs</code>.</p></div></header>
+<div class="cov-grid">
+${coverageTile(M)}
+<div class="cov-zones">
+${zones}
+</div>
+</div>
+</section>`;
 }
 
 function componentBody(t) {
@@ -578,13 +764,15 @@ const head = (title, desc, rel) => `<!doctype html>
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 ${rel.fonts ? `<link rel="stylesheet" href="${esc(rel.fonts)}">\n` : ''}<link rel="stylesheet" href="${rel.preview}tokens.css">
+<link rel="stylesheet" href="${rel.preview}chrome.css">
 <link rel="stylesheet" href="${rel.components}base.css">
 <link rel="stylesheet" href="${rel.components}components.css">
 <link rel="stylesheet" href="${rel.preview}preview.css">
 <script src="${rel.preview}tokens.js"></script>
 <script>
   // Before first paint: the saved or requested theme (?theme=<one of design.md themes>), sub-brand (?brand=<id>),
-  // layout (?view=canvas) and motion setting.
+  // layout (?view=canvas), board view (?board=specimen|guidelines|coverage, or the view a #tile- link lives in)
+  // and motion setting.
   (function () {
     var q = new URLSearchParams(location.search), r = document.documentElement, D = window.DESIGN_TOKENS || {};
     function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -593,54 +781,102 @@ ${rel.fonts ? `<link rel="stylesheet" href="${esc(rel.fonts)}">\n` : ''}<link re
     if (b && (D.brands || []).some(function (x) { return x.id === b; })) r.setAttribute('data-brand', b);
     if ((q.get('view') || get('board-view')) === 'canvas') r.setAttribute('data-view', 'canvas');
     if (get('board-motion') === 'reduce') r.setAttribute('data-motion', 'reduce');
+    var h = location.hash, v = q.get('board') || get('board-tab');
+    if (/^#(tile-spec-|view-specimen)/.test(h)) v = 'specimen';
+    else if (/^#(tile-coverage|view-coverage)/.test(h)) v = 'coverage';
+    else if (/^#(tile-|zone-|view-guidelines)/.test(h)) v = 'guidelines';
+    r.setAttribute('data-board-view', ['specimen', 'guidelines', 'coverage'].indexOf(v) >= 0 ? v : 'specimen');
   })();
 </script>
 <script src="${rel.preview}preview.js" defer></script>
 </head>`;
 
-const toolbar = (label, { canvas = true, review = true, themes = ['light', 'dark'], brands = [] } = {}) => `<a class="skip-link" href="#main">Skip to content</a>
-<header class="board-bar">
-<h1 data-key>${esc(label)}</h1>
-<div class="bar-tools">
-<div class="tool-group" role="group" aria-label="Color theme" data-key>${themes.map((t) => `<button type="button" class="tool" data-theme-choice="${esc(t)}" aria-pressed="false">${esc(themeLabel(t))}</button>`).join('')}${themes.length > 1 ? '<button type="button" class="tool" data-theme-choice="system" aria-pressed="true">System</button>' : ''}${canvas && themes.length > 1 ? '<button type="button" class="tool" id="toggle-duo" aria-pressed="false">Side by side</button>' : ''}</div>
-${brands.length ? `<div class="tool-group" role="group" aria-label="Brand" data-key><button type="button" class="tool" data-brand-choice="" aria-pressed="true">Main brand</button>${brands.map((b) => `<button type="button" class="tool" data-brand-choice="${esc(b.id)}" aria-pressed="false">${esc(stripPh(b.name || b.id))}</button>`).join('')}</div>` : ''}
-${canvas ? '<div class="tool-group view-switch" role="group" aria-label="Layout"><button type="button" class="tool" data-view-choice="page" aria-pressed="true">Page</button><button type="button" class="tool" data-view-choice="canvas" aria-pressed="false">Canvas</button></div>' : ''}
-<div class="tool-group" role="group" aria-label="Motion"><button type="button" class="tool" id="replay-motion">Replay motion</button><button type="button" class="tool" id="toggle-reduce" aria-pressed="false">Reduce motion</button></div>
-${review ? '<div class="tool-group" role="group" aria-label="Review"><button type="button" class="tool" id="toggle-review" aria-pressed="false">Review</button></div>' : ''}
-${canvas ? '<div class="tool-group zoom-tools" role="group" aria-label="Zoom"><button type="button" class="tool" data-zoom="out" aria-label="Zoom out">−</button><output class="zoom-level" id="zoom-level">100%</output><button type="button" class="tool" data-zoom="in" aria-label="Zoom in">+</button><button type="button" class="tool" data-zoom="fit">Fit</button></div>' : ''}
+const seg = (label, items, extra = '') => `<div class="seg" role="group" aria-label="${esc(label)}"${extra}>${items}</div>`;
+const syncBadge = (sync) => (sync ? `<span class="status sync-badge" data-sync="${sync.ok ? 'ok' : 'stale'}" data-tone="${sync.ok ? 'done' : 'warn'}" role="status" title="${esc(sync.ok ? 'DESIGN.md, Tailwind and Figma outputs match the tokens' : `Stale: ${sync.stale.join(', ')}`)}"><span class="status-dot" aria-hidden="true"></span>${sync.ok ? 'Outputs synced' : 'Outputs stale'}</span>` : '');
+const toolbar = (label, { canvas = true, review = true, themes = ['light', 'dark'], brands = [], sub = 'Board', sync = null } = {}) => `<a class="skip-link" href="#main">Skip to content</a>
+<header class="board-bar" id="board-bar">
+<div class="bar-id"><span class="bar-mark" aria-hidden="true"></span><h1 data-key>${esc(label)}</h1><span class="bar-sub">${esc(sub)}</span>${syncBadge(sync)}</div>
+<button type="button" class="tool icon-only bar-more" id="bar-more" aria-expanded="false" aria-controls="bar-tools" aria-label="Board settings">${svgIcon('more', 'md')}</button>
+<div class="bar-tools" id="bar-tools">
+${seg('Color theme', themes.map((t) => `<button type="button" class="tool" data-theme-choice="${esc(t)}" aria-pressed="false">${esc(themeLabel(t))}</button>`).join('') + (themes.length > 1 ? '<button type="button" class="tool" data-theme-choice="system" aria-pressed="true">System</button>' : ''))}
+${brands.length ? seg('Brand', `<button type="button" class="tool" data-brand-choice="" aria-pressed="true">Main</button>${brands.map((b) => `<button type="button" class="tool" data-brand-choice="${esc(b.id)}" aria-pressed="false">${esc(stripPh(b.name || b.id))}</button>`).join('')}`) : ''}
+${canvas ? seg('Layout', '<button type="button" class="tool" data-view-choice="page" aria-pressed="true">Page</button><button type="button" class="tool" data-view-choice="canvas" aria-pressed="false">Canvas</button>', ' data-view-switch') : ''}
+${canvas ? '<div class="seg zoom-tools" role="group" aria-label="Zoom"><button type="button" class="tool" data-zoom="out" aria-label="Zoom out">−</button><output class="zoom-level" id="zoom-level">100%</output><button type="button" class="tool" data-zoom="in" aria-label="Zoom in">+</button><button type="button" class="tool" data-zoom="fit">Fit</button></div>' : ''}
+${canvas && themes.length > 1 ? '<button type="button" class="tool plain" id="toggle-duo" aria-pressed="false">Compare</button>' : ''}
+<div class="pop"><button type="button" class="tool plain" id="motion-menu" aria-expanded="false" aria-controls="motion-pop">Motion</button><div class="pop-panel" id="motion-pop" role="group" aria-label="Motion" hidden><button type="button" class="tool plain" id="replay-motion">Replay motion</button><button type="button" class="tool plain" id="toggle-reduce" aria-pressed="false">Reduce motion</button></div></div>
+${canvas ? `<div class="pop"><button type="button" class="tool plain" id="export-menu" aria-expanded="false" aria-controls="export-pop">${svgIcon('download', 'sm')}Export</button><div class="pop-panel" id="export-pop" role="group" aria-label="Export PNG" hidden><button type="button" class="tool plain" id="export-png">PNG of this view</button><p class="pop-note" id="export-note">Needs the live board (<code>node design-build/board.mjs --serve</code>) or run <code>node design-build/board.mjs --png --view specimen</code>.</p></div></div>` : ''}
+${review ? '<button type="button" class="tool strong" id="toggle-review" aria-pressed="false">Review</button>' : ''}
 </div>
 </header>`;
 
+const viewTabs = () => `<nav class="view-tabs" aria-label="Board views" data-key><ul>${VIEWS.map(([id, label]) => `<li><a href="?board=${id}" data-board-choice="${id}">${label}</a></li>`).join('')}</ul></nav>`;
+
 /** The board page and its AI companions, from the current files. */
-export function build(root) {
+export function build(root, opts = {}) {
   const M = model(root);
+  const sync = exportSync(root, opts.pendingExports, opts.generatedExports);
+  const tile = (t) => tileHtml(t, bodyFor(t, M), M);
+  const tilesWrap = (list) => `<div class="tiles">\n${list.map(tile).join('\n')}\n</div>`;
+  const GROUPS = [['actions', 'Actions'], ['inputs', 'Inputs'], ['feedback', 'Feedback'], ['navigation', 'Navigation'], ['data-display', 'Data display'], ['layout', 'Layout']];
   const zones = ZONES.map(([z, name, desc]) => {
-    let inner = M.tiles.filter((t) => t.zone === z).map((t) => tileHtml(t, bodyFor(t, M), M)).join('\n');
-    if (z === 0) inner += '\n' + coverageTile(M);
+    const all = M.tiles.filter((t) => t.zone === z);
+    let inner;
+    if (z === 3) {
+      const rest = all.filter((t) => t.kind !== 'component');
+      const comps = all.filter((t) => t.kind === 'component');
+      const known = new Set(GROUPS.map(([id]) => id));
+      const groups = GROUPS.map(([id, label]) => {
+        const mine = comps.filter((t) => (t.comp.group || 'layout') === id);
+        if (!mine.length) return '';
+        return `<section class="comp-group" id="group-${id}" data-group="${id}" aria-labelledby="group-${id}-h">
+<h3 class="group-title" id="group-${id}-h">${esc(label)}</h3>
+${tilesWrap(mine)}
+</section>`;
+      }).join('\n');
+      const extra = comps.filter((t) => !known.has(t.comp.group || 'layout'));
+      inner = `${tilesWrap(rest)}\n${groups}${extra.length ? `\n${tilesWrap(extra)}` : ''}`;
+    } else if (z === 4) {
+      const screens = all.filter((t) => t.kind === 'screen');
+      const preview = screens.filter((t) => t.screen?.id === 'preview');
+      const patterns = screens.filter((t) => t.screen?.id !== 'preview');
+      const other = all.filter((t) => t.kind !== 'screen');
+      inner = `${tilesWrap([...other, ...preview])}
+<section class="comp-group" id="group-patterns" data-group="patterns" aria-labelledby="group-patterns-h">
+<h3 class="group-title" id="group-patterns-h">Patterns</h3>
+${tilesWrap(patterns)}
+</section>`;
+    } else inner = tilesWrap(all);
     const feel14 = z === 6 ? feelOf(sectionOf(M.ctx.core, '§14')) : null;
-    return `<section class="zone" id="zone-${z}" data-zone="${z}" aria-labelledby="zone-${z}-h">
-<header class="zone-head"><h2 id="zone-${z}-h"><span class="zone-n">${z}</span> ${esc(name)}</h2><p class="zone-desc">${esc(desc)}</p>${feel14 ? `<p class="feel"><strong>§14 feel:</strong> ${inline(feel14, 'design/core.md')}</p>` : ''}</header>
-<div class="tiles">
+    return `<section class="zone" id="zone-${z}" data-zone="${z}" data-mini aria-labelledby="zone-${z}-h">
+<header class="zone-head"><h2 id="zone-${z}-h">${esc(name)}</h2><p class="zone-desc">${esc(desc)}</p>${feel14 ? `<p class="feel">${inline(feel14, 'design/core.md')}</p>` : ''}</header>
 ${inner}
-</div>
 </section>`;
   }).join('\n');
   const html = `${head('Design system board', 'Every part of the design system as a tile, built from the design files, tokens and UI inventory by design-build/board.mjs.', { preview: '', components: '../../components/', fonts: fontsHref(root, M.ctx) })}
 <body data-page="board">
-${toolbar('Design system board', { themes: themesOf(M), brands: M.ctx.brands.filter((b) => b.loaded) })}
-<nav class="zone-nav" aria-label="Board zones" data-key><ul>${ZONES.map(([z, name]) => `<li><a href="#zone-${z}">${z} · ${esc(name)}</a></li>`).join('')}</ul></nav>
+${toolbar('Design system', { themes: themesOf(M), brands: M.ctx.brands.filter((b) => b.loaded), sync })}
+${viewTabs()}
 <main id="main" tabindex="-1">
-<section class="duo" id="duo" aria-label="${esc(themesOf(M).map(themeLabel).join(', '))} side by side" hidden>${themesOf(M).map((t) => `<div class="duo-pane" data-mode="${esc(t)}"><h2 class="duo-title">${esc(themeLabel(t))}</h2><div class="duo-body"></div></div>`).join('')}</section>
+<section class="duo" id="duo" aria-label="${esc(themesOf(M).map(themeLabel).join(', '))} compared" hidden>${themesOf(M).map((t) => `<div class="duo-pane" data-mode="${esc(t)}" data-chrome="${schemeOf(t)}"><h2 class="duo-title">${esc(themeLabel(t))}</h2><div class="duo-body bento"></div></div>`).join('')}</section>
 <div class="canvas-shell">
 <div class="board-viewport" id="board-viewport" role="region" aria-label="Board. In canvas layout: arrow keys scroll, plus and minus zoom, 0 resets, F fits" tabindex="0">
 <div class="board" id="board">
+${specimenView(M)}
+<section class="view" id="view-guidelines" data-board-panel="guidelines" aria-labelledby="view-guidelines-h">
+<header class="view-head"><div><h2 class="view-title" id="view-guidelines-h">Guidelines</h2><p class="view-sub">Every section of the design files as a card, in seven zones.</p></div>
+<nav class="zone-nav" aria-label="Zones"><ul>${ZONES.map(([z, name]) => `<li><a href="#zone-${z}">${esc(name)}</a></li>`).join('')}</ul></nav></header>
 ${zones}
+</section>
+${coverageView(M)}
 </div>
 </div>
 <div class="minimap" id="minimap" aria-hidden="true"><div class="minimap-board"></div><div class="minimap-view"></div></div>
+<button type="button" class="tool minimap-toggle" id="minimap-toggle" aria-pressed="false" aria-label="Hide the minimap">${svgIcon('minus', 'sm')}</button>
 </div>
 </main>
-<footer class="site-footer"><p>Generated by <code>node design-build/board.mjs</code> from the design files, <code>${esc(M.ctx.tokensRel)}</code>, <code>design-build/inventory.json</code>, <code>ui-inventory/</code> and <code>${esc(M.logo.rel)}</code>. Do not edit this page: change the sources and re-run it. The same content for agents: <code>preview/board.json</code> and <code>preview/board.md</code>.</p></footer>
+<footer class="site-footer"><p title="Sources: design.md, design/, ${esc(M.ctx.tokensRel)}, design-build/inventory.json, ui-inventory/, ${esc(M.logo.rel)}. Agents read preview/board.json and preview/board.md.">Built from the design files by <code>board.mjs</code>. Edit the sources, not this page.</p></footer>
+<script type="module" src="../../components/boot.js"></script>
+<!-- For agents: the same board as data in preview/board.json and preview/board.md. Rebuild with node design-build/board.mjs. -->
 </body>
 </html>
 `;
@@ -655,8 +891,9 @@ ${zones}
     colors: M.hex,
     pairings: M.pairings.map((p) => ({ fg: p.fg, bg: p.bg, size: p.size, target: p.target, ratio: Object.fromEntries(Object.entries(p.modes).map(([m, r]) => [m, r?.ratio ?? null])) })),
     review_file: REVIEW_FILE,
+    exports: { status: sync.ok ? 'synced' : 'stale', files: sync.files, stale: sync.stale },
   };
-  return { html: wrapCode(html), json: JSON.stringify(json, null, 1) + '\n', md: companionMd(M, json), model: M };
+  return { html: wrapCode(html), json: JSON.stringify(json, null, 1) + '\n', md: companionMd(M, json), css: buildChromeCss(root, M.ctx.themes), model: M };
 }
 
 const cell = (s) => String(s).replace(/\|/g, '/').replace(/\n/g, ' ');
@@ -669,6 +906,7 @@ function companionMd(M, json) {
   const state = (m) => (m === 'on' ? 'on' : m === 'off' ? 'switched off' : 'not chosen');
   L.push('# Design board (for agents)', '', 'Generated by `node design-build/board.mjs` together with `preview/index.html` and `preview/board.json`. Do not edit: change the design files and re-run it. Hex values below are stamped from the tokens for exports; the design files keep token refs.', '');
   L.push(`- Brand: ${json.brand_name}`);
+  if (json.exports) L.push(`- Outputs: ${json.exports.status}${json.exports.stale.length ? ` (${json.exports.stale.join(', ')})` : ''}`);
   L.push(`- Completion: ${Math.floor(c.placeholders.completion * 100)}% (${c.placeholders.remaining} of ${c.placeholders.initial} template placeholders left in the enabled files; Phase 4 needs ${Math.round(c.placeholders.phase4_min * 100)}%)`);
   L.push(`- Counted tiles: ${c.tiles.filled} filled, ${c.tiles.partial} partly filled, ${c.tiles.empty} not filled, of ${c.tiles.total}`);
   L.push(`- Modules: ${M.modules.map((m) => `${m.file} ${state(m.state)}`).join('; ')}`);
@@ -723,14 +961,14 @@ export function buildStudies(root, ids) {
   const wall = (list, what) => (Array.isArray(list) && list.length ? `<div class="wall">${list.map((im) => `<img src="${esc(im.src)}" alt="${esc(im.alt)}" loading="lazy">`).join('')}</div>` : `<p class="ph block"><span class="sr-only">Not filled: </span>No ${what} yet: list them in the direction's manifest.</p>`);
   const pane = (d, mode) => {
     const p = `${d.id}-${mode}`;
-    return `<div class="dir-pane" data-direction="${esc(d.id)}" data-mode="${mode}">
+    return `<div class="dir-pane" data-direction="${esc(d.id)}" data-mode="${mode}" data-chrome="${mode}">
 <h3 class="pane-label">${mode === 'light' ? 'Light' : 'Dark'}</h3>
-<ul class="ov-palette dir-prop" aria-label="Palette in proportion">${[['color.surface.default', 'Surface', 6], ['color.brand.primary', 'Brand', 3], ['color.accent', 'Accent', 1]].map(([t, l, w]) => `<li class="ov-chip" style="flex-grow: ${w}"><span class="chip-fill" style="background: var(${varName(t)})"></span><span class="chip-label">${l}</span></li>`).join('')}</ul>
-<div class="dir-type"><p class="dir-display">Display line</p><p class="dir-h1">Heading one</p><p>Body copy at reading size, with a <a href="#dir-${esc(d.id)}">link</a>.</p><p class="lang-te" lang="te">తెలుగు నమూనా</p><p class="lang-hi" lang="hi">हिंदी नमूना</p></div>
+<ul class="dir-prop" aria-label="Palette in proportion">${[['color.surface.default', 'Surface', 6], ['color.brand.primary', 'Brand', 3], ['color.accent', 'Accent', 1]].map(([t, l, w]) => `<li class="prop-chip" style="flex-grow: ${w}"><span class="chip-fill" style="background: var(${varName(t)})"></span><span class="chip-name">${l}</span></li>`).join('')}</ul>
+<div class="dir-type brand"><p class="dir-display">Display line</p><p class="dir-h1">Heading one</p><p>Body copy at reading size, with a <a href="#dir-${esc(d.id)}">link</a>.</p><p class="lang-te" lang="te">తెలుగు నమూనా</p><p class="lang-hi" lang="hi">हिंदी नमूना</p></div>
 <div class="table-scroll" role="region" aria-label="Direction ${esc(d.id)} ${mode} contrast" tabindex="0"><table class="dir-pairs"><thead><tr><th scope="col">Pair</th><th scope="col">Ratio</th></tr></thead><tbody data-pairs></tbody></table></div>
-<div class="icon-grid dense">${Object.keys(ICON).filter((k) => k !== 'link').map((k) => `<span class="icon-cell">${svgIcon(k, 'md')}<span class="sr-only">${k}</span></span>`).join('')}</div>
+<div class="icon-grid dense brand">${Object.keys(ICON).filter((k) => k !== 'link').map((k) => `<span class="icon-cell">${svgIcon(k, 'md')}<span class="sr-only">${k}</span></span>`).join('')}</div>
 <div class="dir-motion"><button type="button" class="tool" data-play aria-pressed="false">Play motion</button><div class="motion-track"><div class="mover fast"></div></div><div class="motion-track"><div class="mover"></div></div><div class="motion-track"><div class="mover slow"></div></div></div>
-<div class="dir-mock">
+<div class="dir-mock brand">
 <article data-component="card" data-variant="raised"><h4>App screen</h4><div data-component="input" data-variant="default"><label for="${p}-name">Your name</label><input id="${p}-name" type="text" autocomplete="name"></div><div class="row"><button type="button" data-component="button" data-variant="primary">Continue</button><span data-component="badge" data-variant="success">Saved</span></div></article>
 <div class="social" role="img" aria-label="Social post mockup"><span class="social-head">Headline for a post</span><span class="social-tag">Brand</span></div>
 </div>
@@ -745,7 +983,7 @@ export function buildStudies(root, ids) {
 </section>`).join('\n');
   out.html = `${head('Visual studies: Phase 3', 'Phase 3 directions side by side, one overview card each, generated by design-build/board.mjs --overview-only.', { preview: '../preview/', components: '../../components/', fonts: fontsHref(root, ctx) })}
 <body data-page="studies" data-directions="${esc(dirs.map((d) => d.id).join(','))}">
-${toolbar('Visual studies: pick a direction', { canvas: false, review: false, themes: ctx.themes, brands: ctx.brands.filter((b) => b.loaded) })}
+${toolbar('Visual studies', { canvas: false, review: false, themes: ctx.themes, brands: ctx.brands.filter((b) => b.loaded), sub: 'Pick a direction' })}
 <nav class="zone-nav" aria-label="Directions" data-key><ul>${dirs.map((d) => `<li><a href="#dir-${esc(d.id)}">Direction ${esc(d.id)}</a></li>`).join('')}</ul></nav>
 <main id="main" tabindex="-1" class="studies">
 <p class="load-note" id="studies-note">Each direction is shown in light and dark with its own tokens, read from <code>directions/&lt;ID&gt;.resolved.json</code> over http. Serve the folder with <code>node design-build/board.mjs --serve --watch</code>.</p>
@@ -795,8 +1033,12 @@ export function staleFiles(root, b = build(root)) {
 export function liveRebuild(root) {
   const t = generateTokens(root);
   if (t.ctx.loaded.problems.length) return { problems: t.ctx.loaded.problems.map((p) => ({ file: t.ctx.tokensRel, line: p.line, message: `${p.message} → fix: ${p.fix}` })), outputs: [] };
-  const b = build(root);
-  const outputs = [['design-build/preview/tokens.css', t.css], ['design-build/preview/tokens.js', t.js], ['design-build/preview/tokens.mjs', t.mjs], ...Object.entries(OUT).map(([k, rel]) => [rel, b[k]])];
+  let generatedExports;
+  try { generatedExports = outputFiles(root); }
+  catch (e) { return { problems: [{ file: 'design-build/designmd.mjs', line: 1, message: `${e.message} → fix: node design-build/designmd.mjs` }], outputs: [] }; }
+  const pendingExports = Object.fromEntries(generatedExports);
+  const b = build(root, { pendingExports, generatedExports });
+  const outputs = [['design-build/preview/tokens.css', t.css], ['design-build/preview/tokens.js', t.js], ['design-build/preview/tokens.mjs', t.mjs], ...Object.entries(OUT).map(([k, rel]) => [rel, b[k]]), ...generatedExports];
   const problems = b.model.logo.problems.map((p) => ({ file: b.model.logo.rel, line: 1, message: p }));
   const studies = path.join(root, 'design-build/studies/index.html');
   if (fs.existsSync(studies)) {
@@ -834,6 +1076,22 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const p = all('--port')[0];
     serve(root, { port: p === undefined ? 4173 : Number(p), watch: !argv.includes('--no-watch'), poll: argv.includes('--poll'), pre });
   }
+  else if (argv.includes('--png')) {
+    const view = all('--view')[0] || 'specimen', theme = all('--theme')[0], width = Number(all('--width')[0] || 1280);
+    if (!VIEWS.some(([v]) => v === view)) { console.error(`--view must be one of ${VIEWS.map(([v]) => v).join(', ')}`); process.exit(2); }
+    const themes = loadContext(root).themes, th = theme || themes[0];
+    if (!themes.includes(th)) { console.error(`--theme must be one of ${themes.join(', ')} (design.md themes)`); process.exit(2); }
+    const { exportPng, closeExport } = await import('./lib/export.mjs');
+    const out = `design-build/exports/board-${view}-${th}-${width}.png`;
+    try {
+      const url = new URL(pathToFileURL(path.join(root, OUT.html)).href); url.searchParams.set('board', view);
+      const png = await exportPng({ url: url.href, theme: th, width });
+      fs.mkdirSync(path.join(root, 'design-build/exports'), { recursive: true });
+      fs.writeFileSync(path.join(root, out), png);
+      console.log(`wrote ${pre}${out}`);
+    } catch (e) { console.error(`PNG export needs Playwright: npm --prefix ${pre}design-build ci && npx --prefix ${pre}design-build playwright install chromium (${e.message.split('\n')[0]})`); process.exitCode = 1; }
+    finally { await closeExport(); }
+  }
   else if (argv.includes('--overview-only')) {
     const ids = all('--direction').flatMap((x) => x.split(',')).map((x) => x.trim()).filter(Boolean);
     if (!ids.length) { console.error('--overview-only needs --direction <ID>, once per direction (e.g. --direction A --direction B)'); process.exit(2); }
@@ -855,14 +1113,14 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (argv.includes('--check')) {
       const stale = staleFiles(root, b);
       for (const p of lp) console.error(p);
-      if (stale.length) console.error(`out of date: ${stale.map((f) => pre + f).join(', ')}; fix: node ${pre}design-build/board.mjs`);
+      if (stale.length) console.error(`out of date: ${stale.map((f) => pre + f).join(', ')}; the board follows the design files and the DESIGN.md, Tailwind and Figma outputs; fix: node ${pre}design-build/designmd.mjs && node ${pre}design-build/board.mjs`);
       if (stale.length || lp.length) process.exit(1);
-      console.log('board is up to date (preview/index.html, board.json, board.md)');
+      console.log('board is up to date (preview/index.html, board.json, board.md, chrome.css)');
     } else {
       for (const [k, rel] of Object.entries(OUT)) fs.writeFileSync(path.join(root, rel), b[k]);
       for (const p of lp) console.error(`warning: ${p}`);
       const c = b.model.coverage;
-      console.log(`wrote ${pre}${OUT.html}, board.json and board.md: ${b.model.tiles.length + 1} tiles, ${Math.floor(c.placeholders.completion * 100)}% filled (${c.placeholders.remaining} placeholders left)`);
+      console.log(`wrote ${pre}${OUT.html}, board.json, board.md and chrome.css: ${b.model.tiles.length + 1} tiles, ${Math.floor(c.placeholders.completion * 100)}% filled (${c.placeholders.remaining} placeholders left)`);
     }
   }
 }

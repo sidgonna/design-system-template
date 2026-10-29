@@ -1,0 +1,34 @@
+# Sodium Yard build state. The starter repo state stays at phase 0.
+phase: 4
+gate_passed: false
+project_type: [digital_product, print_physical]
+evidence:
+  - examples/sodium-yard/design.md
+  - examples/sodium-yard/design/print.md
+inventory: design-build/inventory.json
+research:
+  started_at: "2026-10-29"
+  sources_used: 8
+  competitors_used: 3
+choices:
+  color: "sodium amber, cold steel, filament, blue-grey yard"
+  type: "Bricolage Grotesque headings, Public Sans body"
+  logo: "one lamp head on a pole over a yard line"
+decisions:
+  - { date: 2026-10-29, section: "§1", decision: "Sodium Yard is a fictional night desk for municipal lamps in Visakhapatnam. It is not a real company.", by: "step 6 intake", quote: "built only through the template intake flow" }
+  - { date: 2026-10-29, section: "§4", decision: "Seeds are sodium #c8960a, cold steel #31485a, filament #b8432f, blue-grey #3e4650. Semantic seeds stay as shipped. Chart series stay on the Okabe-Ito hexes, except dark data.6 which is #c65d22 so it stays at 3:1 on the yard surface.", by: "step 6 intake", quote: "charts are operational, not brand decoration" }
+  - { date: 2026-10-29, section: "§4.4", decision: "Themes are dark then light. Dark is the night desk and the default. Light is the morning handover. A high-contrast theme is not shipped.", by: "step 6 intake", quote: "the desk at night is the product" }
+  - { date: 2026-10-29, section: "§5", decision: "Heading is Bricolage Grotesque with Public Sans shipped behind it. Body is Public Sans. Telugu and Hindi use the shipped Noto families.", by: "step 6 intake", quote: "a desk you can read at 01:10" }
+  - { date: 2026-10-29, section: "§16", decision: "Digital product and print are on. Marketing and motion are switched off.", by: "step 6 intake", quote: "the night desk is the product" }
+apply:
+  started_at: null
+  app_url: null
+  routes: []
+  target_errors: 0
+  accepted_by: null
+completion: 1.0
+version: "0.9.0"
+checks:
+  lint: { status: null, commit: null, at: null, errors: null, warnings: null }
+  render: { status: null, commit: null, at: null, failures: null, screenshots: null }
+  a11y: { status: null, commit: null, at: null, serious_or_critical: null, manual: null }

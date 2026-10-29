@@ -8,7 +8,7 @@
 | HTML/CSS API | `<article data-component="card" data-variant="…" [data-interactive] [data-enter]>` + `components/components.css` |
 | Props | `variant`, `interactive`, `enter` |
 | Variants | `flat`, `raised` |
-| Used on | [Design board](../screens/preview.md) (`flat`, `raised`; `default`, `hover`, `focus`) |
+| Used on | [Design board](../screens/preview.md) (`flat`, `raised`; `default`, `hover`, `focus`)<br>[Empty state](../screens/empty.md) (`flat`; `default`) |
 <!-- /ui-inventory:generated -->
 
 ## Purpose

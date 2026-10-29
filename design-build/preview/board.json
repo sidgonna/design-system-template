@@ -16,9 +16,9 @@
    "phase4_min": 0.9
   },
   "components": {
-   "existing": 4,
-   "documented": 4,
-   "planned": 4
+   "existing": 17,
+   "documented": 17,
+   "planned": 0
   }
  },
  "modules": [
@@ -1310,239 +1310,239 @@
        "hint": "to fill (template example in design/core.md)"
       },
       {
-       "line": 458,
+       "line": 471,
        "hint": "palette.primary.300"
       },
       {
-       "line": 458,
+       "line": 471,
        "hint": "palette.secondary.300"
       },
       {
-       "line": 459,
+       "line": 472,
        "hint": "palette.accent.300"
       },
       {
-       "line": 460,
+       "line": 473,
        "hint": "palette.neutral.950"
-      },
-      {
-       "line": 460,
-       "hint": "palette.neutral.950"
-      },
-      {
-       "line": 460,
-       "hint": "palette.neutral.950"
-      },
-      {
-       "line": 460,
-       "hint": "palette.neutral.950"
-      },
-      {
-       "line": 460,
-       "hint": "palette.neutral.950"
-      },
-      {
-       "line": 460,
-       "hint": "palette.neutral.950"
-      },
-      {
-       "line": 460,
-       "hint": "palette.neutral.950"
-      },
-      {
-       "line": 461,
-       "hint": "palette.primary.900"
-      },
-      {
-       "line": 461,
-       "hint": "palette.secondary.900"
-      },
-      {
-       "line": 461,
-       "hint": "palette.accent.900"
-      },
-      {
-       "line": 461,
-       "hint": "palette.success.900"
-      },
-      {
-       "line": 461,
-       "hint": "palette.warning.900"
-      },
-      {
-       "line": 461,
-       "hint": "palette.error.900"
-      },
-      {
-       "line": 461,
-       "hint": "palette.info.900"
-      },
-      {
-       "line": 462,
-       "hint": "palette.primary.100"
-      },
-      {
-       "line": 462,
-       "hint": "palette.secondary.100"
-      },
-      {
-       "line": 462,
-       "hint": "palette.accent.100"
-      },
-      {
-       "line": 462,
-       "hint": "palette.success.100"
-      },
-      {
-       "line": 462,
-       "hint": "palette.warning.100"
-      },
-      {
-       "line": 462,
-       "hint": "palette.error.100"
-      },
-      {
-       "line": 462,
-       "hint": "palette.info.100"
-      },
-      {
-       "line": 463,
-       "hint": "palette.black"
-      },
-      {
-       "line": 463,
-       "hint": "palette.neutral.950"
-      },
-      {
-       "line": 463,
-       "hint": "palette.neutral.900"
-      },
-      {
-       "line": 463,
-       "hint": "palette.neutral.800"
-      },
-      {
-       "line": 463,
-       "hint": "palette.neutral.50"
-      },
-      {
-       "line": 464,
-       "hint": "palette.neutral.50"
-      },
-      {
-       "line": 464,
-       "hint": "palette.neutral.300"
-      },
-      {
-       "line": 464,
-       "hint": "palette.neutral.950"
-      },
-      {
-       "line": 465,
-       "hint": "palette.neutral.800"
-      },
-      {
-       "line": 465,
-       "hint": "palette.neutral.600"
-      },
-      {
-       "line": 465,
-       "hint": "palette.neutral.400"
-      },
-      {
-       "line": 466,
-       "hint": "palette.success.300"
-      },
-      {
-       "line": 466,
-       "hint": "palette.warning.300"
-      },
-      {
-       "line": 466,
-       "hint": "palette.error.300"
-      },
-      {
-       "line": 466,
-       "hint": "palette.info.300"
-      },
-      {
-       "line": 467,
-       "hint": "palette.primary.300"
-      },
-      {
-       "line": 468,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 468,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 468,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 468,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 468,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 468,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 468,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 468,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 469,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 469,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 469,
-       "hint": "to fill (template example in design/core.md)"
-      },
-      {
-       "line": 472,
-       "hint": "to fill (template example in design/core.md)"
       },
       {
        "line": 473,
-       "hint": "to fill (template example in design/core.md)"
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 473,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 473,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 473,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 473,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 473,
+       "hint": "palette.neutral.950"
       },
       {
        "line": 474,
-       "hint": "to fill (template example in design/core.md)"
+       "hint": "palette.primary.900"
+      },
+      {
+       "line": 474,
+       "hint": "palette.secondary.900"
+      },
+      {
+       "line": 474,
+       "hint": "palette.accent.900"
+      },
+      {
+       "line": 474,
+       "hint": "palette.success.900"
+      },
+      {
+       "line": 474,
+       "hint": "palette.warning.900"
+      },
+      {
+       "line": 474,
+       "hint": "palette.error.900"
+      },
+      {
+       "line": 474,
+       "hint": "palette.info.900"
       },
       {
        "line": 475,
-       "hint": "to fill (template example in design/core.md)"
+       "hint": "palette.primary.100"
+      },
+      {
+       "line": 475,
+       "hint": "palette.secondary.100"
+      },
+      {
+       "line": 475,
+       "hint": "palette.accent.100"
+      },
+      {
+       "line": 475,
+       "hint": "palette.success.100"
+      },
+      {
+       "line": 475,
+       "hint": "palette.warning.100"
+      },
+      {
+       "line": 475,
+       "hint": "palette.error.100"
+      },
+      {
+       "line": 475,
+       "hint": "palette.info.100"
       },
       {
        "line": 476,
-       "hint": "to fill (template example in design/core.md)"
+       "hint": "palette.black"
+      },
+      {
+       "line": 476,
+       "hint": "palette.neutral.950"
+      },
+      {
+       "line": 476,
+       "hint": "palette.neutral.900"
+      },
+      {
+       "line": 476,
+       "hint": "palette.neutral.800"
+      },
+      {
+       "line": 476,
+       "hint": "palette.neutral.50"
       },
       {
        "line": 477,
-       "hint": "to fill (template example in design/core.md)"
+       "hint": "palette.neutral.50"
+      },
+      {
+       "line": 477,
+       "hint": "palette.neutral.300"
+      },
+      {
+       "line": 477,
+       "hint": "palette.neutral.950"
       },
       {
        "line": 478,
-       "hint": "to fill (template example in design/core.md)"
+       "hint": "palette.neutral.800"
+      },
+      {
+       "line": 478,
+       "hint": "palette.neutral.600"
+      },
+      {
+       "line": 478,
+       "hint": "palette.neutral.400"
       },
       {
        "line": 479,
+       "hint": "palette.success.300"
+      },
+      {
+       "line": 479,
+       "hint": "palette.warning.300"
+      },
+      {
+       "line": 479,
+       "hint": "palette.error.300"
+      },
+      {
+       "line": 479,
+       "hint": "palette.info.300"
+      },
+      {
+       "line": 480,
+       "hint": "palette.primary.300"
+      },
+      {
+       "line": 481,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 481,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 481,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 481,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 481,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 481,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 481,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 481,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 482,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 482,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 482,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 485,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 486,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 487,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 488,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 489,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 490,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 491,
+       "hint": "to fill (template example in design/core.md)"
+      },
+      {
+       "line": 492,
        "hint": "to fill (template example in design/core.md)"
       }
      ],
@@ -1555,7 +1555,7 @@
   },
   {
    "zone": 3,
-   "name": "Product (§M1)",
+   "name": "Product",
    "tiles": [
     {
      "id": "m1",
@@ -1630,7 +1630,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 37,
+       "line": 46,
        "hint": "How grid, type and spacing adapt per breakpoint."
       }
      ],
@@ -1653,7 +1653,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 42,
+       "line": 51,
        "hint": "higher = more temporary"
       }
      ],
@@ -1676,7 +1676,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 44,
+       "line": 53,
        "hint": "Forms, validation timing, confirmations, navigation patterns."
       }
      ],
@@ -1699,7 +1699,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 46,
+       "line": 55,
        "hint": "5"
       }
      ],
@@ -1763,12 +1763,12 @@
      }
     },
     {
-     "id": "comp-card",
-     "anchor": "#tile-comp-card",
-     "title": "Card",
-     "file": "ui-inventory/components/card.md",
+     "id": "comp-textarea",
+     "anchor": "#tile-comp-textarea",
+     "title": "Textarea",
+     "file": "ui-inventory/components/textarea.md",
      "sections": [
-      "Card"
+      "Textarea"
      ],
      "status": "filled",
      "module": "unset",
@@ -1776,61 +1776,151 @@
      "placeholders": 0,
      "to_fill": [],
      "review": {
-      "id": "component:card",
+      "id": "component:textarea",
       "verdict": null
      }
     },
     {
-     "id": "comp-modal",
-     "anchor": "#tile-comp-modal",
-     "title": "Modal",
-     "file": "design-build/inventory.json",
+     "id": "comp-select",
+     "anchor": "#tile-comp-select",
+     "title": "Select",
+     "file": "ui-inventory/components/select.md",
      "sections": [
-      "Modal"
+      "Select"
      ],
-     "status": "planned",
+     "status": "filled",
      "module": "unset",
      "counted_in_coverage": false,
      "placeholders": 0,
      "to_fill": [],
      "review": {
-      "id": "component:modal",
+      "id": "component:select",
       "verdict": null
      }
     },
     {
-     "id": "comp-navigation",
-     "anchor": "#tile-comp-navigation",
-     "title": "Navigation",
-     "file": "design-build/inventory.json",
+     "id": "comp-checkbox",
+     "anchor": "#tile-comp-checkbox",
+     "title": "Checkbox",
+     "file": "ui-inventory/components/checkbox.md",
      "sections": [
-      "Navigation"
+      "Checkbox"
      ],
-     "status": "planned",
+     "status": "filled",
      "module": "unset",
      "counted_in_coverage": false,
      "placeholders": 0,
      "to_fill": [],
      "review": {
-      "id": "component:navigation",
+      "id": "component:checkbox",
       "verdict": null
      }
     },
     {
-     "id": "comp-table",
-     "anchor": "#tile-comp-table",
-     "title": "Table",
-     "file": "design-build/inventory.json",
+     "id": "comp-radio",
+     "anchor": "#tile-comp-radio",
+     "title": "Radio",
+     "file": "ui-inventory/components/radio.md",
      "sections": [
-      "Table"
+      "Radio"
      ],
-     "status": "planned",
+     "status": "filled",
      "module": "unset",
      "counted_in_coverage": false,
      "placeholders": 0,
      "to_fill": [],
      "review": {
-      "id": "component:table",
+      "id": "component:radio",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-switch",
+     "anchor": "#tile-comp-switch",
+     "title": "Switch",
+     "file": "ui-inventory/components/switch.md",
+     "sections": [
+      "Switch"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:switch",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-alert",
+     "anchor": "#tile-comp-alert",
+     "title": "Alert",
+     "file": "ui-inventory/components/alert.md",
+     "sections": [
+      "Alert"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:alert",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-toast",
+     "anchor": "#tile-comp-toast",
+     "title": "Toast",
+     "file": "ui-inventory/components/toast.md",
+     "sections": [
+      "Toast"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:toast",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-dialog",
+     "anchor": "#tile-comp-dialog",
+     "title": "Dialog",
+     "file": "ui-inventory/components/dialog.md",
+     "sections": [
+      "Dialog"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:dialog",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-tooltip",
+     "anchor": "#tile-comp-tooltip",
+     "title": "Tooltip",
+     "file": "ui-inventory/components/tooltip.md",
+     "sections": [
+      "Tooltip"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:tooltip",
       "verdict": null
      }
     },
@@ -1853,20 +1943,92 @@
      }
     },
     {
-     "id": "comp-toast",
-     "anchor": "#tile-comp-toast",
-     "title": "Toast",
-     "file": "design-build/inventory.json",
+     "id": "comp-avatar",
+     "anchor": "#tile-comp-avatar",
+     "title": "Avatar",
+     "file": "ui-inventory/components/avatar.md",
      "sections": [
-      "Toast"
+      "Avatar"
      ],
-     "status": "planned",
+     "status": "filled",
      "module": "unset",
      "counted_in_coverage": false,
      "placeholders": 0,
      "to_fill": [],
      "review": {
-      "id": "component:toast",
+      "id": "component:avatar",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-table",
+     "anchor": "#tile-comp-table",
+     "title": "Table",
+     "file": "ui-inventory/components/table.md",
+     "sections": [
+      "Table"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:table",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-tabs",
+     "anchor": "#tile-comp-tabs",
+     "title": "Tabs",
+     "file": "ui-inventory/components/tabs.md",
+     "sections": [
+      "Tabs"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:tabs",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-nav",
+     "anchor": "#tile-comp-nav",
+     "title": "Nav",
+     "file": "ui-inventory/components/nav.md",
+     "sections": [
+      "Nav"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:nav",
+      "verdict": null
+     }
+    },
+    {
+     "id": "comp-card",
+     "anchor": "#tile-comp-card",
+     "title": "Card",
+     "file": "ui-inventory/components/card.md",
+     "sections": [
+      "Card"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "component:card",
       "verdict": null
      }
     }
@@ -1891,6 +2053,78 @@
      "to_fill": [],
      "review": {
       "id": "screen:preview",
+      "verdict": null
+     }
+    },
+    {
+     "id": "screen-form",
+     "anchor": "#tile-screen-form",
+     "title": "Form",
+     "file": "ui-inventory/screens/form.md",
+     "sections": [
+      "form"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "screen:form",
+      "verdict": null
+     }
+    },
+    {
+     "id": "screen-empty",
+     "anchor": "#tile-screen-empty",
+     "title": "Empty state",
+     "file": "ui-inventory/screens/empty.md",
+     "sections": [
+      "empty"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "screen:empty",
+      "verdict": null
+     }
+    },
+    {
+     "id": "screen-settings",
+     "anchor": "#tile-screen-settings",
+     "title": "Settings",
+     "file": "ui-inventory/screens/settings.md",
+     "sections": [
+      "settings"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "screen:settings",
+      "verdict": null
+     }
+    },
+    {
+     "id": "screen-table",
+     "anchor": "#tile-screen-table",
+     "title": "Data table",
+     "file": "ui-inventory/screens/table.md",
+     "sections": [
+      "table"
+     ],
+     "status": "filled",
+     "module": "unset",
+     "counted_in_coverage": false,
+     "placeholders": 0,
+     "to_fill": [],
+     "review": {
+      "id": "screen:table",
       "verdict": null
      }
     }
@@ -2175,15 +2409,15 @@
      "placeholders": 3,
      "to_fill": [
       {
-       "line": 499,
+       "line": 512,
        "hint": "to fill"
       },
       {
-       "line": 499,
+       "line": 512,
        "hint": "to fill"
       },
       {
-       "line": 499,
+       "line": 512,
        "hint": "owner"
       }
      ],
@@ -2206,11 +2440,11 @@
      "placeholders": 2,
      "to_fill": [
       {
-       "line": 505,
+       "line": 518,
        "hint": "kebab-case, {brand}-{type}-{variant}-{size}.{ext"
       },
       {
-       "line": 506,
+       "line": 519,
        "hint": "Google Drive / Figma / repo path"
       }
      ],
@@ -2233,7 +2467,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 511,
+       "line": 524,
        "hint": "to fill"
       }
      ],
@@ -2256,11 +2490,11 @@
      "placeholders": 2,
      "to_fill": [
       {
-       "line": 515,
+       "line": 528,
        "hint": "0.1.0"
       },
       {
-       "line": 515,
+       "line": 528,
        "hint": "to fill"
       }
      ],
@@ -2283,7 +2517,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 66,
+       "line": 70,
        "hint": "PLACEHOLDER"
       }
      ],
@@ -2306,7 +2540,7 @@
      "placeholders": 1,
      "to_fill": [
       {
-       "line": 471,
+       "line": 476,
        "hint": "PLACEHOLDER"
       }
      ],
@@ -2329,35 +2563,35 @@
      "placeholders": 8,
      "to_fill": [
       {
-       "line": 148,
+       "line": 153,
        "hint": "20"
       },
       {
-       "line": 149,
+       "line": 154,
        "hint": "25"
       },
       {
-       "line": 149,
+       "line": 154,
        "hint": "5"
       },
       {
-       "line": 149,
+       "line": 154,
        "hint": "3"
       },
       {
-       "line": 150,
+       "line": 155,
        "hint": "30"
       },
       {
-       "line": 373,
+       "line": 378,
        "hint": "5"
       },
       {
-       "line": 410,
+       "line": 415,
        "hint": "TBD: reason"
       },
       {
-       "line": 447,
+       "line": 452,
        "hint": "3"
       }
      ],
@@ -3158,6 +3392,346 @@
    "base": "#1d4ed8",
    "light": "#1d4ed8",
    "dark": "#a3c1ff"
+  },
+  "component.select.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.select.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.select.border": {
+   "base": "#716d68",
+   "light": "#716d68",
+   "dark": "#a7a49f"
+  },
+  "component.select.hint": {
+   "base": "#57534e",
+   "light": "#57534e",
+   "dark": "#c3c0bc"
+  },
+  "component.select.error": {
+   "base": "#b91c1c",
+   "light": "#b91c1c",
+   "dark": "#ffa79c"
+  },
+  "component.select.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.textarea.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.textarea.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.textarea.border": {
+   "base": "#716d68",
+   "light": "#716d68",
+   "dark": "#a7a49f"
+  },
+  "component.textarea.hint": {
+   "base": "#57534e",
+   "light": "#57534e",
+   "dark": "#c3c0bc"
+  },
+  "component.textarea.error": {
+   "base": "#b91c1c",
+   "light": "#b91c1c",
+   "dark": "#ffa79c"
+  },
+  "component.textarea.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.checkbox.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.checkbox.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.checkbox.border": {
+   "base": "#716d68",
+   "light": "#716d68",
+   "dark": "#a7a49f"
+  },
+  "component.checkbox.checked": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.checkbox.mark": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "component.checkbox.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.radio.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.radio.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.radio.border": {
+   "base": "#716d68",
+   "light": "#716d68",
+   "dark": "#a7a49f"
+  },
+  "component.radio.checked": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.radio.mark": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "component.radio.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.switch.bg": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#302d29"
+  },
+  "component.switch.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.switch.border": {
+   "base": "#716d68",
+   "light": "#716d68",
+   "dark": "#a7a49f"
+  },
+  "component.switch.on": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.switch.thumb": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "component.switch.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.alert.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.alert.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.alert.border": {
+   "base": "#a7a49f",
+   "light": "#a7a49f",
+   "dark": "#716d68"
+  },
+  "component.alert.success": {
+   "base": "#00692e",
+   "light": "#00692e",
+   "dark": "#98d0a3"
+  },
+  "component.alert.warning": {
+   "base": "#904000",
+   "light": "#904000",
+   "dark": "#f2b08d"
+  },
+  "component.alert.error": {
+   "base": "#b91c1c",
+   "light": "#b91c1c",
+   "dark": "#ffa79c"
+  },
+  "component.alert.info": {
+   "base": "#1d4ed8",
+   "light": "#1d4ed8",
+   "dark": "#a3c1ff"
+  },
+  "component.toast.bg": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#302d29"
+  },
+  "component.toast.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.toast.border": {
+   "base": "#d9d7d5",
+   "light": "#d9d7d5",
+   "dark": "#44403c"
+  },
+  "component.toast.success": {
+   "base": "#00692e",
+   "light": "#00692e",
+   "dark": "#98d0a3"
+  },
+  "component.toast.warning": {
+   "base": "#904000",
+   "light": "#904000",
+   "dark": "#f2b08d"
+  },
+  "component.toast.error": {
+   "base": "#b91c1c",
+   "light": "#b91c1c",
+   "dark": "#ffa79c"
+  },
+  "component.toast.info": {
+   "base": "#1d4ed8",
+   "light": "#1d4ed8",
+   "dark": "#a3c1ff"
+  },
+  "component.dialog.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#44403c"
+  },
+  "component.dialog.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.dialog.border": {
+   "base": "#d9d7d5",
+   "light": "#d9d7d5",
+   "dark": "#44403c"
+  },
+  "component.dialog.scrim": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.tooltip.bg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.tooltip.fg": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#191714"
+  },
+  "component.avatar.bg": {
+   "base": "#deeeea",
+   "light": "#deeeea",
+   "dark": "#00352e"
+  },
+  "component.avatar.fg": {
+   "base": "#00352e",
+   "light": "#00352e",
+   "dark": "#deeeea"
+  },
+  "component.table.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.table.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.table.border": {
+   "base": "#d9d7d5",
+   "light": "#d9d7d5",
+   "dark": "#44403c"
+  },
+  "component.table.stripe": {
+   "base": "#ebeae8",
+   "light": "#ebeae8",
+   "dark": "#000000"
+  },
+  "component.table.header.bg": {
+   "base": "#f6f5f5",
+   "light": "#f6f5f5",
+   "dark": "#302d29"
+  },
+  "component.table.header.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.tabs.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.tabs.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.tabs.border": {
+   "base": "#d9d7d5",
+   "light": "#d9d7d5",
+   "dark": "#44403c"
+  },
+  "component.tabs.selected": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.tabs.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.nav.bg": {
+   "base": "#ffffff",
+   "light": "#ffffff",
+   "dark": "#191714"
+  },
+  "component.nav.fg": {
+   "base": "#191714",
+   "light": "#191714",
+   "dark": "#f6f5f5"
+  },
+  "component.nav.border": {
+   "base": "#d9d7d5",
+   "light": "#d9d7d5",
+   "dark": "#44403c"
+  },
+  "component.nav.active": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
+  },
+  "component.nav.focus": {
+   "base": "#0b5d52",
+   "light": "#0b5d52",
+   "dark": "#a0cbc2"
   }
  },
  "pairings": [
@@ -3442,5 +4016,16 @@
    }
   }
  ],
- "review_file": "design-build/review.json"
+ "review_file": "design-build/review.json",
+ "exports": {
+  "status": "synced",
+  "files": [
+   "design-build/exports/DESIGN.md",
+   "design-build/exports/tailwind.theme.css",
+   "design-build/exports/tailwind.config.cjs",
+   "design-build/exports/figma.tokens-studio.json",
+   "design-build/exports/figma.variables.json"
+  ],
+  "stale": []
+ }
 }

@@ -1,0 +1,165 @@
+<section class="catalog" id="catalog" aria-labelledby="catalog-h">
+<h3 class="group-title" id="catalog-h">Components by category</h3>
+
+<section class="catalog-group" id="catalog-actions" data-group="actions" aria-labelledby="catalog-actions-h">
+<h4 class="group-title" id="catalog-actions-h">Actions</h4>
+<div class="specimen brand">
+<div class="row">
+<button type="button" data-component="button" data-variant="primary">Save</button>
+<button type="button" data-component="button" data-variant="secondary">Preview</button>
+<button type="button" data-component="button" data-variant="ghost">Cancel</button>
+<button type="button" data-component="button" data-variant="danger">Delete</button>
+<button type="button" data-component="button" data-variant="primary" disabled>Disabled</button>
+<button type="button" data-component="button" data-variant="primary" id="cat-loading" aria-busy="true" aria-disabled="true"><span data-part="spinner" aria-hidden="true"></span><span data-part="label">Saving</span></button>
+</div>
+</div>
+</section>
+
+<section class="catalog-group" id="catalog-inputs" data-group="inputs" aria-labelledby="catalog-inputs-h">
+<h4 class="group-title" id="catalog-inputs-h">Inputs</h4>
+<div class="specimen brand">
+<div data-component="input" data-variant="default">
+<label for="cat-email">Email</label>
+<input id="cat-email" type="email" autocomplete="email" aria-describedby="cat-email-hint" value="ada@example.com">
+<p data-part="hint" id="cat-email-hint">For receipts only.</p>
+</div>
+<div data-component="textarea" data-variant="default">
+<label for="cat-note">Note</label>
+<textarea id="cat-note" rows="3">Window seat, please.</textarea>
+</div>
+<div data-component="textarea" data-variant="error">
+<label for="cat-note-bad">Note</label>
+<textarea id="cat-note-bad" aria-invalid="true" aria-describedby="cat-note-bad-error">Hi</textarea>
+<p data-part="error" id="cat-note-bad-error">Add a few more words.</p>
+</div>
+<div data-component="select" data-variant="default">
+<label for="cat-pier">Plan</label>
+<select id="cat-pier"><option>Basic</option><option>Plus</option></select>
+</div>
+<div data-component="select" data-variant="error">
+<label for="cat-pier-bad">Plan</label>
+<select id="cat-pier-bad" aria-invalid="true" aria-describedby="cat-pier-bad-error"><option value="">Choose</option><option>Basic</option></select>
+<p data-part="error" id="cat-pier-bad-error">Pick a plan.</p>
+</div>
+<div data-component="checkbox" data-variant="default">
+<label><input type="checkbox" name="cat-sms" checked> SMS receipts</label>
+</div>
+<div data-component="checkbox" data-variant="default">
+<label><input type="checkbox" name="cat-sms-off" disabled> Printed copy</label>
+</div>
+<fieldset data-component="radio" data-variant="default">
+<legend>Seat</legend>
+<label><input type="radio" name="cat-seat" value="window" checked> Window</label>
+<label><input type="radio" name="cat-seat" value="aisle"> Aisle</label>
+</fieldset>
+<button type="button" data-component="switch" data-variant="default" role="switch" aria-checked="false">
+<span data-part="track" aria-hidden="true"><span data-part="thumb"></span></span>
+<span data-part="label">Email receipts</span>
+</button>
+<button type="button" data-component="switch" data-variant="default" role="switch" aria-checked="true" disabled>
+<span data-part="track" aria-hidden="true"><span data-part="thumb"></span></span>
+<span data-part="label">Status alerts</span>
+</button>
+</div>
+<p class="pattern-label">Form</p>
+<div class="specimen brand">
+<!-- pattern:form -->
+</div>
+</section>
+
+<section class="catalog-group" id="catalog-feedback" data-group="feedback" aria-labelledby="catalog-feedback-h">
+<h4 class="group-title" id="catalog-feedback-h">Feedback</h4>
+<div class="specimen brand">
+<div data-component="alert" data-variant="info"><p><strong>Info.</strong> Receipts go by email.</p></div>
+<div data-component="alert" data-variant="success"><p><strong>Success.</strong> Changes are saved.</p></div>
+<div data-component="alert" data-variant="warning"><p><strong>Warning.</strong> This list is nearly full.</p></div>
+<div data-component="alert" data-variant="error"><p><strong>Error.</strong> That item was removed.</p></div>
+<div data-component="toast" data-variant="success" role="status"><p><strong>Success.</strong> Saved.</p><button type="button" data-part="dismiss">Close</button></div>
+<div data-component="toast" data-variant="warning" role="status"><p><strong>Warning.</strong> Due soon.</p><button type="button" data-part="dismiss">Close</button></div>
+<div data-component="toast" data-variant="error" role="status"><p><strong>Error.</strong> Try again.</p><button type="button" data-part="dismiss">Close</button></div>
+<div data-component="toast" data-variant="info" role="status"><p><strong>Info.</strong> Gate opens at 8.</p><button type="button" data-part="dismiss">Close</button></div>
+<button type="button" data-component="button" data-variant="secondary" data-dialog-open="cat-dialog" aria-haspopup="dialog" aria-controls="cat-dialog">Open dialog</button>
+<dialog data-component="dialog" data-variant="default" id="cat-dialog" aria-labelledby="cat-dialog-title">
+<h2 id="cat-dialog-title">Save settings</h2>
+<p>Keep these choices for the next visit.</p>
+<div data-part="actions">
+<button type="button" data-component="button" data-variant="secondary" data-part="close">Cancel</button>
+<button type="button" data-component="button" data-variant="primary" data-part="close">Save</button>
+</div>
+</dialog>
+<span data-part="tip-host">
+<button type="button" data-component="button" data-variant="secondary">Seat info</button>
+<span id="cat-tip" data-component="tooltip" data-variant="default" role="tooltip" hidden>Shown while this button is focused.</span>
+</span>
+</div>
+<p class="pattern-label">Empty state</p>
+<div class="specimen brand">
+<!-- pattern:empty -->
+</div>
+</section>
+
+<section class="catalog-group" id="catalog-navigation" data-group="navigation" aria-labelledby="catalog-navigation-h">
+<h4 class="group-title" id="catalog-navigation-h">Navigation</h4>
+<div class="specimen brand">
+<div data-component="tabs" data-variant="default">
+<div role="tablist" aria-label="Day">
+<button type="button" role="tab" id="cat-tab-today" aria-controls="cat-panel-today" aria-selected="true">Today</button>
+<button type="button" role="tab" id="cat-tab-next" aria-controls="cat-panel-next" aria-selected="false" tabindex="-1">Tomorrow</button>
+</div>
+<div role="tabpanel" id="cat-panel-today" aria-labelledby="cat-tab-today">Three items today.</div>
+<div role="tabpanel" id="cat-panel-next" aria-labelledby="cat-tab-next" hidden>Two items tomorrow.</div>
+</div>
+<nav data-component="nav" data-variant="default" aria-label="Catalog">
+<ul>
+<li><a href="#catalog-actions" aria-current="page">Actions</a></li>
+<li><a href="#catalog-inputs">Inputs</a></li>
+<li><a href="#catalog-feedback">Feedback</a></li>
+<li><a href="#catalog-navigation">Navigation</a></li>
+<li><a href="#catalog-data-display">Data</a></li>
+<li><a href="#catalog-layout">Layout</a></li>
+</ul>
+</nav>
+</div>
+</section>
+
+<section class="catalog-group" id="catalog-data-display" data-group="data-display" aria-labelledby="catalog-data-display-h">
+<h4 class="group-title" id="catalog-data-display-h">Data display</h4>
+<div class="specimen brand">
+<div class="row">
+<span data-component="badge" data-variant="neutral">Draft</span>
+<span data-component="badge" data-variant="success">Paid</span>
+<span data-component="badge" data-variant="warning">Due soon</span>
+<span data-component="badge" data-variant="error">Overdue</span>
+<span data-component="badge" data-variant="info">New</span>
+<span data-component="avatar" data-variant="initials" role="img" aria-label="Ada Lovelace">AL</span>
+<span data-component="avatar" data-variant="icon" role="img" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3"></circle><path d="M5 19c1.5-3 4-4.5 7-4.5S17.5 16 19 19"></path></svg></span>
+</div>
+<div data-component="table" data-variant="default" role="region" aria-label="Sample rows" tabindex="0">
+<table>
+<caption>Sample rows</caption>
+<thead><tr><th scope="col">Plan</th><th scope="col">Time</th><th scope="col">Status</th></tr></thead>
+<tbody>
+<tr><td>Basic</td><td>09:00</td><td>On time</td></tr>
+<tr><td>Plus</td><td>11:30</td><td>Due soon</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<p class="pattern-label">Data table</p>
+<div class="specimen brand">
+<!-- pattern:table -->
+</div>
+</section>
+
+<section class="catalog-group" id="catalog-layout" data-group="layout" aria-labelledby="catalog-layout-h">
+<h4 class="group-title" id="catalog-layout-h">Layout</h4>
+<div class="specimen brand">
+<article data-component="card" data-variant="flat"><h3>Flat card</h3><p>A hairline border only.</p></article>
+<article data-component="card" data-variant="raised"><h3>Raised card</h3><p>Lifted off the page.</p></article>
+</div>
+<p class="pattern-label">Settings</p>
+<div class="specimen brand">
+<!-- pattern:settings -->
+</div>
+</section>
+</section>

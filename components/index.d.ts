@@ -9,4 +9,27 @@ export declare function setInputError(root: HTMLElement, message: string | null)
 export declare function createCard(o?: { variant?: CardVariant; interactive?: boolean; enter?: boolean; as?: string; children?: (Node | string)[] | string }): HTMLElement;
 export declare function createBadge(o?: { label?: string; variant?: BadgeVariant; live?: boolean }): HTMLSpanElement;
 export declare function replay<T extends Element>(el: T): T;
-export declare const variants: { button: ButtonVariant[]; card: CardVariant[]; badge: BadgeVariant[] };
+export type FieldVariant = 'default' | 'error';
+export type AlertVariant = 'info' | 'success' | 'warning' | 'error';
+export type ToastVariant = 'success' | 'warning' | 'error' | 'info';
+export type AvatarVariant = 'initials' | 'icon';
+export declare function createSelect(o: { label: string; hint?: string; error?: string; id?: string; name?: string; required?: boolean; disabled?: boolean; value?: string; options?: (string | { value: string; label?: string; disabled?: boolean })[] }): HTMLDivElement;
+export declare function createTextarea(o: { label: string; hint?: string; error?: string; id?: string; name?: string; required?: boolean; disabled?: boolean; value?: string; rows?: number }): HTMLDivElement;
+export declare function createCheckbox(o: { label: string; checked?: boolean; disabled?: boolean; required?: boolean; name?: string; value?: string; variant?: 'default' }): HTMLDivElement;
+export declare function createRadio(o: { legend: string; name?: string; options?: { label: string; value: string; disabled?: boolean }[]; value?: string; disabled?: boolean; variant?: 'default' }): HTMLFieldSetElement;
+export declare function createSwitch(o: { label: string; checked?: boolean; disabled?: boolean; variant?: 'default'; onClick?: (on: boolean) => void }): HTMLButtonElement;
+export declare function createAlert(o?: { title?: string; body?: string; variant?: AlertVariant; live?: boolean }): HTMLDivElement;
+export declare function createToast(o?: { title?: string; body?: string; variant?: ToastVariant; float?: boolean }): HTMLDivElement;
+export declare function createDialog(o?: { title?: string; body?: string; id?: string; openLabel?: string; closeLabel?: string }): HTMLDivElement;
+export declare function createTooltip(o?: { label?: string; tip?: string; variant?: 'default' }): HTMLSpanElement;
+export declare function createAvatar(o: { label: string; initials?: string; variant?: AvatarVariant }): HTMLSpanElement;
+export declare function createTable(o?: { caption?: string; columns?: string[]; rows?: (string | Node)[][] }): HTMLDivElement;
+export declare function createTabs(o?: { label?: string; tabs?: { id?: string; label: string; panel?: string }[]; variant?: 'default' }): HTMLDivElement;
+export declare function createNav(o?: { label?: string; items?: { href: string; label: string; current?: boolean }[]; variant?: 'default' }): HTMLElement;
+export declare function mount(root?: ParentNode): void;
+export declare const variants: {
+  button: ButtonVariant[]; card: CardVariant[]; badge: BadgeVariant[];
+  select: FieldVariant[]; textarea: FieldVariant[]; checkbox: 'default'[]; radio: 'default'[]; switch: 'default'[];
+  alert: AlertVariant[]; toast: ToastVariant[]; dialog: 'default'[]; tooltip: 'default'[];
+  avatar: AvatarVariant[]; table: 'default'[]; tabs: 'default'[]; nav: 'default'[];
+};

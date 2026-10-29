@@ -38,11 +38,20 @@ const relevant = !relFile || appCode || (!relFile.startsWith('..') && (
 if (!relevant) process.exit(0);
 
 if (relFile === 'tokens/tokens.json') {
-  const { generate } = await import(path.join(ROOT, 'design-build/tokens-css.mjs'));
   try {
+    const { generate } = await import(path.join(ROOT, 'design-build/tokens-css.mjs'));
     const g = generate(ROOT);
     for (const [f, c] of [['tokens.css', g.css], ['tokens.js', g.js], ['tokens.mjs', g.mjs]]) fs.writeFileSync(path.join(ROOT, 'design-build/preview', f), c);
-  } catch { /* lint reports tokens-format problems below */ }
+    const { writeOutputs } = await import(path.join(ROOT, 'design-build/lib/designmd.mjs'));
+    writeOutputs(ROOT);
+    const { build } = await import(path.join(ROOT, 'design-build/board.mjs'));
+    const b = build(ROOT);
+    const preview = path.join(ROOT, 'design-build/preview');
+    fs.writeFileSync(path.join(preview, 'index.html'), b.html);
+    fs.writeFileSync(path.join(preview, 'board.json'), b.json);
+    fs.writeFileSync(path.join(preview, 'board.md'), b.md);
+    fs.writeFileSync(path.join(preview, 'chrome.css'), b.css);
+  } catch { /* lint reports tokens-format, exports-stale or board-stale below */ }
 }
 const { lint, format: formatLint } = await import(path.join(ROOT, 'design-build/lint.mjs'));
 const res = lint({ root: ROOT });

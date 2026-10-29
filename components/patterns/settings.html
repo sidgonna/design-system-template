@@ -1,0 +1,28 @@
+<form data-pattern="settings" id="pat-settings" action="#pat-settings">
+  <nav data-component="nav" data-variant="default" aria-label="Settings sections">
+    <ul>
+      <li><a href="#pat-settings-account" aria-current="page">Account</a></li>
+      <li><a href="#pat-settings-alerts">Alerts</a></li>
+    </ul>
+  </nav>
+  <section id="pat-settings-account">
+    <div data-component="input" data-variant="default">
+      <label for="pat-settings-email">Email</label>
+      <input id="pat-settings-email" type="email" autocomplete="email" value="ada@example.com">
+    </div>
+  </section>
+  <section id="pat-settings-alerts">
+    <button type="button" data-component="switch" data-variant="default" role="switch" aria-checked="true">
+      <span data-part="track" aria-hidden="true"><span data-part="thumb"></span></span>
+      <span data-part="label">Email receipts</span>
+    </button>
+    <fieldset data-component="radio" data-variant="default">
+      <legend>Seat</legend>
+      <label><input type="radio" name="pat-settings-seat" value="window" checked> Window</label>
+      <label><input type="radio" name="pat-settings-seat" value="aisle"> Aisle</label>
+    </fieldset>
+  </section>
+  <div data-part="actions">
+    <button type="submit" data-component="button" data-variant="primary">Save</button>
+  </div>
+</form>

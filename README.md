@@ -121,16 +121,101 @@ RULES FOR THIS WHOLE SESSION
 Begin with Step 1 now.
 ```
 
-## Components: usage
-The template ships four working components: **Button, Input, Card and Badge** (digital-product.md §M1.1). They use only token variables and have no runtime dependencies. Their motion runs on motion tokens; under `prefers-reduced-motion` nothing moves and only short opacity and color fades remain (core.md §10). Without `components/base.css` (or your own base styles) the page keeps the browser default font, Times New Roman. You can use them three ways:
+## Example brands
+
+The starter board is this folder. Two filled examples live under `examples/` and are their own design-system roots. Shared components and checks are symlinks, so rebuilding an example does not overwrite the starter board. Presets (feel, theme order, ramp seeds, fonts) are in [`seeds.yaml`](seeds.yaml). Research URLs stay in design.md §16.2.
+
+| Brand | Default theme | Feel |
+|---|---|---|
+| [Godavari Ferry](examples/godavari-ferry/) | light, then dark | A paper ticket you can read in full sun, on a moving boat. |
+| [Sodium Yard](examples/sodium-yard/) | dark, then light | The yard at night. The next van is a lamp colour, not a sentence. |
+
+```sh
+# Starter
+node design-build/board.mjs
+node design-build/board.mjs --serve --watch
+
+# Examples (build, check, or serve on its own port)
+node examples/use.mjs godavari-ferry
+node examples/use.mjs godavari-ferry --check
+node examples/use.mjs sodium-yard
+node examples/use.mjs sodium-yard --check
+node examples/use.mjs sodium-yard --serve
+```
+
+With the starter server already running, an example is the same origin at `/examples/<brand>/design-build/preview/`. Details: [`examples/README.md`](examples/README.md).
+
+## Use it in a Vite or Next app
+
+Put this folder at the app root as `design-system/`, with no `.git` of its own. The commands below assume that layout. In this repository, drop the `design-system/` prefix.
+
+Phase 6 step 1 in design.md requires one import of `tokens.css`. When the brand has shipped faces, import `fonts.css` before it, or the named families fall through to a system font. `components/base.css` then sets the body and the headings from the tokens. React wrappers import `components.css` themselves and start with `'use client'`.
+
+Vite (`src/main.tsx`). The dev server is usually `http://localhost:5173/`.
 
 ```tsx
-// React 18+. In the app entry (src/main.tsx, or app/layout.tsx in Next.js), once:
-import '../design-system/design-build/preview/tokens.css';   // the tokens, first
-import '../design-system/components/base.css';               // optional: body font, colors, headings from the tokens
+import '../design-system/assets/fonts/fonts.css';
+import '../design-system/design-build/preview/tokens.css';
+import '../design-system/components/base.css';
+```
+
+Next.js App Router (`app/layout.tsx`). The dev server is usually `http://localhost:3000/`.
+
+```tsx
+import '../design-system/assets/fonts/fonts.css';
+import '../design-system/design-build/preview/tokens.css';
+import '../design-system/components/base.css';
+```
+
+```tsx
+import { Button, Card } from '../design-system/components/react';
+```
+
+Check the running app, one flag per route:
+
+```sh
+node design-system/design-build/render.mjs --url http://localhost:5173/
+node design-system/design-build/render.mjs --url http://localhost:3000/
+```
+
+A theme toggle sets `data-theme` on `<html>`. With no attribute, the first theme in `design.md` is the default and a later `light` or `dark` follows `prefers-color-scheme`.
+
+The product version is [CHANGELOG.md](CHANGELOG.md) (v1.0.0). `template_version` in design.md is the document schema. A brand's `system_version` stays in that brand's design.md. The unfilled starter keeps its placeholder system version. Agent rules: [RULES.md](RULES.md). Stitch and the tools beside it: [design-build/references/competitors.md](design-build/references/competitors.md).
+
+## DESIGN.md, Tailwind and Figma
+
+`tokens/tokens.json` stays the source. One command writes the files other tools read, under `design-build/exports/`:
+
+| File | What it is |
+|---|---|
+| `DESIGN.md` | Google's DESIGN.md format (version alpha) for the default theme: colors, typography, spacing, rounded corners and components. A `json tokens` fence in the same file is `tokens/tokens.json` byte for byte. Import reads that fence back unchanged. A DESIGN.md with no fence converts through the Google schema only. |
+| `tailwind.theme.css` | Tailwind v4 `@theme` for the default theme, plus `[data-theme]` overrides where a value changes. |
+| `tailwind.config.cjs` | Tailwind v3 `theme.extend` for the default theme, and `darkTheme` for values that differ. Copy it to the app root. This folder is an ES module package, so the config is `.cjs`. |
+| `figma.tokens-studio.json` | Tokens Studio sets: `global`, then one set per theme. |
+| `figma.variables.json` | One Figma variables collection. One mode per theme in `design.md`. |
+
+```sh
+node design-build/designmd.mjs
+node design-build/designmd.mjs --check
+node design-build/designmd.mjs lint
+node design-build/designmd.mjs lint path/to/DESIGN.md --format json
+node design-build/designmd.mjs import path/to/DESIGN.md --out tokens/imported.json
+```
+
+`--check` exits 1 when a file is stale, or when the generated DESIGN.md has a Google-format lint error. Warnings do not fail it. The board header shows **Outputs synced** or **Outputs stale**, and a stale export is a lint error (`exports-stale`). `node examples/use.mjs <brand>` writes that brand's own `design-build/exports/` and the same badge. A dark-first brand's DESIGN.md describes `themes[0]` (Sodium Yard: dark).
+
+## Components: usage
+The template ships a grouped set (digital-product.md §M1.1): **Actions** (Button), **Inputs** (Input, Textarea, Select, Checkbox, Radio, Switch), **Feedback** (Alert, Toast, Dialog, Tooltip), **Navigation** (Tabs, Nav), **Data display** (Badge, Avatar, Table) and **Layout** (Card). Patterns for a form, an empty state, a settings page and a data table live in `components/patterns/`. They use only token variables and have no runtime dependencies. Their motion runs on motion tokens; under `prefers-reduced-motion` nothing moves and only short opacity and color fades remain (core.md §10). Without `components/base.css` (or your own base styles) the page keeps the browser default font, Times New Roman. You can use them three ways:
+
+```tsx
+// React 18+. In the app entry (Vite src/main.tsx, or Next.js app/layout.tsx), once, in this order.
+// fonts.css first when the brand ships faces (README → Use it in a Vite or Next app).
+import '../design-system/assets/fonts/fonts.css';
+import '../design-system/design-build/preview/tokens.css';
+import '../design-system/components/base.css';               // body font, colors, headings from the tokens
 // In any component file. The wrappers import components/components.css themselves, so don't import it again.
 // They start with 'use client', so a Next.js Server Component page can render them.
-import { Button, Input, Card, Badge } from '../design-system/components/react';   // typed (index.d.ts)
+import { Button, Input, Textarea, Select, Checkbox, Radio, Switch, Alert, Toast, Dialog, Tooltip, Tabs, Nav, Badge, Avatar, Table, Card } from '../design-system/components/react';   // typed (index.d.ts)
 
 <Card variant="raised" interactive>
   <h3><a href="/plans/pro">Pro plan</a></h3>
@@ -145,7 +230,8 @@ import { Button, Input, Card, Badge } from '../design-system/components/react'; 
 <button type="button" data-component="button" data-variant="secondary">Preview</button>
 <span data-component="badge" data-variant="warning">Expiring</span>
 <script type="module">
-  import { createInput, setButtonLoading, setInputError, replay } from './design-system/components/index.js';
+  import { createInput, createSelect, createTabs, createDialog, mount, setButtonLoading, setInputError, replay } from './design-system/components/index.js';
+  mount(document); // or load components/boot.js, which calls mount once the document is ready
 </script>
 ```
 
@@ -154,6 +240,19 @@ import { Button, Input, Card, Badge } from '../design-system/components/react'; 
 | Button | primary, secondary, ghost, danger | `variant`, `loading` (keeps focus: `aria-busy` + `aria-disabled`; announces `loadingLabel`, default "Loading"), `disabled`, `type` |
 | Input | default, error | `label`, `hint`, `error` (sets the variant, `aria-invalid` and `aria-describedby`, and shakes), plus the native input attributes (`required`, `disabled`, `readOnly`, `maxLength`, `autoComplete`, `inputMode`…) |
 | Card | flat, raised | `variant`, `interactive` (hover and focus-within lift), `enter` (plays the entrance), `as` |
+| Textarea | default, error | `label`, `hint`, `error`, `rows`, plus the native textarea attributes |
+| Select | default, error | `label`, `hint`, `error`, `options` (native `<select>`) |
+| Checkbox | default | `label`, `checked`, `disabled` (the label wraps the native input) |
+| Radio | default | `legend`, `name`, `options`, `value` (fieldset of native radios) |
+| Switch | default | `label`, `checked` or `defaultChecked`, `disabled` (`role="switch"`, not a Button) |
+| Alert | info, success, warning, error | `variant`, `title`, `live` (error and warning use `role="alert"`) |
+| Toast | success, warning, error, info | `variant`, `title`, `float` (fixed, off the board), `onDismiss` |
+| Dialog | default | `open`, `title`, `onClose` (native `<dialog>`) |
+| Tooltip | default | `tip` (hidden until hover or focus; Escape dismisses) |
+| Tabs | default | `label`, `tabs`, `value` (arrow keys, Home and End) |
+| Nav | default | `label`, `items` (`href` required, `aria-current="page"`) |
+| Avatar | initials, icon | `variant`, `label` (`role="img"`) |
+| Table | default | `caption` (scroll region with `tabindex="0"`) |
 | Badge | neutral, success, warning, error, info | `variant`, `live` (`role="status"` for a status that changes on the page) |
 
 An unknown `variant` logs a console error in the React wrappers (and throws in the vanilla helpers) instead of silently rendering the default look.
@@ -178,10 +277,15 @@ The markdown holds the prose, and `node design-system/design-build/ui-inventory.
 | [`design/motion-video.md`](design/motion-video.md) | §M3: video, titles, captions, sound and export |
 | [`design/print.md`](design/print.md) | §M4: print, packaging and merch |
 | [`KICKSTART.md`](KICKSTART.md) | The same kickstart prompt as above |
+| [`RULES.md`](RULES.md) | Short rules for coding agents. design.md §0 and §16 win if they disagree |
+| [`seeds.yaml`](seeds.yaml) | Quick-start presets for the example brands (feel, themes, ramp seeds, fonts). §16.2 owns research URLs |
+| [`CHANGELOG.md`](CHANGELOG.md) | Product releases. v1.0.0 notes are in [`releases/v1.0.0.md`](releases/v1.0.0.md). No git tag is published by those notes |
 | [`BOTTLENECKS.md`](BOTTLENECKS.md) | Where AI agents stumble, the fix for each, and which fixes are implemented |
+| [`design-build/references/competitors.md`](design-build/references/competitors.md) | Stitch and similar tools, with screenshots stored in this repo |
 | `components/` | The shipped components: `components.css` (the `data-component` / `data-variant` API), `index.js` (vanilla helpers) and `react/` (typed React wrappers) |
 | `ui-inventory/` | Per-screen component use, one doc per component, and blank templates |
 | `tokens/tokens.json` | A machine copy of the §13 tokens, in W3C Design Tokens (DTCG) format: `palette.*` OKLCH ramps, system roles and `component.*` tokens, with one mode per theme in design.md `themes:` (light and dark by default; one theme is fine). Sub-brands get `tokens/brands/<id>.json` with their own ramps |
+| `design-build/exports/` | Generated from the tokens: `DESIGN.md` (Google's format, with the token file in a fence), Tailwind v4 `@theme` CSS, a Tailwind v3 config, Tokens Studio JSON and Figma variables JSON |
 | `assets/` | Logo (with its `logo/logo.json` manifest), icons, imagery, motion, moodboard, templates and fonts |
 | `design-build/` | Working files during a build (state, inventory, research notes, studies, the design board) and the quality checks (`lint.mjs`, `render.mjs`, hooks) |
 
@@ -197,13 +301,14 @@ The markdown holds the prose, and `node design-system/design-build/ui-inventory.
 
 | Command | What it checks | Needs |
 |---|---|---|
-| `node design-system/design-build/lint.mjs` | Static checks on the design docs, `tokens/tokens.json`, the design system's board and studies, **and your app's code**: `src/`, `app/`, `pages/`, `components/`, `styles/`, top-level `*.html`/`*.css` and `public/*.html` (css, scss, ts, tsx, js, jsx, vue, svelte, html; `node_modules`, `dist`, `build`, `.next` skipped), or the `code_dirs` in `design-build/project.json`:<br>• raw hex, rgb, hsl, oklch, px, ms, opacity or z-index values outside §13<br>• `{token}` and `var(--token)` references that don't resolve<br>• tokens used in a §4 "Never use for" slot<br>• WCAG 2 contrast for every §4 pairing, in every theme and brand (4.5:1 normal, 3:1 large and UI); APCA Lc is reported as advice only<br>• every fill has its `on.*` colour, readable at rest and under each hover, pressed and focus state layer<br>• the token tiers: component tokens and code use roles or component tokens, never `palette.*`<br>• front matter `themes:` matches the token modes; `color.data.*` series stay distinguishable under colour-vision deficiencies<br>• raw opacity and z-index values (use `opacity.*` and `z-index.*` tokens)<br>• unjustified core §2 `avoid_defaults`<br>• components or variants missing from `design-build/inventory.json`<br>• screens and component docs in `ui-inventory/`: every component on a listed screen has a complete doc, the docs match inventory.json, and they use only real tokens<br>• DTCG format, generated CSS or a board that is stale, section ownership, KICKSTART/README sync, and Phase 4 completion<br>Each finding gives `file:line`, the value and the fix. A hard-coded color in app code is an error. | Node 18+ only |
+| `node design-system/design-build/lint.mjs` | Static checks on the design docs, `tokens/tokens.json`, the design system's board and studies, **and your app's code**: `src/`, `app/`, `pages/`, `components/`, `styles/`, top-level `*.html`/`*.css` and `public/*.html` (css, scss, ts, tsx, js, jsx, vue, svelte, html; `node_modules`, `dist`, `build`, `.next` skipped), or the `code_dirs` in `design-build/project.json`:<br>• raw hex, rgb, hsl, oklch, px, ms, opacity or z-index values outside §13<br>• `{token}` and `var(--token)` references that don't resolve<br>• tokens used in a §4 "Never use for" slot<br>• WCAG 2 contrast for every §4 pairing, in every theme and brand (4.5:1 normal, 3:1 large and UI); APCA Lc is reported as advice only<br>• every fill has its `on.*` colour, readable at rest and under each hover, pressed and focus state layer<br>• the token tiers: component tokens and code use roles or component tokens, never `palette.*`<br>• front matter `themes:` matches the token modes; `color.data.*` series stay distinguishable under colour-vision deficiencies<br>• raw opacity and z-index values (use `opacity.*` and `z-index.*` tokens)<br>• unjustified core §2 `avoid_defaults`<br>• components or variants missing from `design-build/inventory.json`<br>• screens and component docs in `ui-inventory/`: every component on a listed screen has a complete doc, the docs match inventory.json, and they use only real tokens<br>• DTCG format, generated CSS, DESIGN.md / Tailwind / Figma outputs, or a board that is stale, section ownership, KICKSTART/README sync, and Phase 4 completion<br>Each finding gives `file:line`, the value and the fix. A hard-coded color in app code is an error. | Node 18+ only |
 | `node design-system/design-build/render.mjs [page …] [--url <url> …]` | Captures each page (the board, `preview/index.html`, by default) at 390, 768 and 1280 wide in every theme in design.md `themes:` (light and dark by default), into `design-build/screenshots/`. For your app, start its dev server (`npm run dev`) and pass the URL it prints: `--url http://localhost:5173/`. It fails on any of these:<br>• an uncaught page error, a script or stylesheet that fails to load, or a blank page<br>• sideways scroll<br>• key elements off-screen<br>• overlapping controls<br>• tap targets under 24px<br>• no visible focus<br>• serious or critical axe issues (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`)<br>Results go to `render-report.json` and `a11y-report.json`. | `npm --prefix design-system/design-build ci` and `npx --prefix design-system/design-build playwright install chromium` (add `--with-deps` on a fresh Linux machine) |
 | `node design-system/design-build/motion.mjs [page] [--url <url>]` | Proves that motion plays: card entrance, badge pop-in, input error shake and focus ring, button hover, press and spinner, and the board's Play motion demo. It samples each animation's transform and opacity mid-flight, then checks under `prefers-reduced-motion: reduce` that nothing moves while color feedback stays. It also fails on console errors. `--strip <dir>` saves frame strips. | the same `npm ci` + Playwright |
 | `node design-system/design-build/ui-inventory.mjs [--check]` | Regenerates `ui-inventory/index.md` and the tables in each screen and component doc from `inventory.json`, and creates missing docs from the templates. `--check` only reports. | Node 18+ |
 | `npm --prefix design-system/design-build run tokens:check` | Validates `tokens/tokens.json` against the DTCG 2025.10 format with Terrazzo | the same `npm ci` |
 | `node design-system/design-build/tokens-css.mjs` | Regenerates `preview/tokens.css` (CSS variables: one block per theme, with `prefers-color-scheme` / `prefers-contrast` and `data-theme`, plus `data-brand` blocks for sub-brands), `tokens.mjs` (ES module for app code) and `tokens.js` from `tokens/tokens.json`; `--check` fails if they are stale | Node 18+ |
 | `node design-system/design-build/ramps.mjs [--check]` | Writes the `palette.*` ramps (11 OKLCH steps per seed in core.md §13 `ramps:`) into `tokens/tokens.json` and each sub-brand file, then regenerates the token CSS; `--check` fails if a ramp no longer matches its seed | Node 18+ |
+| `node design-system/design-build/designmd.mjs [--check]` | Writes `design-build/exports/`: Google DESIGN.md (the default theme, plus a `json tokens` fence that is `tokens.json` byte for byte), Tailwind v4 `@theme` CSS, a Tailwind v3 config, Tokens Studio JSON and Figma variables JSON. `--check` fails if any file differs, or if the generated DESIGN.md has a Google-format lint error. `lint` checks a DESIGN.md; `import` restores a fenced token file unchanged, or converts a Google-only file to DTCG. The board badge reads Outputs synced when these files match. | Node 18+ |
 | `node design-system/design-build/board.mjs` | Builds the design board, `preview/index.html`: an overview card with a coverage ring, the brand identity zone, and one tile per core section, module part, component doc, screen and governance part, with hatched placeholders for what is unfilled, ramp tiles, live components and motion, a view per theme (plus side by side) and a brand switch for sub-brands, and a pan and zoom canvas with a minimap. It also writes `preview/board.json` and `board.md` for AI agents. `--check` fails if they are stale; `--review "§4=accept"` records Phase 5 verdicts in `design-build/review.json`; `--overview-only --direction A --direction B` writes the Phase 3 studies page; `--serve --watch` is the live board: it serves both over http, rebuilds `tokens.css`, the board and the studies page when their sources change and reloads open tabs (a bad save keeps the last good board and shows the file:line; `--no-watch` for a plain server). The reload script is added to served pages only, so the committed `index.html` and `--check` are unaffected | Node 18+ |
 | `node design-system/design-build/test/run.mjs` | The checks' own self-test: good and bad fixtures, mutation tests for every rule, the CLI flags, running from an app root, the git and agent hooks, the UI inventory (missing, stale or unfilled docs, unknown tokens, variants and states), the React wrappers (server-rendered), the board (every tile, coverage, `board-stale`, `review.json`, the studies page), dark-only and three-theme fixture systems through every check, and, when Playwright is installed, the render fixtures, the component helpers in a browser and the motion check (including a broken reduced-motion block that must fail) | Node 18+ |
 
@@ -218,7 +323,7 @@ Useful flags:
 
 **Gates:**
 - **CI.** For your app, copy `design-system/design-build/ci/app-design-checks.example.yml` to `.github/workflows/design-checks.yml`: it installs the app and the checks, lints, checks the tokens, starts the dev server and runs render + axe on it. The template's own `.github/workflows/design-checks.yml` checks the template (self-test, lint, tokens, render) and is not copied into apps.
-- **Pre-commit.** `node design-system/design-build/install-hooks.mjs` installs it once per clone. It lints the design files and the app code (a hard-coded color blocks the commit), regenerates the token files when `tokens.json` changes, and runs render + axe when visual files change (the app on `app_url` if its dev server is running). If `design-system/` goes missing, the hook fails loudly instead of passing.
+- **Pre-commit.** `node design-system/design-build/install-hooks.mjs` installs it once per clone. It lints the design files and the app code (a hard-coded color blocks the commit), regenerates the token files, the DESIGN.md / Tailwind / Figma exports and the board when `tokens.json` changes, and runs render + axe when visual files change (the app on `app_url` if its dev server is running). If `design-system/` goes missing, the hook fails loudly instead of passing.
 - **Agent hooks (optional).** `design-build/hooks/` has a Claude Code `PostToolUse` example and a Cursor `postToolUse` example. Each runs the lint after every agent edit and gives the findings back to the agent. See [`design-build/hooks/README.md`](design-build/hooks/README.md). They are not switched on by default.
 
 **No gaming (design.md §0.5).** Agents must not do any of these without the owner's approval:

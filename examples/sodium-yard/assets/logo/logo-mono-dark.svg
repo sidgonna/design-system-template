@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 56" fill="none">
+  <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M22 10h16"/>
+    <path d="M14 16h32l4 12H10z"/>
+    <path d="M30 28v12"/>
+    <path d="M4 44h52"/>
+  </g>
+  <text x="78" y="36" fill="currentColor" stroke="none" font-family="Bricolage Grotesque, sans-serif" font-size="26" font-weight="640">Sodium Yard</text>
+</svg>

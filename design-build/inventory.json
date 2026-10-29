@@ -1,31 +1,102 @@
 {
-  "$comment": "The single source of truth for components and screens. Components this project has (status: existing, read from the code in KICKSTART Step 2) or has agreed to build (status: planned, matching design/digital-product.md §M1.1). lint.mjs (rule unknown-component) rejects any component, variant or prop not listed here. Reuse, then extend, then create, and add a new entry only with the user's agreement (design.md §0.5). import = the React wrappers' folder, relative to the project root: app code imports it relatively ('../design-system/components/react') or through a path alias, and the lint checks every import path that ends in design-system/components; props = the props the lint accepts (native attributes the wrapper forwards included); html = the framework-agnostic markup API (components/components.css); doc = its ui-inventory doc. Do not edit `ignore` without the user's approval.",
+  "$comment": "The single source of truth for components and screens. Components this project has (status: existing, read from the code in KICKSTART Step 2) or has agreed to build (status: planned, matching design/digital-product.md §M1.1). lint.mjs (rule unknown-component) rejects any component, variant or prop not listed here. Reuse, then extend, then create, and add a new entry only with the user's agreement (design.md §0.5). import = the React wrappers' folder, relative to the project root: app code imports it relatively ('../design-system/components/react') or through a path alias, and the lint checks every import path that ends in design-system/components; props = the props the lint accepts (native attributes the wrapper forwards included); html = the framework-agnostic markup API (components/components.css); doc = its ui-inventory doc. group = the board category (actions, inputs, feedback, navigation, data-display, layout). Do not edit `ignore` without the user's approval.",
   "library": null,
   "theme_files": [],
   "token_files": ["tokens/tokens.json"],
   "hardcoded_colors": null,
   "components": [
-    { "name": "Button", "aliases": ["btn"], "status": "existing", "import": "design-system/components/react", "html": "<button data-component=\"button\" data-variant=\"…\">", "doc": "ui-inventory/components/button.md", "props": ["variant", "loading", "loadingLabel", "disabled", "type", "form", "autoFocus"], "variants": ["primary", "secondary", "ghost", "danger"] },
-    { "name": "Input", "aliases": ["TextField"], "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"input\" data-variant=\"default|error\"><label><input>", "doc": "ui-inventory/components/input.md", "props": ["label", "hint", "error", "disabled", "required", "type", "autoComplete", "inputMode", "readOnly", "autoFocus", "maxLength", "minLength", "pattern", "min", "max", "step", "form", "spellCheck", "enterKeyHint"], "variants": ["default", "error"] },
-    { "name": "Card", "aliases": [], "status": "existing", "import": "design-system/components/react", "html": "<article data-component=\"card\" data-variant=\"…\" [data-interactive] [data-enter]>", "doc": "ui-inventory/components/card.md", "props": ["variant", "interactive", "enter"], "variants": ["flat", "raised"] },
-    { "name": "Modal", "aliases": ["Sheet", "Dialog"], "status": "planned", "import": null, "props": ["open", "title"], "variants": [] },
-    { "name": "Navigation", "aliases": ["Nav"], "status": "planned", "import": null, "props": [], "variants": [] },
-    { "name": "Table", "aliases": [], "status": "planned", "import": null, "props": [], "variants": [] },
-    { "name": "Badge", "aliases": ["Tag"], "status": "existing", "import": "design-system/components/react", "html": "<span data-component=\"badge\" data-variant=\"…\">", "doc": "ui-inventory/components/badge.md", "props": ["variant", "live"], "variants": ["neutral", "success", "warning", "error", "info"] },
-    { "name": "Toast", "aliases": [], "status": "planned", "import": null, "props": ["variant"], "variants": ["success", "warning", "error", "info"] }
+    { "name": "Button", "aliases": ["btn"], "group": "actions", "status": "existing", "import": "design-system/components/react", "html": "<button data-component=\"button\" data-variant=\"…\">", "doc": "ui-inventory/components/button.md", "props": ["variant", "loading", "loadingLabel", "disabled", "type", "form", "autoFocus"], "variants": ["primary", "secondary", "ghost", "danger"] },
+    { "name": "Input", "aliases": ["TextField"], "group": "inputs", "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"input\" data-variant=\"default|error\"><label><input>", "doc": "ui-inventory/components/input.md", "props": ["label", "hint", "error", "disabled", "required", "type", "autoComplete", "inputMode", "readOnly", "autoFocus", "maxLength", "minLength", "pattern", "min", "max", "step", "form", "spellCheck", "enterKeyHint"], "variants": ["default", "error"] },
+    { "name": "Textarea", "aliases": [], "group": "inputs", "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"textarea\" data-variant=\"default|error\"><label><textarea>", "doc": "ui-inventory/components/textarea.md", "props": ["label", "hint", "error", "disabled", "required", "rows", "autoFocus", "readOnly", "maxLength", "minLength"], "variants": ["default", "error"] },
+    { "name": "Select", "aliases": [], "group": "inputs", "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"select\" data-variant=\"default|error\"><label><select>", "doc": "ui-inventory/components/select.md", "props": ["label", "hint", "error", "disabled", "required", "autoFocus"], "variants": ["default", "error"] },
+    { "name": "Checkbox", "aliases": [], "group": "inputs", "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"checkbox\" data-variant=\"default\"><label><input type=\"checkbox\">", "doc": "ui-inventory/components/checkbox.md", "props": ["label", "checked", "disabled", "required"], "variants": ["default"] },
+    { "name": "Radio", "aliases": [], "group": "inputs", "status": "existing", "import": "design-system/components/react", "html": "<fieldset data-component=\"radio\" data-variant=\"default\"><legend><input type=\"radio\">", "doc": "ui-inventory/components/radio.md", "props": ["legend", "options", "value", "disabled"], "variants": ["default"] },
+    { "name": "Switch", "aliases": [], "group": "inputs", "status": "existing", "import": "design-system/components/react", "html": "<button data-component=\"switch\" data-variant=\"default\" role=\"switch\">", "doc": "ui-inventory/components/switch.md", "props": ["label", "checked", "defaultChecked", "disabled"], "variants": ["default"] },
+    { "name": "Alert", "aliases": [], "group": "feedback", "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"alert\" data-variant=\"info|success|warning|error\">", "doc": "ui-inventory/components/alert.md", "props": ["variant", "title", "live"], "variants": ["info", "success", "warning", "error"] },
+    { "name": "Toast", "aliases": [], "group": "feedback", "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"toast\" data-variant=\"success|warning|error|info\">", "doc": "ui-inventory/components/toast.md", "props": ["variant", "title", "float", "onDismiss"], "variants": ["success", "warning", "error", "info"] },
+    { "name": "Dialog", "aliases": ["Modal", "Sheet"], "group": "feedback", "status": "existing", "import": "design-system/components/react", "html": "<dialog data-component=\"dialog\" data-variant=\"default\">", "doc": "ui-inventory/components/dialog.md", "props": ["open", "title", "onClose"], "variants": ["default"] },
+    { "name": "Tooltip", "aliases": [], "group": "feedback", "status": "existing", "import": "design-system/components/react", "html": "<span data-component=\"tooltip\" data-variant=\"default\" role=\"tooltip\" hidden>", "doc": "ui-inventory/components/tooltip.md", "props": ["tip"], "variants": ["default"] },
+    { "name": "Badge", "aliases": ["Tag"], "group": "data-display", "status": "existing", "import": "design-system/components/react", "html": "<span data-component=\"badge\" data-variant=\"…\">", "doc": "ui-inventory/components/badge.md", "props": ["variant", "live"], "variants": ["neutral", "success", "warning", "error", "info"] },
+    { "name": "Avatar", "aliases": [], "group": "data-display", "status": "existing", "import": "design-system/components/react", "html": "<span data-component=\"avatar\" data-variant=\"initials|icon\" role=\"img\">", "doc": "ui-inventory/components/avatar.md", "props": ["variant", "label"], "variants": ["initials", "icon"] },
+    { "name": "Table", "aliases": [], "group": "data-display", "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"table\" data-variant=\"default\"><table>", "doc": "ui-inventory/components/table.md", "props": ["caption"], "variants": ["default"] },
+    { "name": "Tabs", "aliases": [], "group": "navigation", "status": "existing", "import": "design-system/components/react", "html": "<div data-component=\"tabs\" data-variant=\"default\" role=\"tablist\">", "doc": "ui-inventory/components/tabs.md", "props": ["label", "tabs", "value"], "variants": ["default"] },
+    { "name": "Nav", "aliases": ["Navigation"], "group": "navigation", "status": "existing", "import": "design-system/components/react", "html": "<nav data-component=\"nav\" data-variant=\"default\">", "doc": "ui-inventory/components/nav.md", "props": ["label", "items"], "variants": ["default"] },
+    { "name": "Card", "aliases": [], "group": "layout", "status": "existing", "import": "design-system/components/react", "html": "<article data-component=\"card\" data-variant=\"…\" [data-interactive] [data-enter]>", "doc": "ui-inventory/components/card.md", "props": ["variant", "interactive", "enter"], "variants": ["flat", "raised"] }
   ],
   "screens": {
     "$comment": "One entry per web-app screen (ui-inventory/screens/<id>.md is generated from it, plus your notes). route = URL path or file; source = the files that render it, relative to the project root or the design-system folder; components = every inventory component on the screen with the variants and states it uses (states from digital-product.md §M1.2). lint rule ui-inventory checks all of it.",
     "preview": {
       "name": "Design board",
       "route": "design-build/preview/index.html",
-      "purpose": "The design board, generated by design-build/board.mjs: every part of the system as a tile, with tokens, type, color, motion and the shipped components in every variant and state, for review (design.md §16 Phase 5).",
+      "purpose": "The design board, generated by design-build/board.mjs: every part of the system as a tile, with tokens, type, color, motion and the shipped components in every variant and state, grouped as actions, inputs, feedback, navigation, data display and layout, for review (design.md §16 Phase 5).",
       "source": ["design-build/preview/index.html"],
       "components": [
         { "component": "Button", "variants": ["primary", "secondary", "ghost", "danger"], "states": ["default", "hover", "focus", "active", "disabled", "loading"] },
         { "component": "Input", "variants": ["default", "error"], "states": ["default", "focus", "error"] },
-        { "component": "Card", "variants": ["flat", "raised"], "states": ["default", "hover", "focus"] },
-        { "component": "Badge", "variants": ["neutral", "success", "warning", "error", "info"], "states": ["default"] }
+        { "component": "Textarea", "variants": ["default", "error"], "states": ["default", "focus", "error"] },
+        { "component": "Select", "variants": ["default", "error"], "states": ["default", "focus", "error", "disabled"] },
+        { "component": "Checkbox", "variants": ["default"], "states": ["default", "focus", "disabled"] },
+        { "component": "Radio", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Switch", "variants": ["default"], "states": ["default", "focus", "disabled"] },
+        { "component": "Alert", "variants": ["info", "success", "warning", "error"], "states": ["default"] },
+        { "component": "Toast", "variants": ["success", "warning", "error", "info"], "states": ["default", "success", "error"] },
+        { "component": "Dialog", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Tooltip", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Badge", "variants": ["neutral", "success", "warning", "error", "info"], "states": ["default"] },
+        { "component": "Avatar", "variants": ["initials", "icon"], "states": ["default"] },
+        { "component": "Table", "variants": ["default"], "states": ["default"] },
+        { "component": "Tabs", "variants": ["default"], "states": ["default", "focus", "active"] },
+        { "component": "Nav", "variants": ["default"], "states": ["default", "focus", "active"] },
+        { "component": "Card", "variants": ["flat", "raised"], "states": ["default", "hover", "focus"] }
+      ]
+    },
+    "form": {
+      "name": "Form",
+      "route": "components/patterns/form.html",
+      "purpose": "A short form: name, note, plan, receipt choice and seat, with save and cancel.",
+      "source": ["components/patterns/form.html"],
+      "components": [
+        { "component": "Input", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Textarea", "variants": ["error"], "states": ["error", "focus"] },
+        { "component": "Select", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Checkbox", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Radio", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Button", "variants": ["primary", "secondary"], "states": ["default", "hover", "focus", "active"] }
+      ]
+    },
+    "empty": {
+      "name": "Empty state",
+      "route": "components/patterns/empty.html",
+      "purpose": "What a list shows when no rows match: a card, a sentence, and one action.",
+      "source": ["components/patterns/empty.html"],
+      "components": [
+        { "component": "Card", "variants": ["flat"], "states": ["default"] },
+        { "component": "Button", "variants": ["primary"], "states": ["default", "hover", "focus"] }
+      ]
+    },
+    "settings": {
+      "name": "Settings",
+      "route": "components/patterns/settings.html",
+      "purpose": "A settings page: section links, an email field, a switch, a seat choice and save.",
+      "source": ["components/patterns/settings.html"],
+      "components": [
+        { "component": "Nav", "variants": ["default"], "states": ["default", "focus", "active"] },
+        { "component": "Input", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Switch", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Radio", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Button", "variants": ["primary"], "states": ["default", "hover", "focus"] }
+      ]
+    },
+    "table": {
+      "name": "Data table",
+      "route": "components/patterns/table.html",
+      "purpose": "A data table page: a search field, a search action, and a captioned table with status badges.",
+      "source": ["components/patterns/table.html"],
+      "components": [
+        { "component": "Input", "variants": ["default"], "states": ["default", "focus"] },
+        { "component": "Button", "variants": ["secondary"], "states": ["default", "hover", "focus"] },
+        { "component": "Table", "variants": ["default"], "states": ["default"] },
+        { "component": "Badge", "variants": ["success", "warning"], "states": ["default"] }
       ]
     }
   },

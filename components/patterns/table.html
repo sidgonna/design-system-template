@@ -1,0 +1,23 @@
+<div data-pattern="table" id="pat-table">
+  <form action="#pat-table">
+    <div data-component="input" data-variant="default">
+      <label for="pat-table-q">Find a row</label>
+      <input id="pat-table-q" type="search" name="q">
+    </div>
+    <div data-part="actions">
+      <button type="submit" data-component="button" data-variant="secondary">Search</button>
+    </div>
+  </form>
+  <div data-component="table" data-variant="default" role="region" aria-label="Rows" tabindex="0">
+    <table>
+      <caption>Rows today</caption>
+      <thead>
+        <tr><th scope="col">Plan</th><th scope="col">Time</th><th scope="col">Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Basic</td><td>09:00</td><td><span data-component="badge" data-variant="success">On time</span></td></tr>
+        <tr><td>Plus</td><td>11:30</td><td><span data-component="badge" data-variant="warning">Due soon</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

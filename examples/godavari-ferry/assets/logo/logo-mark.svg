@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" fill="none">
+  <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="miter" stroke-linecap="square">
+    <path d="M4 14H60"/>
+    <path d="M14 14V34"/>
+    <path d="M32 14V34"/>
+    <path d="M50 14V34"/>
+    <path d="M4 34H60"/>
+    <path d="M2 42H62"/>
+  </g>
+</svg>

@@ -8,7 +8,7 @@
 | HTML/CSS API | `<button data-component="button" data-variant="…">` + `components/components.css` |
 | Props | `variant`, `loading`, `loadingLabel`, `disabled`, `type`, `form`, `autoFocus` |
 | Variants | `primary`, `secondary`, `ghost`, `danger` |
-| Used on | [Design board](../screens/preview.md) (`primary`, `secondary`, `ghost`, `danger`; `default`, `hover`, `focus`, `active`, `disabled`, `loading`) |
+| Used on | [Design board](../screens/preview.md) (`primary`, `secondary`, `ghost`, `danger`; `default`, `hover`, `focus`, `active`, `disabled`, `loading`)<br>[Form](../screens/form.md) (`primary`, `secondary`; `default`, `hover`, `focus`, `active`)<br>[Empty state](../screens/empty.md) (`primary`; `default`, `hover`, `focus`)<br>[Settings](../screens/settings.md) (`primary`; `default`, `hover`, `focus`)<br>[Data table](../screens/table.md) (`secondary`; `default`, `hover`, `focus`) |
 <!-- /ui-inventory:generated -->
 
 ## Purpose

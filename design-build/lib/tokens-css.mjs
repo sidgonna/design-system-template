@@ -10,7 +10,9 @@ export const TYPE_EXT = 'org.design-system.type';
 /** Light or dark UA colour scheme for a theme name (dark, brand-dark… are dark; light, high-contrast… are light). */
 export const schemeOf = (theme) => (/(^|-)dark($|-)/.test(theme) ? 'dark' : 'light');
 // Themes with an OS-level media query; any other theme name applies only with data-theme="<name>".
-const MEDIA = { dark: '(prefers-color-scheme: dark)', 'high-contrast': '(prefers-contrast: more)' };
+// light is listed so a dark-first system (themes[0] === dark) still follows prefers-color-scheme: light.
+// A light-first system never emits it: light is the default, so it is not in themes.slice(1).
+const MEDIA = { light: '(prefers-color-scheme: light)', dark: '(prefers-color-scheme: dark)', 'high-contrast': '(prefers-contrast: more)' };
 
 const isAlias = (v) => typeof v === 'string' && /^\{[^{}]+\}$/.test(v);
 const ref = (v) => `var(${varName(v.slice(1, -1))})`;

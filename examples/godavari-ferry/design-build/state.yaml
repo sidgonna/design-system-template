@@ -1,0 +1,34 @@
+# Godavari Ferry build state. The starter repo state stays at phase 0.
+phase: 4
+gate_passed: false
+project_type: [digital_product, print_physical]
+evidence:
+  - examples/godavari-ferry/design.md
+  - examples/godavari-ferry/design/print.md
+inventory: design-build/inventory.json
+research:
+  started_at: "2026-10-29"
+  sources_used: 8
+  competitors_used: 3
+choices:
+  color: "night water, red oxide, antique brass, warm stone"
+  type: "Fraunces headings, Atkinson Hyperlegible body"
+  logo: "Dowleswaram barrage: three piers and a waterline"
+decisions:
+  - { date: 2026-10-29, section: "§1", decision: "Godavari Ferry is a fictional passenger operator between Gowthami Ghat and the Dowleswaram Barrage steps at Rajamahendravaram. It is not a real company.", by: "step 3 intake", quote: "built only through the template intake flow" }
+  - { date: 2026-10-29, section: "§4", decision: "Seeds are night water #163a4a, red oxide #7c2d2a, antique brass #8a5a12, warm stone #5c534c. Semantic seeds stay as shipped. Chart series stay on the Okabe-Ito hexes.", by: "step 3 intake", quote: "charts are operational, not brand decoration" }
+  - { date: 2026-10-29, section: "§5", decision: "Heading is Fraunces with Source Serif 4 shipped behind it. Body is Atkinson Hyperlegible. Telugu and Hindi use the shipped Noto families.", by: "step 3 intake", quote: "a paper ticket you can read in full sun" }
+  - { date: 2026-10-29, section: "§16", decision: "Digital product and print are on. Marketing and motion are switched off, and the intake markers on those flags are deleted.", by: "step 3 intake", quote: "the timetable is the product" }
+  - { date: 2026-10-29, section: "§4.4", decision: "Themes are light and dark only. A high-contrast theme is not shipped; glare is handled by type size and ink.", by: "step 3 intake", quote: "add it only if jetty staff ask" }
+apply:
+  started_at: null
+  app_url: null
+  routes: []
+  target_errors: 0
+  accepted_by: null
+completion: 1.0
+version: "0.9.0"
+checks:
+  lint: { status: null, commit: null, at: null, errors: null, warnings: null }
+  render: { status: null, commit: null, at: null, failures: null, screenshots: null }
+  a11y: { status: null, commit: null, at: null, serious_or_critical: null, manual: null }

@@ -8,7 +8,7 @@
 | HTML/CSS API | `<span data-component="badge" data-variant="…">` + `components/components.css` |
 | Props | `variant`, `live` |
 | Variants | `neutral`, `success`, `warning`, `error`, `info` |
-| Used on | [Design board](../screens/preview.md) (`neutral`, `success`, `warning`, `error`, `info`; `default`) |
+| Used on | [Design board](../screens/preview.md) (`neutral`, `success`, `warning`, `error`, `info`; `default`)<br>[Data table](../screens/table.md) (`success`, `warning`; `default`) |
 <!-- /ui-inventory:generated -->
 
 ## Purpose

@@ -1,0 +1,68 @@
+{
+  "$comment": "Optional board copy read by design-build/board.mjs. Absent on the starter, so the starter specimen strings stay as shipped.",
+  "buttons": {
+    "primary": "Send the van",
+    "secondary": "Tonight's lamps",
+    "ghost": "Not this pole",
+    "danger": "Mark it dead",
+    "disabled": "Disabled",
+    "loading": "Saving…"
+  },
+  "guidelinesButtons": {
+    "primary": "Send the van",
+    "secondary": "Tonight's lamps",
+    "ghost": "Not this pole",
+    "danger": "Mark it dead",
+    "disabled": "Disabled",
+    "loading": "Saving…"
+  },
+  "input": {
+    "label": "Lamp ID",
+    "value": "",
+    "hint": "The number on the pole door.",
+    "errorLabel": "Lamp ID",
+    "errorValue": "VYD",
+    "errorHint": "Ward, then the pole number.",
+    "error": "It needs the ward and the number."
+  },
+  "guidelinesInput": {
+    "label": "Lamp ID",
+    "hint": "Ward, then the pole number, as on the door.",
+    "errorLabel": "Lamp ID",
+    "errorValue": "VYD",
+    "errorHint": "Ward, then the pole number.",
+    "error": "VYD is only the ward. It needs the pole number."
+  },
+  "cards": {
+    "flatTitle": "Pole card",
+    "flatBody": "A hairline border; plays the entrance.",
+    "interactiveTitle": "Interactive card",
+    "interactiveBody": "Lifts on hover and focus."
+  },
+  "guidelinesCards": {
+    "flatTitle": "Pole card",
+    "flatBody": "A hairline border only. It has data-enter, so it plays the entrance.",
+    "raisedTitle": "Raised card",
+    "raisedBody": "Uses shadow.2 to lift off the desk.",
+    "interactiveTitle": "Interactive card",
+    "interactiveBody": "Hover it or tab to its link: it lifts to shadow.3."
+  },
+  "badges": [
+    { "variant": "neutral", "label": "Spare" },
+    { "variant": "success", "label": "Lit" },
+    { "variant": "warning", "label": "Flicker" },
+    { "variant": "error", "label": "Dead" },
+    { "variant": "info", "label": "Crew" }
+  ],
+  "typeSample": "Van 2 rolls at 01:10.",
+  "overline": "WARD 4",
+  "display": "Lamp's out.",
+  "scripts": {
+    "te": "తదుపరి వ్యాన్ ఒంటి గంటకు.",
+    "hi": "अगली वैन एक बजे है।"
+  },
+  "scriptNote": {
+    "te": "తదుపరి వ్యాన్",
+    "hi": "अगली वैन"
+  }
+}
